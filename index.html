@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GIS Developer & Engineer - Portfolio</title>
+  <link rel="preload" href="css/style.css" as="style" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preload" href="js/script.js" as="script" />
+  <meta name="description" content="GIS Developer & Engineer Portfolio - Specialized in spatial analysis, remote sensing, and geodatabase design" />
+  <meta name="keywords" content="GIS, Geographic Information Systems, Remote Sensing, Spatial Analysis, Geodatabase" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="navbar">
+    <div class="nav-content">
+      <div class="nav-logo">GIS Portfolio</div>
+      <ul class="nav-links">
+        <li><a href="#home" data-en="Home" data-fr="Accueil">Home</a></li>
+        <li><a href="#timeline" data-en="Experience" data-fr="Expérience">Experience</a></li>
+        <li><a href="#projects" data-en="Projects" data-fr="Projets">Projects</a></li>
+        <li><a href="#results" data-en="Results" data-fr="Résultats">Results</a></li>
+        <li><a href="#skills" data-en="Skills" data-fr="Compétences">Skills</a></li>
+        <li><a href="#training" data-en="Training" data-fr="Formation">Training</a></li>
+        <li><a href="#contact" data-en="Contact" data-fr="Contact">Contact</a></li>
+      </ul>
+      <button class="lang-toggle" id="langToggle" onclick="toggleLanguage()">
+        <span class="lang-flag">🇫🇷</span>
+        <span class="lang-text">FR</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <h1 data-en="GIS Developer & Engineer" data-fr="Développeur et Ingénieur SIG">GIS Engineer</h1>
+      <p class="subtitle" data-en="Engineer first, problem-solver always." data-fr="Ingénieur d’abord, solutionneur toujours.">Engineer first, problem solver always.</p>
+      <div class="cta-buttons">
+        <a href="#projects" class="cta-btn primary" data-en="View Projects" data-fr="Voir les Projets">View Projects</a>
+        <a href="#timeline" class="cta-btn" data-en="Experience" data-fr="Expérience">Experience</a>
+        <a href="#contact" class="cta-btn" data-en="Contact" data-fr="Contact">Contact</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="timeline-section" id="timeline">
+    <h2 class="section-title" data-en="Career Journey" data-fr="Parcours Professionnel">Career Journey</h2>
+
+    <div class="timeline-wrapper">
+      <!-- Timeline items -->
+      <div class="timeline" id="timelineList">
+
+        <!-- Item 1 -->
+        <div class="timeline-item" tabindex="0" data-images="images\timeline1.jpg">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">2023</div>
+            <div class="timeline-title" data-en="Team Leader – Design and Integration of a Geodatabase" data-fr="Chef d'équipe – Conception et Intégration d'une Géodatabase spatiale">Team Leader – Design and Integration of a Geodatabase</div>
+            <div class="timeline-description" data-en="Led a team in designing and implementing a spatial geodatabase from custom data dictionaries. Managed data modeling in ArcGIS Pro, integrated deliverables, and developed Python scripts and geodatabase rules to automate validation and ensure high-quality data." data-fr="Encadrement d’une équipe pour la conception et la mise en place d’une géodatabase spatiale à partir de dictionnaires de données personnalisés. Supervision de la modélisation et de la structuration des données sous ArcGIS Pro, intégration des livrables, et développement de scripts Python et de règles de géodatabase pour automatiser la validation et garantir la qualité des données.">Led a team in designing and implementing a spatial geodatabase from custom data dictionaries. Managed data modeling in ArcGIS Pro, integrated deliverables, and developed Python scripts and geodatabase rules to automate validation and ensure high-quality data.</div>
+          </div>
+        </div>
+
+        <!-- Item 2 (two images) -->
+        <div class="timeline-item" tabindex="0" data-images="images\timeline2.gif">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">2021</div>
+            <div class="timeline-title" data-en="LiDAR Classification in MicroStation" data-fr="Classification LiDAR sur MicroStation ">LiDAR Classification in MicroStation</div>
+            <div class="timeline-description" data-en="Performed advanced LiDAR point cloud processing, including automated and manual classification, noise filtering, class management, and generation of high-precision DTMs and DSMs." data-fr="Traitement avancé de nuages de points LiDAR, incluant classification automatique et manuelle, suppression du bruit, gestion des classes et génération de modèles numériques de terrain (MNT) et de surface (MNS) haute précision.">Performed advanced LiDAR point cloud processing, including automated and manual classification, noise filtering, class management, and generation of high-precision DTMs and DSMs.</div>
+          </div>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="timeline-item" tabindex="0" data-images="images\timeline3.webp">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">2019</div>
+            <div class="timeline-title" data-en="Updating and integrating fiber optic and infrastructure data in Smallworld GE" data-fr="Mise à jour et intégration des données de fibre optique et d'infrastructure dans Smallworld GE">Updating and integrating fiber optic and infrastructure data in Smallworld GE</div>
+            <div class="timeline-description" data-en="Coordinated with cross-functional teams to align fiber optic and infrastructure data with project requirements and AutoCAD plans. Engaged in follow-up meetings and client discussions to define technical specifications and ensure data compliance. Participated in team meetings and client consultations to define technical specifications and ensure data compliance with established standards." data-fr="Coordination avec des équipes pluridisciplinaires pour aligner les données de fibre optique et d’infrastructure avec les exigences du projet et les plans AutoCAD. Participation aux réunions d’équipe et consultations clients pour définir les spécifications techniques et garantir la conformité des données aux normes établies.">Coordinated with cross-functional teams to align fiber optic and infrastructure data with project requirements and AutoCAD plans. Engaged in follow-up meetings and client discussions to define technical specifications and ensure data compliance.</div>
+          </div>
+        </div>
+
+        <!-- Item 4 (three images) -->
+        <div class="timeline-item" tabindex="0" data-images="images\timeline4.webp">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">2018 - 2019</div>
+            <div class="timeline-title" data-en="Digitization and Rectification" data-fr="Numérisation et rectification">Digitization and Rectification</div>
+            <div class="timeline-description" data-en="Performed precise digitization of plans from drone imagery, applying rigorous QA/QC procedures to ensure data integrity and accuracy." data-fr="Numérisation précise de plans à partir d’images de drones, avec mise en œuvre de procédures strictes de contrôle qualité (QA/QC) assurant l’intégrité et la précision des données.">Performed precise digitization of plans from drone imagery, applying rigorous QA/QC procedures to ensure data integrity and accuracy.</div>
+          </div>
+        </div>
+
+       
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Media Modal -->
+  <div id="mediaModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <img id="modalImage" src="" alt="Full size image" style="display: none;">
+      <video id="modalVideo" controls style="display: none;">
+        <source src="" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+<section class="projects-section" id="projects">
+  <h2 class="section-title" data-en="Featured Projects" data-fr="Projets à la une">Featured Projects</h2>
+  <div class="projects-grid">
+    
+    <!-- Project 1 -->
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type" data-en="Lidar Classification" data-fr="Classification LiDAR">Lidar Classification</span>
+        <h3 class="project-title" data-en="Classification lidar with Microstation" data-fr="Classification LiDAR sur MicroStation">Classification lidar with Microstation</h3>
+        <p class="project-tech">MicroStation | TerraScan | Python (laspy) | Automatisation  | Contrôle Qualité </p>
+      </div>
+      <div class="project-content">
+        <div class="project-section">
+          <h4 data-en="Challenge" data-fr="Défi">Challenge</h4>
+          <p data-en="Processing raw LiDAR data with varying point densities and inconsistent classification across multiple flight missions." data-fr="Traitement de données LiDAR brutes issues de missions de vol multiples. Données caractérisées par des densités de points hétérogènes et des classifications initiales incohérentes, compliquant la production de modèles fiables et homogènes.">
+            Processing raw LiDAR data with varying point densities and inconsistent classification across multiple flight missions.
+          </p>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Strategy" data-fr="Stratégie">Strategy</h4>
+          <ul>
+            <li data-en="Developed MicroStation macros to automate data preprocessing and cleaning." data-fr="Développement de macros dans MicroStation pour le prétraitement et le nettoyage automatique des données.">Developed MicroStation macros to automate data preprocessing and cleaning.</li>
+            <li data-en="Implementation of custom classification routines in TerraScan to standardize point classification (ground, vegetation, buildings) across all flights." data-fr="Implémentation de routines de classification personnalisées dans TerraScan pour homogénéiser la classification des points (sol, végétation, bâti) sur l'ensemble des vols.">Implementation of custom classification routines in TerraScan to standardize point classification (ground, vegetation, buildings) across all flights.</li>
+            <li data-en="Developed Python scripts using laspy to automate splitting, validation, and merging of LAS files." data-fr="Création de scripts Python (avec la librairie laspy) pour le découpage, la validation et la fusion des fichiers LAS.">Developed Python scripts using laspy to automate splitting, validation, and merging of LAS files.</li>
+          </ul>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Results" data-fr="Résultats">Results</h4>
+          <ul>
+            <li data-en="Reduced processing time by 15%" data-fr="Réduction du temps de traitement de 15%">Reduced processing time by 15%</li>
+            <li data-en="Achieved 95% classification accuracy" data-fr="Atteinte d'une précision de classification de 95%">Achieved 95% classification accuracy</li>
+            <li data-en="Delivered high-resolution DTM/DSM products" data-fr="Livraison de produits DTM/DSM haute résolution">Delivered high-resolution DTM/DSM products</li>
+            <li data-en="Established new standards for company LiDAR workflows" data-fr="Établissement de nouvelles normes pour les flux de travail LiDAR de l'entreprise">Established new standards for company LiDAR workflows</li>
+          </ul>
+        </div>
+      </div>
+      <button class="expand-btn" onclick="toggleProject(this)" data-en="View Details ↓" data-fr="Voir Détails ↓">View Details ↓</button>
+    </div>
+
+    <!-- Project 2 -->
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type" data-en="Database Architecture" data-fr="Architecture de base de données">Design and Integration of a Geodatabase</span>
+        <h3 class="project-title" data-en="Design and Integration of a Geodatabase" data-fr="Conception et Intégration d’une Géodatabase">Design and Integration of a Geodatabase</h3>
+        <p class="project-tech">ArcGIS Pro | SQL Server | Python | Arcade | Automatisation  |Contrôle Qualité</p>
+      </div>
+      <div class="project-content">
+        <div class="project-section">
+          <h4 data-en="Challenge" data-fr="Défi">Challenge</h4>
+          <p data-en="The municipality needed a centralized GIS database for more than 50 departments. It had to handle complex data relationships, integrate robust validation rules, and support a multi-user editing environment with conflict management." data-fr="La municipalité avait besoin d’une base de données SIG centralisée pour plus de 50 départements. Celle-ci devait gérer des relations de données complexes, intégrer des règles de validation robustes et permettre un environnement d’édition multi-utilisateurs avec gestion des conflits.">
+            The municipality needed a centralized GIS database for more than 50 departments. It had to handle complex data relationships, integrate robust validation rules, and support a multi-user editing environment with conflict management.
+          </p>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Strategy" data-fr="Stratégie">Strategy</h4>
+          <ul>
+            <li data-en="Designed normalized geodatabase schema with 200+ feature classes" data-fr="Conception d'un schéma de géodatabase normalisé avec plus de 200 classes d'entités">Designed normalized geodatabase schema with 200+ feature classes</li>
+            <li data-en="Implemented coded domains for standardized data entry" data-fr="Mise en place de domaines codés pour standardiser la saisie des données.">Implemented coded domains for standardized data entry</li>
+            <li data-en="Created Arcade attribute rules for automated validation" data-fr="Développement de règles attributaires avec Arcade pour l’automatisation de la validation.">Created Arcade attribute rules for automated validation</li>
+            <li data-en="Developed Python toolbox for data migration and ETL processes" data-fr="Création d’une boîte à outils Python dédiée aux processus ETL et à la migration des données.">Developed Python toolbox for data migration and ETL processes</li>
+            <li data-en="Built versioned editing workflows with conflict resolution" data-fr="Mise en œuvre de workflows d’édition versionnée avec résolution des conflits et suivi des mises à jour.">Built versioned editing workflows with conflict resolution</li>
+          </ul>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Results" data-fr="Résultats">Results</h4>
+          <ul>
+            <li data-en="Migrated 10+ years of legacy data without loss" data-fr="Migration réussie de plus de 10 ans de données historiques sans perte d’information.">Migrated 10+ years of legacy data without data loss</li>
+            <li data-en="Reduced data entry errors by 90% with validation rules" data-fr="Réduction de 90 % des erreurs de saisie grâce aux règles de validation">Reduced data entry errors by 90% with validation rules</li>
+            <li data-en="Enabled collaboration across departments" data-fr="Collaboration entre les départements">Enabled collaboration across departments</li>
+            <li data-en="Automated manual workflows saving hours of daily work" data-fr="Aautomatisation des flux de travail manuels, économisant plusieures heures de travailles par jour">Automated manual workflows saving hours of daily work</li>
+          </ul>
+        </div>
+      </div>
+      <button class="expand-btn" onclick="toggleProject(this)" data-en="View Details ↓" data-fr="Voir Détails ↓">View Details ↓</button>
+    </div>
+
+    <!-- Project 3 -->
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type" data-en="Optic fiber and Infrastructur" data-fr="Fibre optique et infrastructure">Optic fiber and Infrastructur</span>
+        <h3 class="project-title" data-en="Fiber Optic and infrastructure Network Management" data-fr="Gestion du réseau fibre optique et infrastructure">Fiber Optic and infrastructure Network Management</h3>
+        <p class="project-tech">SmallWorld GIS | AutoCAD</p>
+      </div>
+      <div class="project-content">
+        <div class="project-section">
+          <h4 data-en="Challenge" data-fr="Défi">Challenge</h4>
+          <p data-en="The client requested to manage more than 10,000 km of fiber optic network and infrastructure while ensuring compliance with AutoCAD plans and project requirements." data-fr=" Le client devait gérer plus de 10 000 km de réseau fibre optique et d’infrastructures, tout en assurant la conformité avec les plans issus d’AutoCAD et les exigences du projet">
+            The client requested to manage more than 10,000 km of fiber optic network and infrastructure while ensuring compliance with AutoCAD plans and project requirements.
+          </p>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Strategy" data-fr="Stratégie">Strategy</h4>
+          <ul>
+            <li data-en="Coordinated with cross-functional teams to align fiber optic and infrastructure data with project requirements and AutoCAD plans" data-fr="Coordination avec les équipes inter fonctionnelles afin d’aligner les données de fibre optique et d’infrastructures avec les plans et spécifications techniques.">Coordinated with cross-functional teams to align fiber optic and infrastructure data with project requirements and AutoCAD plans</li>
+            <li data-en="Participation in project follow-up meetings to ensure progress and resolve technical issues." data-fr="Participation aux réunions de suivi de projet pour assurer l’avancement et résoudre les problèmes techniques.">Participation in project follow-up meetings to ensure progress and resolve technical issues.</li>
+            <li data-en="Collaborated with clients to define technical requirements and ensure data compliance with expectations" data-fr="Collaboration directe avec le client pour définir les exigences, valider les livrables et garantir la conformité des données.">Collaborated with clients to define technical requirements and ensure data compliance with expectations</li>
+          </ul>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Results" data-fr="Résultats">Results</h4>
+          <ul>
+            <li data-en="Managed 500,000+ infrastructure (fiber optics, electric cables and poles) connections with 98% accuracy" data-fr="Gestion de plus de 500 000 connexions infrastructure (fiber optics, electric cables and poles) avec une précision de 98 %.">Managed 500,000+ infrastructure connections (fibre optique, cables electrique et poteaux) with 98% accuracy</li>
+            <li data-en="Enhanced data quality by cross-validating with AutoCAD plans and technical specifications." data-fr="Amélioration de la qualité des données grâce à la validation croisée avec les plans AutoCAD et les spécifications techniques">Enhanced data quality by cross-validating with AutoCAD plans and technical specifications.</li>
+            <li data-en="Consolidated and harmonized fiber optic, electrical cable, and pole data into a unified GIS database, improving accessibility and planning efficiency." data-fr="Consolidation et harmonisation des données de fibre optique, câbles électriques et poteaux sur une base SIG unique, facilitant la consultation et la planification.">Consolidated and harmonized fiber optic, electrical cable, and pole data into a unified GIS database, improving accessibility and planning efficiency.</li>
+          </ul>
+        </div>
+      </div>
+      <button class="expand-btn" onclick="toggleProject(this)" data-en="View Details ↓" data-fr="Voir Détails ↓">View Details ↓</button>
+    </div>
+
+    <!-- Project 4 -->
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type" data-en="Cartography | GIS" data-fr="SIG | Cartographie">Cartography | GISI</span>
+        <h3 class="project-title" data-en="Digitization & QGIS Plugin Development" data-fr="Numérisation & développement des plugin QGIS ">Digitization & QGIS Plugin Development</h3>
+        <p class="project-tech">QGIS | Python (PyQGIS) | QA/QC</p>
+      </div>
+      <div class="project-content">
+        <div class="project-section">
+          <h4 data-en="Challenge" data-fr="Défi">Challenge</h4>
+          <p data-en="Engineering firm required rapid digitization of cadastral maps over drone images, ensuring high accuracy and seamless integration with existing GIS workflows." data-fr="Une entreprise d’ingénierie avait besoin d’une numérisation rapide et précise des plans cadastraux à partir d’images de drones, avec une intégration fluide dans les flux de travail SIG existants.">
+            Engineering firm required rapid digitization of cadastral maps over drone images, ensuring high accuracy and seamless integration with existing GIS workflows.
+          </p>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Strategy" data-fr="Stratégie">Strategy</h4>
+          <ul>
+            <li data-en="Performed precise digitization from drone imagery, applying strict quality assurance and quality control (QA/QC) procedures" data-fr="Réalisation d’une numérisation précise à partir d’images de drones, en appliquant des procédures rigoureuses de contrôle qualité (QA/QC).">Performed accurate digitization from drone images, applying rigorous quality control (QA/QC) procedures.</li>
+            <li data-en="Developed a QGIS plugin that applies multiple rule-based conditions simultaneously to bulk-update attributes, significantly improving data editing efficiency and accuracy for large spatial datasets." data-fr="Développement d’un plugin QGIS permettant de mettre à jour en masse les attributs selon plusieurs conditions basées sur des règles, améliorant l’efficacité et la précision des grands jeux de données spatiales.">Developed a QGIS plugin that applies multiple rule-based conditions simultaneously to bulk-update attributes, significantly improving data editing efficiency and accuracy for large spatial datasets.</li>
+            <li data-en="Integrated Python scripts for batch processing of vector layers" data-fr="Intégration de scripts Python pour le traitement par lots et l’optimisation des couches vectorielles.">Integrated Python scripts for batch processing of vector layers</li>
+          </ul>
+        </div>
+        <div class="project-section">
+          <h4 data-en="Results" data-fr="Résultats">Results</h4>
+          <ul>
+            <li data-en="Digitized over 1000+ municipalities" data-fr="Numérisation réussie de plus de 1 000 municipalités.">Digitized over 1000+ municipalities</li>
+            <li data-en="Reduced processing time by 20% compared to fully manual workflows" data-fr="Réduction de 20 % du temps de traitement par rapport aux workflows manuels.">Reduced processing time by 20% compared to fully manual workflows</li>
+            <li data-en="Achieved sub-meter spatial accuracy consistently" data-fr="Atteinte d'une précision spatiale sub-métrique de manière constante">Achieved sub-meter spatial accuracy consistently</li>
+            <li data-en="Delivered a reusable and adaptable plugin to support future projects." data-fr="Livraison d’un plugin réutilisable et adaptable pour des projets futurs.">Delivered a reusable and adaptable plugin to support future projects.</li>
+          </ul>
+        </div>
+      </div>
+      <button class="expand-btn" onclick="toggleProject(this)" data-en="View Details ↓" data-fr="Voir Détails ↓">View Details ↓</button>
+    </div>
+
+  </div>
+  </section>
+
+<!-- NEW GALLERY SECTION -->
+<!-- PROJECT RESULTS VISUALIZATIONS -->
+<section class="results-gallery-section" id="results">
+  <h2 class="section-title" data-en="Project Results Visualizations" data-fr="Résultats de Projets et Visualisations">Project Results Visualizations</h2>
+
+  <div class="results-grid">
+
+    <!-- LiDAR Processing -->
+    <div class="result-category">
+      <div class="result-header">
+        <span class="result-type" data-en="LiDAR Processing" data-fr="Traitement LiDAR">LiDAR Processing</span>
+        <h3 class="result-title" data-en="LiDAR Elevation Model" data-fr="Modèle d'élévation LiDAR">LiDAR Elevation Model</h3>
+        <p class="result-description" data-en="High-precision classification of terrain, vegetation, and buildings from aerial LiDAR data with advanced 3D modeling capabilities" data-fr="Classification haute précision du terrain, de la végétation et des bâtiments à partir de données LiDAR aériennes avec capacités de modélisation 3D avancées">High-precision classification of terrain, vegetation, and buildings from aerial LiDAR data with advanced 3D modeling capabilities</p>
+      </div>
+      <div class="result-gallery">
+        <div class="gallery-item">
+          <img src="images/Lidar_full.PNG" alt="LiDAR Elevation Model">
+        </div>
+        <div class="gallery-item">
+          <img src="images/Lidar_ortho.PNG" alt="LiDAR Orthophoto">
+        </div>
+        <div class="gallery-item">
+          <img src="images/Lidar_split.PNG" alt="LiDAR Split View">
+        </div>
+        <div class="gallery-item">
+          <img src="images/Lidar_ortho2.PNG" alt="LiDAR Orthophoto 2">
+        </div>>
+      </div>
+    </div>
+
+    <!-- Design and Integration of a Geodatabase -->
+    <div class="result-category">
+      <div class="result-header">
+        <span class="result-type" data-en="Geodatabase" data-fr="Geodatabase">3D Visualization</span>
+        <h3 class="result-title" data-en="Designed and automated a spatial geodatabase in ArcGIS Pro using Python, ensuring seamless data integration and quality." data-fr="Conception et automatisation d’une géodatabase spatiale sous ArcGIS Pro avec Python, assurant intégration et qualité optimale des données.">Designed and automated a spatial geodatabase in ArcGIS Pro using Python, ensuring seamless data integration and quality.</h3>
+        <p class="result-description" data-en="Interactivevisualizations for enhanced spatial understanding" data-fr="Modèles interactifs et visualisations pour une compréhension spatiale améliorée">Interactive visualizations for enhanced spatial understanding</p>
+      </div>
+      <div class="result-gallery">
+        <div class="gallery-item">
+          <img src="images/Domain_Import_img.PNG" alt="Domain Import Visualization">
+        </div>
+      </div>
+    </div>
+
+    <!-- Optic Fiber -->
+    <div class="result-category">
+      <div class="result-header">
+        <span class="result-type" data-en="Optic Fiber" data-fr="fiber optique">Optic fiber</span>
+        <h3 class="result-title" data-en="Optic Fiber and infrastructure data integration" data-fr="Integration des données fibre optique et infrastructure ">Optic Fiber and infrastructure data integration</h3>
+        <p class="result-description" data-en="Update and integration of fiber optic and infrastructure data on Smallworld GIS" data-fr="Mise à jour et intégration des données de fibre optique et d'infrastructure sur Smallworld GIS">Update and integration of fiber optic and infrastructure data on Smallworld GIS</p>
+      </div>
+      <div class="result-gallery">
+        <div class="gallery-item">
+          <img src="images/timeline1.jpg" alt="fiber optic and infrastructure data on Smallworld GIS">
+        </div>
+        <div class="gallery-item">
+          <img src="images/timeline1.jpg" alt="fiber optic and infrastructure data on Smallworld GIS"> 
+        </div>
+      </div>
+    </div>
+
+    <!-- Digitization -->
+    <div class="result-category">
+      <div class="result-header">
+        <span class="result-type" data-en="Digitization" data-fr="Numérisation">Digitization</span>
+        <h3 class="result-title" data-en="large-scale digitization of urban infrastructure with centimetric accuracy" data-fr="Numérisation à grande échelle et précision centimétriqu">large-scale digitization of urban infrastructure with centimetric accuracy</h3>
+        <p class="result-description" data-en="High-precision, large-scale digitization of urban infrastructure with centimetric accuracy, including roads, pavements, intersections, parking areas, green spaces, public and private buildings, and key facilities such as gas stations." data-fr="Numérisation à grande échelle de l’infrastructure urbaine avec précision centimétrique, incluant routes, trottoirs, intersections, parkings, espaces verts, bâtiments publics et privés, ainsi que des installations clés telles que les stations-service.">High-precision, large-scale digitization of urban infrastructure with centimetric accuracy, including roads, pavements, intersections, parking areas, green spaces, public and private buildings, and key facilities such as gas stations.</p>
+      </div>
+      <div class="result-gallery">
+        <div class="gallery-item">
+          <img src="images/degitize1.PNG" alt="degitize">
+        </div>
+        <div class="gallery-item">
+          <img src="images/degitize2.PNG" alt="degitize">
+        </div>
+        <div class="gallery-item">
+          <img src="images/degitize23.jpeg" alt="degitize">
+        </div>
+        </div>
+    </div>
+
+  </section>
+
+<!-- GALLERY MODAL -->
+<div id="galleryModal" class="gallery-modal">
+  <div class="gallery-modal-content">
+    <span class="gallery-modal-close">&times;</span>
+    <img id="galleryModalImage" src="" alt="Gallery Image">
+    <div class="gallery-modal-info">
+      <h3 id="galleryModalTitle"></h3>
+    </div>
+    <div class="gallery-modal-nav">
+      <button id="galleryPrev" class="gallery-nav-btn">&lt;</button>
+      <button id="galleryNext" class="gallery-nav-btn">&gt;</button>
+    </div>
+  </div>
+</div>
+
+  <!-- SKILLS -->
+  <section class="skills-section" id="skills">
+    <h2 class="section-title" data-en="Skills & Expertise" data-fr="Compétences et Expertise">Skills & Expertise</h2>
+    <div class="skills-grid">
+      <div class="skill-item">Python</div>
+      <div class="skill-item">QGIS</div>
+      <div class="skill-item">ArcGIS Pro</div>
+      <div class="skill-item">SmallWorld GIS</div>
+      <div class="skill-item" data-en="LiDAR Processing" data-fr="Traitement LiDAR">Classification  Lidar</div>
+      <div class="skill-item" data-en="Drone Mapping" data-fr="Cartographie par Drone">Drone Mapping</div>
+      <div class="skill-item" data-en="Photogrammetry" data-fr="Photogrammétrie">Photogrammetry</div>
+    </div>
+  </section>
+
+  <!-- EDUCATION & CERTIFICATIONS -->
+  <section class="training-section" id="training">
+    <h2 class="section-title" data-en="Education & Certifications" data-fr="Formation et Certifications">Education & Certifications</h2>
+    <div class="training-grid">
+      
+         
+      <!-- Enhanced Education Item 3: 3D Photogrammetric Restitution -->
+      <div class="training-item">
+        <div class="training-header">
+          <h3 class="training-title" data-en="3D Photogrammetric Restitution" data-fr="Restitution Photogrammétrique 3D">3D Photogrammetric Restitution</h3>
+          <span class="training-provider" data-en="Wolo Engineering" data-fr="Wolo Engineering">Wolo Engineering</span>
+          <span class="training-year">2023</span>
+        </div>
+        <p class="training-description">
+          <span data-en="- Hands-on experience in 3D restitution from stereoscopic aerial imagery" 
+                data-fr="- Expérience pratique en restitution 3D à partir d'images aériennes stéréoscopiques">
+            - Hands-on experience in 3D restitution from stereoscopic aerial imagery
+          </span><br>
+          
+          <span data-en="- Proficient in using the Topo Mouse for precise digitization" 
+                data-fr="- Maîtrise de la Topo Mouse pour la numérisation précise">
+            - Proficient in using the Topo Mouse for precise digitization
+          </span><br>
+          
+          <span data-en="- Advanced stereo plotting and feature extraction techniques" 
+                data-fr="- Techniques avancées de stéréorestitution et d'extraction d'entités">
+            - Advanced stereo plotting and feature extraction techniques
+          </span>
+        </p>
+      </div>
+
+      <!-- Enhanced Education Item 4: Metashape Training -->
+      <div class="training-item">
+        <div class="training-header">
+          <h3 class="training-title" data-en="Metashape Professional Training" data-fr="Formation Professionnelle Metashape">Metashape Professional Training</h3>
+          <span class="training-provider" data-en="Wolo Engineering" data-fr="Wolo Engineering">Wolo Engineering</span>
+          <span class="training-year">2022</span>
+        </div>
+        <p class="training-description">
+          <span data-en="- Localization and marking of GCP points for accurate georeferencing" 
+                data-fr="- Localisation et marquage des points GCP pour géoréférencement précis">
+            - Localization and marking of GCP points for accurate georeferencing
+          </span><br>
+
+          <span data-en="- Creation and processing of dense point clouds from aerial imagery" 
+                data-fr="- Création et traitement de nuages de points denses à partir d'images aériennes">
+            - Creation and processing of dense point clouds from aerial imagery
+          </span><br>
+
+          <span data-en="- Generation of high-resolution orthomosaics for precise mapping" 
+                data-fr="- Génération d'orthomosaïques haute résolution pour cartographie précise">
+            - Generation of high-resolution orthomosaics for precise mapping
+          </span><br>
+
+          <span data-en="- Advanced mesh generation and texture mapping techniques" 
+                data-fr="- Techniques avancées de génération de maillage et de mappage de texture">
+            - Advanced mesh generation and texture mapping techniques
+          </span>
+        </p>
+      </div>
+
+      <!-- Enhanced Education Item 6: M.Sc. Geographic Information Systems -->
+      <div class="training-item">
+        <div class="training-header">
+          <h3 class="training-title" data-en="National Engineer’s Degree in Geomatics and Surveying" data-fr="Diplôme National d’Ingénieur en Géomatique et Topographie">National Engineer’s Degree in Geomatics and Surveying</h3>
+          <span class="training-provider" data-en="ESAT University" data-fr="ESAT University">ESAT University</span>
+          <span class="training-year">2021-2023</span>
+        </div>
+        <p class="training-description" data-en="Specialized in digital cartography, topographic instrumentation, and GIS applications, combining theoretical knowledge with practical fieldwork for geospatial analysis and urban planning." data-fr="Spécialisation en cartographie numérique, instrumentation topographique et applications SIG, combinant connaissances théoriques et travaux pratiques sur le terrain pour l’analyse géospatiale et l’aménagement urbain.">
+          Specialized in digital cartography, topographic instrumentation, and GIS applications, combining theoretical knowledge with practical fieldwork for geospatial analysis and urban planning.
+        </p>
+      </div>
+    
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact-section" id="contact">
+    <h2 class="section-title" data-en="Contact" data-fr="Contact">Contact</h2>
+    <div class="contact-content">
+      <p data-en="Ready to discuss your next GIS project?" data-fr="Prêt à discuter de votre prochain projet SIG ?">Ready to discuss your next GIS project?</p>
+      <div class="contact-links">
+        <a href="mailto:tlilixmed@gmail.com" class="contact-btn" data-en="Email" data-fr="Email">Email</a>
+        <a href="https://linkedin.com/in/tlilixmed" class="contact-btn">LinkedIn</a>
+        <a href="https://github.com/TlilixMED" class="contact-btn">GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; I know how to google things.</p>
+  </footer>
+
+  <!-- load your JS (timeline logic, project toggles, etc.) -->
+  <script src="js/script.js"></script>
+</body>
+</html>
+
