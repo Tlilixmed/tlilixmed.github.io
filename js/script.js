@@ -148,19 +148,28 @@ document.addEventListener('DOMContentLoaded', () => {
   new SectionGallery(); // Initialize gallery after DOM loaded
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.project-card').forEach(card => observer.observe(card));
+});
+
 /* ===========================
    PROJECT TOGGLE
    =========================== */
 function toggleProject(button) {
-  const card = button.closest('.project-card');
-  const content = card.querySelector('.project-content');
-  if (content.classList.contains('expanded')) {
-    content.classList.remove('expanded');
-    button.textContent = button.getAttribute('data-en') || 'View Details ↓';
-  } else {
-    content.classList.add('expanded');
-    button.textContent = button.getAttribute('data-en')?.replace('View Details ↓','Hide Details ↑') || 'Hide Details ↑';
-  }
+  const content = button.previousElementSibling;
+  content.classList.toggle('expanded');
+  button.textContent = content.classList.contains('expanded')
+    ? (button.dataset.en === "View Details ↓" ? "Hide Details ↑" : "Masquer ↑")
+    : (button.dataset.en === "View Details ↓" ? "View Details ↓" : "Voir Détails ↓");
 }
 
 /* ===========================
