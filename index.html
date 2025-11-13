@@ -313,7 +313,7 @@
       </div>
       <div class="result-gallery">
         <div class="gallery-item">
-          <video src="videos/FO.mp4" controls autoplay muted loop></video>
+          <video src="videos/FO.mp4" type="video/mp4" controls autoplay muted loop></video>
         </div>
         <div class="gallery-item">
           <img src="images/Fiber1.jpeg" alt="FO/CAD"> 
@@ -346,20 +346,27 @@
 
   </section>
 
-<!-- GALLERY MODAL -->
+<!-- SECTION GALLERY MODAL -->
 <div id="galleryModal" class="gallery-modal">
   <div class="gallery-modal-content">
     <span class="gallery-modal-close">&times;</span>
-    <img id="galleryModalImage" src="" alt="Gallery Image">
+
+    <img id="galleryModalImage" src="" alt="Gallery Image" style="display:none;">
+    <video id="galleryModalVideo" controls style="display:none;">
+      Your browser does not support the video tag.
+    </video>
+
     <div class="gallery-modal-info">
       <h3 id="galleryModalTitle"></h3>
     </div>
+
     <div class="gallery-modal-nav">
       <button id="galleryPrev" class="gallery-nav-btn">&lt;</button>
       <button id="galleryNext" class="gallery-nav-btn">&gt;</button>
     </div>
   </div>
 </div>
+
 
   <!-- SKILLS -->
   <section class="skills-section" id="skills">
