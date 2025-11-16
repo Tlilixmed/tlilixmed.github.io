@@ -1076,6 +1076,105 @@ footer {
   box-shadow: 0 5px 20px rgba(102,126,234,0.45);
 }
 
+/* ===========================
+   RESPONSIVE NAVBAR STYLES
+   =========================== */
+
+/* Hamburger Menu Toggle */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 21px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.nav-toggle span {
+  width: 100%;
+  height: 3px;
+  background: #667eea;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.nav-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.nav-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Mobile Navigation Overlay */
+.nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.nav-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===========================
+   ENHANCED MOBILE EXPERIENCE
+   =========================== */
+
+/* Improved touch targets for mobile */
+@media (max-width: 480px) {
+  .nav-links a {
+    padding: 1rem;
+    font-size: 1.1rem;
+    display: block;
+    margin: 0.5rem 0;
+  }
+  
+  .cta-btn, .contact-btn, .expand-btn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .lang-toggle {
+    min-width: 60px;
+    min-height: 44px;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  .nav-links a,
+  .cta-btn,
+  .contact-btn,
+  .expand-btn,
+  .lang-toggle {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Prevent zoom on input for iOS */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .timeline {
@@ -1107,12 +1206,53 @@ footer {
     height: 150px;
   }
   
+  /* Mobile Navigation */
+  .nav-links {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background: white;
+    flex-direction: column;
+    padding: 5rem 2rem 2rem;
+    transition: left 0.3s ease;
+    z-index: 999;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .nav-links.active {
+    left: 0;
+  }
+  
+  .nav-toggle {
+    display: flex;
+  }
+  
+  .nav-content {
+    justify-content: space-between;
+  }
+  
+  .lang-toggle {
+    z-index: 1001;
+  }
+  
+  /* Prevent body scroll when menu is open */
+  body.menu-open {
+    overflow: hidden;
+  }
+  
+  /* Mobile Hero Profile */
   .hero-profile-wrapper {
     position: relative;
     right: 0;
-    top: auto;
+    top: 0;
     transform: none;
-    margin-top: 2rem;
+    margin-top: 3rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
   }
   
   .hero-photo-container {
@@ -1122,6 +1262,11 @@ footer {
   
   .hero-cv-card {
     width: 200px;
+    margin: 0 auto;
+  }
+  
+  .hero-content h1 {
+    font-size: 2.5rem;
   }
   
   .training-grid {
@@ -1141,7 +1286,7 @@ footer {
   }
   
   .nav-content {
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
   }
   
@@ -1182,5 +1327,23 @@ footer {
     left: -40px;
     font-size: 1.2rem;
     width: 10px;
+  }
+  
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+  
+  .hero-profile-wrapper {
+    margin-top: 20rem;
+    gap: 1.5rem;
+  }
+  
+  .hero-photo-container {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .hero-cv-card {
+    width: 180px;
   }
 }

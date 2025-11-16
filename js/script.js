@@ -141,8 +141,48 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
-// Initialize everything when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+/* ===========================
+   MOBILE NAVIGATION
+   =========================== */
+document.addEventListener('DOMContentLoaded', function() {
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.querySelector('.nav-links');
+  const navOverlay = document.getElementById('navOverlay');
+  const body = document.body;
+  
+  // Toggle mobile menu
+  function toggleMenu() {
+    navToggle.classList.toggle('active');
+    navLinks.classList.toggle('active');
+    navOverlay.classList.toggle('active');
+    body.classList.toggle('menu-open');
+  }
+  
+  // Close mobile menu
+  function closeMenu() {
+    navToggle.classList.remove('active');
+    navLinks.classList.remove('active');
+    navOverlay.classList.remove('active');
+    body.classList.remove('menu-open');
+  }
+  
+  // Event listeners
+  navToggle.addEventListener('click', toggleMenu);
+  navOverlay.addEventListener('click', closeMenu);
+  
+  // Close menu when clicking on a link
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', closeMenu);
+  });
+  
+  // Close menu with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+      closeMenu();
+    }
+  });
+
+  // Initialize everything when DOM is loaded
   // Observe all elements that need animation
   const elementsToAnimate = document.querySelectorAll('section, .section-title, .result-category, .skill-item, .project-card');
   elementsToAnimate.forEach(el => observer.observe(el));
