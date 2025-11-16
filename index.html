@@ -11,10 +11,14 @@
 
   <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
 
+  <!-- Preload critical resources -->
+  <link rel="preload" href="css/style.css" as="style">
+  <link rel="preload" href="images/1024.png" as="image">
+  
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/script.js" defer></script>
 
-  <meta property="og:title" content="GIS Developer & Engineer – Portfolio" />
+  <meta property="og:title" content="GIS Engineer Portfolio" />
   <meta property="og:description" content="Explore featured GIS projects in LiDAR processing, database design, and spatial automation." />
   <meta property="og:image" content="images/preview.png" />
   <meta property="og:type" content="website" />
@@ -22,8 +26,6 @@
 
   <meta name="theme-color" content="#667eea" />
 </head>
-
-
 
 <body>
 
@@ -52,7 +54,7 @@
     <div class="hero-content">
       <div class="hero-profile-wrapper">
   <div class="hero-photo-container">
-      <img src="images/1024.png" alt="Profile Photo">
+      <img src="images/1024.png" alt="Profile Photo" loading="eager" width="260" height="260">
   </div>
 
   <div class="hero-cv-card">
@@ -65,7 +67,7 @@
   </div>
 </div>
 
-      <h1 data-en="GIS Developer & Engineer" data-fr="Développeur et Ingénieur SIG">GIS Engineer</h1>
+      <h1 data-en="GIS Engineer" data-fr="Ingénieur SIG">GIS Engineer</h1>
       <p class="subtitle" data-en="Engineer first, problem-solver always." data-fr="Ingénieur d’abord, solutionneur toujours.">Engineer first, problem solver always.</p>
       <div class="cta-buttons">
         <a href="#projects" class="cta-btn primary" data-en="View Projects" data-fr="Voir les Projets">View Projects</a>
@@ -291,16 +293,16 @@
       </div>
       <div class="result-gallery">
         <div class="gallery-item">
-          <img src="images/Lidar_full.PNG" alt="LiDAR Elevation Model">
+          <img src="images/Lidar_full.PNG" alt="LiDAR Elevation Model" loading="lazy">
         </div>
         <div class="gallery-item">
-          <img src="images/Lidar_ortho.PNG" alt="LiDAR Orthophoto">
+          <img src="images/Lidar_ortho.PNG" alt="LiDAR Orthophoto" loading="lazy">
         </div>
         <div class="gallery-item">
-          <img src="images/Lidar_split.PNG" alt="LiDAR Split View">
+          <img src="images/Lidar_split.PNG" alt="LiDAR Split View" loading="lazy">
         </div>
         <div class="gallery-item">
-          <img src="images/Lidar_ortho2.PNG" alt="LiDAR Orthophoto 2">
+          <img src="images/Lidar_ortho2.PNG" alt="LiDAR Orthophoto 2" loading="lazy">
         </div>
       </div>
     </div>
@@ -314,7 +316,7 @@
       </div>
       <div class="result-gallery">
         <div class="gallery-item">
-          <img src="images/Domain_Import_img.PNG" alt="Domain Import Visualization">
+          <img src="images/Domain_Import_img.PNG" alt="Domain Import Visualization" loading="lazy">
         </div>
       </div>
     </div>
@@ -328,13 +330,13 @@
       </div>
       <div class="result-gallery">
         <div class="gallery-item">
-          <video src="videos/FO.mp4" type="video/mp4" controls autoplay muted loop></video>
+          <video src="videos/FO.mp4" type="video/mp4" controls preload="metadata" loading="lazy"></video>
         </div>
         <div class="gallery-item">
-          <img src="images/Fiber1.jpeg" alt="FO/CAD"> 
+          <img src="images/Fiber1.jpeg" alt="FO/CAD" loading="lazy"> 
         </div>
         <div class="gallery-item">
-          <img src="images/FO2.png" alt="FO/CAD"> 
+          <img src="images/FO2.png" alt="FO/CAD" loading="lazy"> 
         </div>
       </div>
     </div>
@@ -348,13 +350,13 @@
       </div>
       <div class="result-gallery">
         <div class="gallery-item">
-          <img src="images/degitize1.PNG" alt="degitize">
+          <img src="images/degitize1.PNG" alt="degitize" loading="lazy">
         </div>
         <div class="gallery-item">
-          <img src="images/degitize2.PNG" alt="degitize">
+          <img src="images/degitize2.PNG" alt="degitize" loading="lazy">
         </div>
         <div class="gallery-item">
-          <img src="images/degitize23.jpeg" alt="degitize">
+          <img src="images/degitize23.jpeg" alt="degitize" loading="lazy">
         </div>
         </div>
     </div>
@@ -461,11 +463,11 @@
       <!-- Enhanced Education Item 6: M.Sc. Geographic Information Systems -->
       <div class="training-item">
         <div class="training-header">
-          <h3 class="training-title" data-en="National Engineer’s Degree in Geomatics and Surveying" data-fr="Diplôme National d’Ingénieur en Géomatique et Topographie">National Engineer’s Degree in Geomatics and Surveying</h3>
+          <h3 class="training-title" data-en="National Engineer's Degree in Geomatics and Surveying" data-fr="Diplôme National d'Ingénieur en Géomatique et Topographie">National Engineer's Degree in Geomatics and Surveying</h3>
           <span class="training-provider" data-en="ESAT University" data-fr="ESAT University">ESAT University</span>
           <span class="training-year">2021-2023</span>
         </div>
-        <p class="training-description" data-en="Specialized in digital cartography, topographic instrumentation, and GIS applications, combining theoretical knowledge with practical fieldwork for geospatial analysis and urban planning." data-fr="Spécialisation en cartographie numérique, instrumentation topographique et applications SIG, combinant connaissances théoriques et travaux pratiques sur le terrain pour l’analyse géospatiale et l’aménagement urbain.">
+        <p class="training-description" data-en="Specialized in digital cartography, topographic instrumentation, and GIS applications, combining theoretical knowledge with practical fieldwork for geospatial analysis and urban planning." data-fr="Spécialisation en cartographie numérique, instrumentation topographique et applications SIG, combinant connaissances théoriques et travaux pratiques sur le terrain pour l'analyse géospatiale et l'aménagement urbain.">
           Specialized in digital cartography, topographic instrumentation, and GIS applications, combining theoretical knowledge with practical fieldwork for geospatial analysis and urban planning.
         </p>
       </div>
@@ -489,9 +491,5 @@
   <footer>
     <p>&copy; I know how to google things.</p>
   </footer>
-
-  <!-- load your JS (timeline logic, project toggles, etc.) -->
-  <script src="js/script.js"></script>
 </body>
 </html>
-

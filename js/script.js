@@ -141,24 +141,14 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
+// Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  const elementsToAnimate = document.querySelectorAll('section, .section-title, .result-category, .skill-item');
+  // Observe all elements that need animation
+  const elementsToAnimate = document.querySelectorAll('section, .section-title, .result-category, .skill-item, .project-card');
   elementsToAnimate.forEach(el => observer.observe(el));
 
-  new SectionGallery(); // Initialize gallery after DOM loaded
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('animate-in');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.2 });
-
-  document.querySelectorAll('.project-card').forEach(card => observer.observe(card));
+  // Initialize gallery
+  new SectionGallery();
 });
 
 /* ===========================
