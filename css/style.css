@@ -1375,3 +1375,20 @@ footer {
     right: auto !important;
   }
 }
+@media (max-width: 768px) {
+  .timeline-date {
+    left: -82px;      /* bring date closer */
+    font-size: 1.2rem;
+    width: 50px;
+  }
+
+  .timeline-dot {
+    left: -15px;      /* keep dot aligned with line */
+     width: 10px;
+    height: 10px;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #3498db;
+  }
+}
+
+
