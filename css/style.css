@@ -128,7 +128,7 @@ body {
   text-align: center;
   color: white;
   position: relative;
-  padding-top: 0.5rem;               /* room for fixed nav - tweak to match nav height */
+  padding-top: 15rem;               /* room for fixed nav - tweak to match nav height */
 }
 
 .hero-content h1 {
@@ -1027,7 +1027,7 @@ footer {
   box-shadow: 0 10px 30px rgba(0,0,0,0.18);
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  margin-bottom: 0 !important;
   animation: floatCV 7s ease-in-out infinite;
 }
 
@@ -1269,10 +1269,6 @@ footer {
     height: 260px;
   }
   
-  .hero-cv-card {
-    width: 260px;
-    max-width: none;
-  }
   
   .hero-content h1 {
     font-size: 2.5rem;
@@ -1352,9 +1348,6 @@ footer {
     height: 160px;
   }
   
-  .hero-cv-card {
-    width: 180px;
-  }
 }
 @media (max-width: 768px) {
   .hero {
