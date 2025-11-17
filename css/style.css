@@ -121,13 +121,14 @@ body {
 
 /* Hero Section */
 .hero {
-  height: 100vh;
+  min-height: 100vh;               /* Use min-height to avoid clipping when content grows */
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   color: white;
   position: relative;
+  padding-top: 0.5rem;               /* room for fixed nav - tweak to match nav height */
 }
 
 .hero-content h1 {
@@ -974,14 +975,12 @@ footer {
 
 /* Hero Profile + CV Card */
 .hero-profile-wrapper {
-  position: absolute;
-  right: 5%;
-  top: 55%;
-  transform: translateY(-50%);
+  position: relative;              /* <-- important: not absolute on mobile */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
+  margin: 2rem 0 1.5rem 0;         /* safe spacing to next section */
   animation: fadeInHero 1.2s ease forwards;
   opacity: 0;
 }
@@ -992,13 +991,13 @@ footer {
 }
 
 .hero-photo-container {
-  width: 260px;
-  height: 260px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
-  backdrop-filter: blur(12px);
-  border: 4px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.15);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+  backdrop-filter: blur(10px);
+  border: 3px solid rgba(255,255,255,0.35);
   overflow: hidden;
   position: relative;
   animation: floatPhoto 6s ease-in-out infinite;
@@ -1006,8 +1005,9 @@ footer {
 
 .hero-photo-container img {
   width: 100%;
-  height: 120%;
+  height: 100%;                    /* prevent overflow cropping */
   object-fit: cover;
+  object-position: center;
 }
 
 @keyframes floatPhoto {
@@ -1017,16 +1017,17 @@ footer {
 }
 
 .hero-cv-card {
-  width: 260px;
-  padding: 1.3rem 1.2rem;
+  width: 90%;
+  max-width: 260px;
+  padding: 0.5rem;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255,255,255,0.25);
-  backdrop-filter: blur(15px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.9rem;
   animation: floatCV 7s ease-in-out infinite;
 }
 
@@ -1144,8 +1145,16 @@ footer {
     font-size: 1.1rem;
     display: block;
     margin: 0.5rem 0;
+    
   }
-  
+  @media (max-width: 480px) {
+  .hero-cv-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.6rem;
+  }
+}
+
   .cta-btn, .contact-btn, .expand-btn {
     min-height: 44px;
     display: flex;
@@ -1256,13 +1265,13 @@ footer {
   }
   
   .hero-photo-container {
-    width: 180px;
-    height: 180px;
+    width: 260px;
+    height: 260px;
   }
   
   .hero-cv-card {
-    width: 200px;
-    margin: 0 auto;
+    width: 260px;
+    max-width: none;
   }
   
   .hero-content h1 {
@@ -1345,5 +1354,24 @@ footer {
   
   .hero-cv-card {
     width: 180px;
+  }
+}
+@media (max-width: 768px) {
+  .hero {
+    padding-top: 2rem !important;
+  }
+
+  .hero-profile-wrapper {
+    margin-top: 6rem !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .hero-profile-wrapper {
+    position: relative !important;
+    transform: none !important;
+    top: auto !important;
+    right: auto !important;
   }
 }
