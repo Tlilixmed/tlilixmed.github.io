@@ -128,7 +128,7 @@ body {
   text-align: center;
   color: white;
   position: relative;
-  padding-top: 15rem;               /* room for fixed nav - tweak to match nav height */
+  padding-top: 4rem;               /* room for fixed nav - tweak to match nav height */
 }
 
 .hero-content h1 {
@@ -975,24 +975,29 @@ footer {
 
 /* Hero Profile + CV Card */
 .hero-profile-wrapper {
-  position: relative;              /* <-- important: not absolute on mobile */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  margin: 2rem 0 1.5rem 0;         /* safe spacing to next section */
+  margin: 2rem 0 1.5rem 0;
   animation: fadeInHero 1.2s ease forwards;
   opacity: 0;
 }
 
 @keyframes fadeInHero {
-  from { opacity: 0; transform: translateY(-40%) scale(0.95); }
-  to   { opacity: 1; transform: translateY(-50%) scale(1); }
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
 }
 
 .hero-photo-container {
-  width: 160px;
-  height: 160px;
+  width: 250px;
+  height: 250px;
   border-radius: 50%;
   background: rgba(255,255,255,0.15);
   box-shadow: 0 10px 25px rgba(0,0,0,0.18);
@@ -1005,7 +1010,7 @@ footer {
 
 .hero-photo-container img {
   width: 100%;
-  height: 100%;                    /* prevent overflow cropping */
+  height: 100%;
   object-fit: cover;
   object-position: center;
 }
@@ -1017,7 +1022,7 @@ footer {
 }
 
 .hero-cv-card {
-  width: 90%;
+ width: 90%;
   max-width: 260px;
   padding: 0.5rem;
   border-radius: 20px;
@@ -1027,7 +1032,7 @@ footer {
   box-shadow: 0 10px 30px rgba(0,0,0,0.18);
   display: flex;
   align-items: center;
-  margin-bottom: 0 !important;
+  justify-content: space-between;
   animation: floatCV 7s ease-in-out infinite;
 }
 
@@ -1042,12 +1047,16 @@ footer {
   background: rgba(255,255,255,0.25);
   padding: 0.6rem 0.8rem;
   border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .cv-text {
   display: flex;
   flex-direction: column;
   color: white;
+  flex-grow: 1;
+  margin: 0 1rem;
+  text-align: center;
 }
 
 .cv-title {
@@ -1061,7 +1070,6 @@ footer {
 }
 
 .cv-download-btn {
-  margin-left: auto;
   padding: 0.6rem 1rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
@@ -1070,6 +1078,7 @@ footer {
   font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .cv-download-btn:hover {
@@ -1362,12 +1371,23 @@ footer {
 
 @media (max-width: 768px) {
   .hero-profile-wrapper {
-    position: relative !important;
-    transform: none !important;
-    top: auto !important;
-    right: auto !important;
+   .hero-profile-wrapper {
+    margin-top: 2rem;
   }
 }
+/* Mobile CV Card Fix */
+@media (max-width: 768px) {
+  .hero-cv-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+    .hero-photo-container {
+    width: 200px;
+    height: 200px;
+  }}
+
 @media (max-width: 768px) {
   .timeline-date {
     left: -82px;      /* bring date closer */
@@ -1383,5 +1403,3 @@ footer {
     box-shadow: 0 0 0 2px #3498db;
   }
 }
-
-
