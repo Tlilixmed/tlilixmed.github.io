@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tlili Mohamed - Digital Signature Card</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .signature-card {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+            background: linear-gradient(135deg, #3D73DD 0%, #527FF2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 60px 80px;
+            box-shadow: 0 20px 60px rgba(61, 115, 221, 0.3);
+            overflow: hidden;
+        }
+
+        .photo-container {
+            flex-shrink: 0;
+            margin-right: 60px;
+        }
+
+        .profile-photo {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            border: 8px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .content-block {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: white;
+        }
+
+        .name {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .job-title {
+            font-size: 32px;
+            font-weight: 600;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            opacity: 0.95;
+            letter-spacing: -0.3px;
+        }
+
+        .tagline {
+            font-size: 20px;
+            font-weight: 400;
+            line-height: 1.5;
+            margin-bottom: 48px;
+            opacity: 0.9;
+            max-width: 450px;
+            letter-spacing: 0.2px;
+        }
+
+        .button-container {
+            display: inline-block;
+        }
+
+        .view-projects-btn {
+            display: inline-block;
+            padding: 18px 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            letter-spacing: 0.3px;
+        }
+
+        .view-projects-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .view-projects-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .signature-card {
+                padding: 40px 50px;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .photo-container {
+                margin-right: 0;
+                margin-bottom: 40px;
+
+            }
+
+            .profile-photo {
+                width: 220px;
+                height: 220px;
+            }
+
+            .name {
+                font-size: 42px;
+            }
+
+            .job-title {
+                font-size: 24px;
+            }
+
+            .tagline {
+                font-size: 16px;
+                margin-bottom: 32px;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .signature-card {
+                padding: 30px 25px;
+                aspect-ratio: auto;
+                min-height: auto;
+            }
+
+            .profile-photo {
+                width: 180px;
+                height: 180px;
+            }
+
+            .name {
+                font-size: 32px;
+                margin-bottom: 12px;
+            }
+
+            .job-title {
+                font-size: 18px;
+                margin-bottom: 16px;
+            }
+
+            .tagline {
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+
+            .view-projects-btn {
+                padding: 14px 36px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="signature-card">
+        <div class="photo-container">
+            <img src="images/1024.png" alt="Tlili Mohamed" class="profile-photo">
+        </div>
+        <div class="content-block">
+            <h1 class="name">Tlili Mohamed</h1>
+            <h2 class="job-title">GIS Engineer</h2>
+            <p class="tagline">Engineer first, problem solver always.</p>
+            <div class="button-container">
+                <a href="https://tiligis.me/#projects" class="view-projects-btn">View Projects</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
