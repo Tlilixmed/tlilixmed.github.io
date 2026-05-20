@@ -121,7 +121,7 @@ body {
 
 /* Hero Section */
 .hero {
-  min-height: 100vh;               /* Use min-height to avoid clipping when content grows */
+  min-height: 115vh;               /* Use min-height to avoid clipping when content grows */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,6 +163,7 @@ body {
 .cta-btn.primary {
   background: white;
   color: #667eea;
+  padding-top: 2rem;
 }
 
 .cta-btn:hover {
@@ -978,7 +979,7 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   margin: 2rem 0 1.5rem 0;
   animation: fadeInHero 1.2s ease forwards;
   opacity: 0;
@@ -996,8 +997,8 @@ footer {
 }
 
 .hero-photo-container {
-  width: 250px;
-  height: 250px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background: rgba(255,255,255,0.15);
   box-shadow: 0 10px 25px rgba(0,0,0,0.18);
@@ -1023,7 +1024,7 @@ footer {
 
 .hero-cv-card {
  width: 90%;
-  max-width: 260px;
+  max-width: 250px;
   padding: 0.5rem;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.12);
@@ -1267,7 +1268,7 @@ footer {
     right: 0;
     top: 0;
     transform: none;
-    margin-top: 3rem;
+    margin-top: 2rem;
     flex-direction: column;
     align-items: center;
     gap: 2rem;
@@ -1403,3 +1404,153 @@ footer {
     box-shadow: 0 0 0 2px #3498db;
   }
 }}
+
+/* UPDATED FREELANCE SECTION TO MATCH OTHERS */
+.freelance-section {
+  background: white; /* Solid white background */
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); /* Match your existing shadow */
+  margin: 2rem auto;
+  color: #333; /* Dark text for readability */
+}
+
+.freelance-container {
+  padding: 1rem 2rem 1rem 2rem; /* Reduced bottom padding */
+}
+
+.freelance-intro {
+  text-align: center;
+  margin-bottom: 1.5rem; /* Reduced bottom margin */
+  font-size: 1.1rem;
+  color: #555; /* Match your project description colors */
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem; /* Reduced bottom margin */
+}
+
+.service-card {
+  background: #f8f9fa; /* Light grey like your project cards */
+  padding: 2.5rem 2rem;
+  border-radius: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  border-color: #667eea;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+}
+
+.service-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.service-card h3 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.service-card p {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.freelance-cta {
+  text-align: center;
+  margin-top: 2rem; /* Reduced top margin */
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.freelance-cta p {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+}
+
+/* Fix the button colors for white background */
+.freelance-cta .cta-btn.primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+}
+
+.freelance-cta .cta-btn.primary:hover {
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+
+/* Map Gallery */
+.map-gallery-section {
+  background: white;
+  border-radius: 20px;
+  margin: 2rem auto;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.map-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  height: 250px;
+}
+
+.map-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.map-item:hover img {
+  transform: scale(1.1);
+}
+
+.map-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.map-item:hover .map-info {
+  opacity: 1;
+}
+
+/* Modal specific for maps */
+#mapModal .gallery-modal-content {
+  max-width: 90%;
+  max-height: 90vh;
+}
+
+#modalMapImg {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}

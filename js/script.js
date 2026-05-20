@@ -221,3 +221,36 @@ function toggleLanguage() {
   if (currentLanguage === 'fr') { langFlag.textContent = '🇺🇸'; langText.textContent = 'EN'; }
   else { langFlag.textContent = '🇫🇷'; langText.textContent = 'FR'; }
 }
+
+/* ===========================
+   MAP GALLERY MODAL
+   =========================== */
+function openMapModal(imgSrc, title, desc) {
+  const modal = document.getElementById('mapModal');
+  const modalImg = document.getElementById('modalMapImg');
+  const modalTitle = document.getElementById('modalMapTitle');
+  const modalDesc = document.getElementById('modalMapDesc');
+
+  modalImg.src = imgSrc;
+  modalTitle.textContent = title;
+  modalDesc.textContent = desc;
+
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMapModal() {
+  const modal = document.getElementById('mapModal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
+  document.body.style.overflow = 'auto';
+}
+
+// Add the new sections to the animation observer
+document.addEventListener('DOMContentLoaded', () => {
+  const newSections = document.querySelectorAll('.freelance-section, .map-gallery-section, .service-card, .map-item');
+  newSections.forEach(el => observer.observe(el));
+});
