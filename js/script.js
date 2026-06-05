@@ -254,3 +254,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const newSections = document.querySelectorAll('.freelance-section, .map-gallery-section, .service-card, .map-item');
   newSections.forEach(el => observer.observe(el));
 });
+
+/* ===========================
+   CV LANGUAGE SWITCHER
+   =========================== */
+let currentCVLang = 'en';
+
+function toggleCVLanguage() {
+  currentCVLang = currentCVLang === 'en' ? 'fr' : 'en';
+  
+  const downloadBtn = document.getElementById('cvDownloadBtn');
+  const langLabel = document.getElementById('cvLangLabel');
+  
+  if (currentCVLang === 'fr') {
+    downloadBtn.href = 'assets/Tlili_Mohamed_CV_Fr.pdf'; // Path to French CV
+    downloadBtn.textContent = 'Télécharger';
+    langLabel.textContent = 'PDF • FR';
+  } else {
+    downloadBtn.href = 'assets/Tlili_Mohamed_CV_En.pdf'; // Path to English CV
+    downloadBtn.textContent = 'Download';
+    langLabel.textContent = 'PDF • EN';
+  }
+  
+  // Optional: Add a small animation to the button
+  const switchBtn = document.querySelector('.cv-lang-switch svg');
+  switchBtn.style.transform = 'scale(1.2)';
+  setTimeout(() => {
+    switchBtn.style.transform = 'scale(1)';
+  }, 200);
+}

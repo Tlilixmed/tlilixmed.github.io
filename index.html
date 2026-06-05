@@ -64,12 +64,22 @@
       </div>
       <div class="hero-cv-card">
         <div class="cv-icon">
-        <img src="images/pdf.png" alt="CV Icon"></div>
+          <img src="images/pdf.png" alt="CV Icon">
+        </div>
         <div class="cv-text">
           <span class="cv-title">Curriculum Vitae</span>
-          <span class="cv-sub">PDF • 2 pages</span>
+          <!-- Language Indicator -->
+          <span class="cv-sub" id="cvLangLabel">PDF • EN</span>
         </div>
-        <a href="assets/mohamed-tlili-cv.pdf" class="cv-download-btn" download>Download Resume</a>
+        <!-- Language Switch Button -->
+        <button class="cv-lang-switch" onclick="toggleCVLanguage()" title="Switch CV Language">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+        <a href="assets/Tlili_Mohamed_CV_Fr.pdf" id="cvDownloadBtn" class="cv-download-btn" download>Download</a>
       </div>
     </div>
     <h1 data-en="GIS Engineer" data-fr="Ingénieur SIG">GIS Engineer</h1>

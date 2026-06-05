@@ -1554,3 +1554,45 @@ footer {
   max-height: 70vh;
   object-fit: contain;
 }
+
+
+/* CV Language Switch Styles  */
+.cv-lang-switch {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
+.cv-lang-switch:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: rotate(180deg);
+}
+
+.cv-lang-switch svg {
+  transition: transform 0.3s ease;
+}
+
+/* Ensure the card stays compact / should be duplicated above remeber fix later */
+.hero-cv-card {
+  gap: 5px;
+}
+
+.cv-text {
+  margin: 0 8px !important;
+}
+
+@media (max-width: 768px) {
+  .hero-cv-card {
+    flex-direction: row !important; /* Keep it horizontal for the switch to look good */
+    max-width: 320px;
+  }
+}
