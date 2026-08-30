@@ -1,0 +1,46 @@
+{
+  "type": "FeatureCollection",
+  "name": "fiber-network",
+  "_note": "Illustrative sample layer — replace with your own exported GeoJSON (see MAP-GUIDE.md)",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Backbone route 1",
+        "name_fr": "Tronçon principal 1"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [10.68, 34.70], [10.72, 34.72], [10.76, 34.71], [10.80, 34.74]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Distribution loop",
+        "name_fr": "Boucle de distribution"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [10.64, 34.76], [10.70, 34.78], [10.76, 34.77], [10.82, 34.79]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Feeder line",
+        "name_fr": "Ligne de raccordement"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [10.72, 34.68], [10.74, 34.72], [10.78, 34.73], [10.84, 34.72]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "type": "FeatureCollection",
+  "name": "urban-digitization",
+  "_note": "Illustrative sample layer — replace with your own exported GeoJSON (see MAP-GUIDE.md)",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parcel group 1",
+        "name_fr": "Groupe de parcelles 1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.175, 36.795], [10.180, 36.795], [10.180, 36.799], [10.175, 36.799], [10.175, 36.795]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parcel group 2",
+        "name_fr": "Groupe de parcelles 2"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.182, 36.794], [10.188, 36.794], [10.188, 36.798], [10.182, 36.798], [10.182, 36.794]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parcel group 3",
+        "name_fr": "Groupe de parcelles 3"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.176, 36.801], [10.183, 36.801], [10.183, 36.805], [10.176, 36.805], [10.176, 36.801]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parcel group 4",
+        "name_fr": "Groupe de parcelles 4"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.185, 36.800], [10.190, 36.800], [10.190, 36.804], [10.185, 36.804], [10.185, 36.800]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Digitized landmark",
+        "name_fr": "Point remarquable numérisé"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [10.1815, 36.7975]
+      }
+    }
+  ]
+}

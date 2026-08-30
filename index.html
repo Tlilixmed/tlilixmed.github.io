@@ -15,9 +15,16 @@
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="images/1024.png" as="image">
   
+  <!-- Leaflet — interactive GeoJSON map (CDN, no build step, GitHub-Pages friendly) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/script.js" defer></script>
   <script src="js/contact-form.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js" defer></script>
+  <script src="js/map-projects.js" defer></script>
+  <script src="js/map.js" defer></script>
 
   <meta property="og:title" content="Tlili Mohamed — GIS Engineer Portfolio" />
   <meta property="og:description" content="Explore featured GIS projects in LiDAR processing, database design, and spatial automation." />
@@ -42,6 +49,7 @@
         <li><a href="#home" data-en="Home" data-fr="Accueil">Home</a></li>
         <li><a href="#projects" data-en="Projects" data-fr="Projets">Projects</a></li>
         <li><a href="#results" data-en="Results" data-fr="Résultats">Results</a></li>
+        <li><a href="#maps" data-en="Maps" data-fr="Cartes">Maps</a></li>
         <li><a href="#freelance" data-en="Freelance" data-fr="Freelance">Freelance</a></li>
         <li><a href="#timeline" data-en="Experience" data-fr="Expérience">Experience</a></li>
         <li><a href="#skills" data-en="Skills" data-fr="Compétences">Skills</a></li>
@@ -91,6 +99,7 @@
     </div>
     <h1 data-en="GIS Engineer" data-fr="Ingénieur SIG">GIS Engineer</h1>
     <p class="subtitle" data-en="Engineer first, problem-solver always." data-fr="Ingénieur d'abord, solutionneur toujours.">Engineer first, problem solver always.</p>
+    
     <div class="cta-buttons">
       <a href="#projects" class="cta-btn primary" data-en="View Projects" data-fr="Voir les Projets">View Projects</a>
       <a href="#timeline" class="cta-btn" data-en="Experience" data-fr="Expérience">Experience</a>
@@ -147,7 +156,7 @@
 
       <!-- Project 2 -->
       <div class="project-card">
-        <div class="project-thumb"><img src="images/DB1.jpeg" alt="Geodatabase design and automation" loading="lazy"></div>
+        <div class="project-thumb"><img src="images/Large Scale DGT.png" alt="Geodatabase design and automation" loading="lazy"></div>
         <div class="project-header">
           <span class="project-type" data-en="Database Architecture" data-fr="Architecture de base de données">Database Architecture</span>
           <h3 class="project-title" data-en="Design and Integration of a Geodatabase" data-fr="Conception et Intégration d'une Géodatabase">Design and Integration of a Geodatabase</h3>
@@ -155,7 +164,7 @@
         <div class="project-impact">
           <span class="impact-chip" data-en="-90% data entry errors" data-fr="-90 % d'erreurs de saisie">-90% data entry errors</span>
           <span class="impact-chip" data-en="100 feature classes designed" data-fr="100 classes d'entités conçues">100 feature classes designed</span>
-          <span class="impact-chip" data-en="2+ yrs legacy data migrated" data-fr="2+ ans de données migrées">2+ yrs legacy data migrated</span>
+          <span class="impact-chip" data-en="10+ yrs legacy data migrated" data-fr="10+ ans de données migrées">10+ yrs legacy data migrated</span>
         </div>
         </div>
         <div class="project-content">
@@ -179,7 +188,7 @@
           <div class="project-section">
             <h4 data-en="Results" data-fr="Résultats">Results</h4>
             <ul>
-              <li data-en="Migrated 2+ years of legacy data without loss" data-fr="Migration réussie de plus de 2 ans de données historiques sans perte d'information">Migrated 2+ years of legacy data without data loss</li>
+              <li data-en="Migrated 10+ years of legacy data without loss" data-fr="Migration réussie de plus de 10 ans de données historiques sans perte d'information">Migrated 10+ years of legacy data without data loss</li>
               <li data-en="Reduced data entry errors by 90% with validation rules" data-fr="Réduction de 90 % des erreurs de saisie grâce aux règles de validation">Reduced data entry errors by 90% with validation rules</li>
               <li data-en="Enabled collaboration across departments" data-fr="Collaboration entre les départements">Enabled collaboration across departments</li>
               <li data-en="Automated manual workflows saving hours of daily work" data-fr="Automatisation des flux de travail manuels, économisant plusieurs heures de travail par jour">Automated manual workflows saving hours of daily work</li>
@@ -197,16 +206,16 @@
           <h3 class="project-title" data-en="Fiber Optic and infrastructure Network Management" data-fr="Gestion du réseau fibre optique et infrastructure">Fiber Optic and infrastructure Network Management</h3>
           <p class="project-tech">Smallworld GIS | AutoCAD</p>
         <div class="project-impact">
-          <span class="impact-chip" data-en="3,000+ km network managed" data-fr="Réseau de 3 000+ km géré">3,000+ km network managed</span>
-          <span class="impact-chip" data-en="50,000+ connections" data-fr="50 000+ connexions">50,000+ connections</span>
+          <span class="impact-chip" data-en="10,000+ km network managed" data-fr="Réseau de 10 000+ km géré">10,000+ km network managed</span>
+          <span class="impact-chip" data-en="500,000+ connections" data-fr="500 000+ connexions">500,000+ connections</span>
           <span class="impact-chip" data-en="98% data accuracy" data-fr="Précision des données : 98 %">98% data accuracy</span>
         </div>
         </div>
         <div class="project-content">
           <div class="project-section">
             <h4 data-en="Challenge" data-fr="Défi">Challenge</h4>
-            <p data-en="The client requested to manage more than 3,000 km of fiber optic network and infrastructure while ensuring compliance with AutoCAD plans and project requirements." data-fr=" Le client devait gérer plus de 3 000 km de réseau fibre optique et d'infrastructures, tout en assurant la conformité avec les plans issus d'AutoCAD et les exigences du projet">
-              The client requested to manage more than 3,000 km of fiber optic network and infrastructure while ensuring compliance with AutoCAD plans and project requirements
+            <p data-en="The client requested to manage more than 10,000 km of fiber optic network and infrastructure while ensuring compliance with AutoCAD plans and project requirements." data-fr=" Le client devait gérer plus de 10 000 km de réseau fibre optique et d'infrastructures, tout en assurant la conformité avec les plans issus d'AutoCAD et les exigences du projet">
+              The client requested to manage more than 10,000 km of fiber optic network and infrastructure while ensuring compliance with AutoCAD plans and project requirements
             </p>
           </div>
           <div class="project-section">
@@ -220,7 +229,7 @@
           <div class="project-section">
             <h4 data-en="Results" data-fr="Résultats">Results</h4>
             <ul>
-              <li data-en="Managed 50,000+ infrastructure (fiber optics, electric cables and poles) connections with 98% accuracy" data-fr="Gestion de plus de 50 000 connexions infrastructure (fiber optics, electric cables and poles) avec une précision de 98 %">Managed 50,000+ infrastructure connections (fibre optique, cables electrique et poteaux) with 98% accuracy</li>
+              <li data-en="Managed 500,000+ infrastructure (fiber optics, electric cables and poles) connections with 98% accuracy" data-fr="Gestion de plus de 500 000 connexions infrastructure (fiber optics, electric cables and poles) avec une précision de 98 %">Managed 500,000+ infrastructure connections (fibre optique, cables electrique et poteaux) with 98% accuracy</li>
               <li data-en="Enhanced data quality by cross-validating with AutoCAD plans and technical specifications" data-fr="Amélioration de la qualité des données grâce à la validation croisée avec les plans AutoCAD et les spécifications techniques">Enhanced data quality by cross-validating with AutoCAD plans and technical specifications</li>
               <li data-en="Consolidated and harmonized fiber optic, electrical cable, and pole data into a unified GIS database, improving accessibility and planning efficiency" data-fr="Consolidation et harmonisation des données de fibre optique, câbles électriques et poteaux sur une base SIG unique, facilitant la consultation et la planification">Consolidated and harmonized fiber optic, electrical cable, and pole data into a unified GIS database, improving accessibility and planning efficiency</li>
             </ul>
@@ -231,7 +240,7 @@
 
       <!-- Project 4 -->
       <div class="project-card">
-        <div class="project-thumb"><img src="images/degitize1.PNG" alt="Urban digitization result" loading="lazy"></div>
+        <div class="project-thumb"><img src="images/Presentation.png" alt="Urban digitization result" loading="lazy"></div>
         <div class="project-header">
           <span class="project-type" data-en="Cartography | GIS" data-fr="SIG | Cartographie">Cartography | GIS</span>
           <h3 class="project-title" data-en="Digitization & QGIS Plugin Development" data-fr="Numérisation & développement des plugin QGIS ">Digitization & QGIS Plugin Development</h3>
@@ -311,9 +320,6 @@
         </div>
         <div class="result-gallery">
           <div class="gallery-item">
-            <img src="images/Database 2.PNG" alt="Data Visualization">
-          </div>
-          <div class="gallery-item">
             <img src="images/Domain_Import_img.PNG" alt="Domain Import Visualization">
           </div>
           <div class="gallery-item">
@@ -321,6 +327,9 @@
           </div>
           <div class="gallery-item">
             <img src="images/DB2.jpeg" alt="Data base">
+          </div>
+          <div class="gallery-item">
+            <img src="images/Large Scale DGT.png" alt="Data base">
           </div>
         </div>
       </div>
@@ -354,16 +363,16 @@
         </div>
         <div class="result-gallery">
           <div class="gallery-item">
-            <img src="images/Large Scale DGT.png" alt="degitize">
-          </div>
-          <div class="gallery-item">
-            <img src="images/degitize1.PNG" alt="degitize">
+            <img src="images/Presentation.png" alt="degitize">
           </div>
           <div class="gallery-item">
             <img src="images/degitize2.PNG" alt="degitize">
           </div>
           <div class="gallery-item">
             <img src="images/degitize23.jpeg" alt="degitize">
+          </div>
+          <div class="gallery-item">
+            <img src="images/Database 2.PNG" alt="degitize">
           </div>
         </div>
       </div>
@@ -374,7 +383,44 @@
   <!-- MAPS -->
 <section class="map-gallery-section" id="maps">
   <h2 class="section-title" data-en="Map Gallery" data-fr="Galerie de Cartes">Map Gallery</h2>
-  
+
+  <!-- ============================================================
+       INTERACTIVE PROJECT MAP (GeoJSON showcase)
+       Add / update your work in  js/map-projects.js  +  geojson/  folder.
+       Step-by-step guide: MAP-GUIDE.md
+       ============================================================ -->
+  <div class="imap-block">
+    <p class="imap-intro"
+       data-en="Explore my work geographically — pick a project from the list or dive into the map and click any feature for details."
+       data-fr="Explorez mes travaux géographiquement — choisissez un projet dans la liste ou parcourez la carte et cliquez sur une entité pour plus de détails.">
+      Explore my work geographically — pick a project from the list or dive into the map and click any feature for details.
+    </p>
+    <div class="imap-shell">
+      <aside class="imap-panel">
+        <div class="imap-filters" id="imapFilters" role="group" aria-label="Filter projects"></div>
+        <div class="imap-list" id="imapList"></div>
+        <p class="imap-hint"
+           data-en="Have data like this? I turn shapefiles into interactive web maps — let’s talk."
+           data-fr="Vous avez des données similaires ? Je transforme vos shapefiles en cartes web interactives — parlons-en.">
+          Have data like this? I turn shapefiles into interactive web maps — let's talk.
+        </p>
+      </aside>
+      <div class="imap-frame">
+        <div id="imapMap" class="imap-map" aria-label="Interactive project map"></div>
+        <button id="imapReset" class="imap-reset" type="button" aria-label="Fit all projects"
+                data-en-title="Show all projects" data-fr-title="Afficher tous les projets">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="7"></circle>
+            <circle cx="12" cy="12" r="2.5"></circle>
+            <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"></path>
+          </svg>
+        </button>
+        <div class="imap-legend" id="imapLegend" aria-hidden="true"></div>
+        <div class="imap-loading" id="imapLoading"><span class="imap-spinner"></span></div>
+      </div>
+    </div>
+  </div>
+
   <div class="map-grid">
     <!-- Map 1 -->
     <div class="map-item" onclick="openMapModal('images/Open Ground 2.jpg', 'Mineral Exploration', 'Mineral analysis.')">

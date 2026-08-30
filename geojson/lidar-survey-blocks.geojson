@@ -1,0 +1,52 @@
+{
+  "type": "FeatureCollection",
+  "name": "lidar-survey-blocks",
+  "_note": "Illustrative sample layer — replace with your own exported GeoJSON (see MAP-GUIDE.md)",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Flight block A",
+        "name_fr": "Bloc de vol A",
+        "note": "Classes: ground · vegetation · buildings",
+        "note_fr": "Classes : sol · végétation · bâti"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.72, 37.22], [9.82, 37.22], [9.82, 37.30], [9.72, 37.30], [9.72, 37.22]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Flight block B",
+        "name_fr": "Bloc de vol B",
+        "note": "Classes: ground · vegetation · buildings",
+        "note_fr": "Classes : sol · végétation · bâti"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.90, 37.16], [10.02, 37.16], [10.02, 37.24], [9.90, 37.24], [9.90, 37.16]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Flight block C",
+        "name_fr": "Bloc de vol C",
+        "note": "Coastal strip — DTM/DSM delivery",
+        "note_fr": "Bande côtière — livraison MNT/MNS"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.60, 37.32], [9.70, 37.32], [9.70, 37.40], [9.60, 37.40], [9.60, 37.32]
+        ]]
+      }
+    }
+  ]
+}
