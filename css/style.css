@@ -222,15 +222,15 @@ body::-webkit-scrollbar-thumb {
 }
 
 .hero-content h1 {
-  font-size: 3.5rem;
-  margin-bottom: 1rem;
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
   font-weight: 800;
   color: var(--ink);
   text-shadow: 2px 2px 4px rgba(159, 178, 211, 0.45), -2px -2px 4px var(--shadow-light);
 }
 
 .subtitle {
-  font-size: 1.3rem;
+  font-size: 1rem;
   margin-bottom: 2rem;
   color: var(--ink-muted);
   opacity: 0.95;
@@ -238,7 +238,7 @@ body::-webkit-scrollbar-thumb {
 
 .cta-buttons {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -1763,4 +1763,239 @@ footer {
 
 .cv-text {
   margin: 0 8px !important;
+}
+
+/* ============================================================
+   PORTFOLIO CONTENT UPGRADES (additive layer)
+   hero identity/KPI strip · project thumbs & impact chips ·
+   skill groups · availability pill · quote form
+   ============================================================ */
+
+/* Hero identity + KPI strip */
+.hero-name {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.hero-loc {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin-top: 1.2rem;
+}
+
+
+.hero-stat {
+  background: var(--bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--neu-raised-sm);
+  padding: 0.9rem 1.4rem;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.hero-stat-num {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.hero-stat-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  margin-top: 0.25rem;
+  line-height: 1.35;
+}
+
+/* Project thumbnails + impact chips */
+.project-thumb {
+  margin: -2rem -2rem 1.4rem;
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  background: var(--bg-deep);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.project-thumb img {
+  display: block;
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+}
+
+.project-impact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.1rem 0 0;
+}
+
+.impact-chip {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--bg);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--neu-inset-sm);
+}
+
+/* Skill groups */
+.skills-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.skill-group {
+  background: var(--bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--neu-raised-sm);
+  padding: 1.6rem 1.4rem;
+}
+
+.skill-group-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.skill-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.skill-group .skill-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-pill);
+}
+
+/* Availability pill */
+.availability-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--neu-raised-sm);
+  margin-bottom: 1.2rem;
+}
+
+.availability-pill::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22B45E;
+  box-shadow: 0 0 0 3px rgba(34, 180, 94, 0.18);
+}
+
+/* Quote form (mailto — no backend, no data stored) */
+.quote-form {
+  max-width: 640px;
+  margin: 2.2rem auto 0;
+  text-align: left;
+  background: var(--bg);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--neu-raised);
+  padding: 2rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.form-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.quote-form input,
+.quote-form select,
+.quote-form textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: none;
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  box-shadow: var(--neu-inset);
+  outline: none;
+  transition: box-shadow 0.3s ease;
+  width: 100%;
+}
+
+.quote-form textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.quote-form input:focus,
+.quote-form select:focus,
+.quote-form textarea:focus {
+  box-shadow: var(--neu-inset), 0 0 0 2px var(--accent-glow);
+}
+
+.quote-submit {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.95rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--grad-accent);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 5px 5px 12px rgba(159, 178, 211, 0.9), -5px -5px 12px var(--shadow-light);
+  transition: all 0.3s ease;
+}
+
+.quote-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 8px 8px 18px rgba(159, 178, 211, 0.9), -8px -8px 18px var(--shadow-light);
+}
+
+.contact-note {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  margin-top: 1rem;
+}
+
+/* Responsive for new blocks */
+@media (max-width: 768px) {
+  .hero-stat-num { font-size: 1.25rem; }
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+  .quote-form { padding: 1.4rem; }
+  .project-thumb img { height: 150px; }
 }
