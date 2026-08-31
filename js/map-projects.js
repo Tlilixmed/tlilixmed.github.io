@@ -61,10 +61,10 @@ window.MAP_PROJECTS = [
   },
   ------------------------------------------- */
   {
-    id: 'Skarn-Favorabl-Geology',
+    id: 'SOMETHING-Favorabl-Geology',
     title: {
-      en: 'Skarn Favorable Geology',
-      fr: 'Skarn Favorable Geology'
+      en: 'SOMETHING Favorable Geology',
+      fr: 'SOMETHING Favorable Geology'
     },
     desc: {
       en: 'lorum ipsum.',
