@@ -218,11 +218,11 @@ body::-webkit-scrollbar-thumb {
   text-align: center;
   color: var(--ink);
   position: relative;
-  padding-top: 4rem;               /* room for fixed nav - tweak to match nav height */
+  padding-top: 3rem;               /* room for fixed nav - tweak to match nav height */
 }
 
 .hero-content h1 {
-  font-size: 3.5rem;
+  font-size: 3rem;
   margin-bottom: 1rem;
   font-weight: 800;
   color: var(--ink);
@@ -231,7 +231,7 @@ body::-webkit-scrollbar-thumb {
 
 .subtitle {
   font-size: 1.3rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   color: var(--ink-muted);
   opacity: 0.95;
 }
@@ -2160,8 +2160,9 @@ footer {
   outline: none;
 }
 
-.imap-map .leaflet-tile {
-  /* calm the colorful OSM style toward the soft azure theme */
+.imap-map.imap-soft .leaflet-tile {
+  /* calm the colorful OSM-style basemaps toward the soft azure theme
+     (satellite / dark basemaps opt out — see js/map.js .soft flag) */
   filter: saturate(0.55) contrast(0.94) brightness(1.03);
 }
 
@@ -2436,5 +2437,584 @@ footer {
   .imap-legend {
     left: 18px;
     bottom: 18px;
+  }
+}
+
+/* ============================================================
+   INTERACTIVE MAP v2 ADDITIONS — grouped legend · basemap
+   switcher · attribute viewer (popups + side panel)
+   ============================================================ */
+
+/* --- legend container: roomier, scrollable (groups inside) --- */
+.imap-legend {
+  max-width: 252px;
+  max-height: 300px;
+  overflow-y: auto;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--shadow-dark) transparent;
+}
+
+/* --- legend: project group rows --- */
+.imap-lg-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.imap-lg-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.3rem;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  transition: background 0.2s ease;
+}
+
+.imap-lg-head:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.imap-lg-eye {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.imap-lg-eye:hover {
+  color: var(--accent);
+}
+
+.imap-lg-eye.off {
+  opacity: 0.45;
+}
+
+.imap-lg-eye.off::after {
+  content: '';
+  position: absolute;
+  width: 13px;
+  height: 2px;
+  background: currentColor;
+  transform: rotate(-45deg);
+  border-radius: 2px;
+}
+
+.imap-lg-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imap-lg-count {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--accent-soft);
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.imap-lg-chevron {
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-top: 5.5px solid var(--ink-soft);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.imap-lg-chevron.open {
+  transform: rotate(-180deg);
+}
+
+.imap-lg-group.off .imap-lg-head {
+  opacity: 0.5;
+}
+
+.imap-lg-layers {
+  margin: 0.08rem 0 0.3rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  border-left: 2px solid rgba(159, 178, 211, 0.35);
+  padding-left: 0.45rem;
+}
+
+.imap-lg-layer {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.22rem 0.3rem;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.imap-lg-layer:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.imap-lg-layer.off {
+  opacity: 0.55;
+}
+
+.imap-lg-layer.off .imap-lg-layer-label {
+  text-decoration: line-through;
+  text-decoration-color: rgba(125, 140, 171, 0.7);
+}
+
+.imap-lg-layer.failed {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.imap-lg-check {
+  position: relative;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1.5px rgba(125, 140, 171, 0.7);
+  transition: all 0.2s ease;
+}
+
+.imap-lg-check.on {
+  background: var(--imap-color, var(--accent));
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.08);
+}
+
+.imap-lg-check.on::after {
+  content: '\2713';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.imap-lg-layer-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imap-lg-failed {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #C2410C;
+  flex-shrink: 0;
+}
+
+/* --- project list cards: sub-layer chips --- */
+.imap-card-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+}
+
+.imap-card-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.imap-card-layer .imap-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.imap-card-layer.failed {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.imap-card-layer.more {
+  color: var(--accent);
+}
+
+/* --- base map switcher --- */
+.imap-bm-btn {
+  position: absolute;
+  top: 76px;
+  right: 26px;
+  z-index: 900;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--neu-raised-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.imap-bm-btn:hover {
+  color: var(--accent);
+  box-shadow: var(--neu-raised);
+}
+
+.imap-bm-btn.active,
+.imap-bm-btn:active {
+  box-shadow: var(--neu-inset-sm);
+  color: var(--accent);
+}
+
+.imap-bm-panel {
+  position: absolute;
+  top: 126px;
+  right: 26px;
+  z-index: 900;
+  width: 224px;
+  background: rgba(214, 225, 243, 0.96);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: 16px;
+  box-shadow: var(--neu-raised);
+  padding: 0.55rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.imap-bm-panel.open {
+  display: flex;
+}
+
+.imap-bm-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  padding: 0.15rem 0.5rem 0.45rem;
+  border-bottom: 1px solid rgba(159, 178, 211, 0.35);
+  margin-bottom: 0.2rem;
+}
+
+.imap-bm-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.42rem 0.55rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.imap-bm-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.imap-bm-item.active {
+  background: var(--bg-deep);
+  box-shadow: var(--neu-inset-sm);
+  color: var(--accent);
+}
+
+.imap-bm-swatch {
+  width: 18px;
+  height: 14px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(159, 178, 211, 0.55);
+  flex-shrink: 0;
+}
+
+.imap-bm-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imap-bm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* --- popups: layer label + attribute mini-table --- */
+.imap-popup-layer {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.imap-popup-noprops {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.imap-attr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.imap-attr-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 0.32rem 0.75rem 0.32rem 0;
+  vertical-align: top;
+  width: 40%;
+  border-bottom: 1px solid rgba(159, 178, 211, 0.28);
+}
+
+.imap-attr-table td {
+  padding: 0.32rem 0;
+  color: var(--ink);
+  border-bottom: 1px solid rgba(159, 178, 211, 0.16);
+  word-break: break-word;
+}
+
+.imap-attr-table tr:last-child th,
+.imap-attr-table tr:last-child td {
+  border-bottom: none;
+}
+
+.imap-popup .imap-attr-table {
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+}
+
+.imap-popup .imap-attr-table th {
+  width: 42%;
+  padding-top: 0.22rem;
+  padding-bottom: 0.26rem;
+}
+
+.imap-popup-more {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+  border: none;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--radius-pill);
+  padding: 0.34rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.imap-popup-more:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* --- QGIS-style attribute panel (overlay on the map) --- */
+.imap-attr {
+  position: absolute;
+  inset: 12px;
+  z-index: 940;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: rgba(214, 225, 243, 0.96);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+}
+
+.imap-attr[hidden] {
+  display: none;
+}
+
+.imap-attr-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.imap-attr-headtxt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.imap-attr-kicker {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.imap-attr-title {
+  font-size: 0.98rem;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.imap-attr-layer {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.imap-attr-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: var(--neu-raised-sm);
+  color: var(--ink-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.imap-attr-close:hover {
+  color: var(--accent);
+}
+
+.imap-attr-close:active {
+  box-shadow: var(--neu-inset-sm);
+}
+
+.imap-attr-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.imap-attr-zoom {
+  border: none;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--bg);
+  box-shadow: var(--neu-raised-sm);
+  border-radius: var(--radius-pill);
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.imap-attr-zoom:hover {
+  box-shadow: var(--neu-raised);
+}
+
+.imap-attr-zoom:active {
+  box-shadow: var(--neu-inset-sm);
+}
+
+.imap-attr-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--shadow-dark) transparent;
+}
+
+.imap-attr-empty {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.imap-attr-geom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+  margin-top: 0.7rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(159, 178, 211, 0.55);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.imap-attr-file {
+  margin-top: 0.35rem;
+  font-size: 0.66rem;
+  color: var(--ink-soft);
+  opacity: 0.85;
+  word-break: break-all;
+}
+
+/* --- responsive --- */
+@media (max-width: 480px) {
+  .imap-bm-btn {
+    top: 66px;
+    right: 18px;
+  }
+
+  .imap-bm-panel {
+    top: 112px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .imap-legend {
+    max-width: 205px;
+    max-height: 215px;
+  }
+
+  .imap-attr {
+    inset: 8px;
+    padding: 0.85rem;
   }
 }

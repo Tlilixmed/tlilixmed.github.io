@@ -385,9 +385,10 @@
   <h2 class="section-title" data-en="Map Gallery" data-fr="Galerie de Cartes">Map Gallery</h2>
 
   <!-- ============================================================
-       INTERACTIVE PROJECT MAP (GeoJSON showcase)
-       Add / update your work in  js/map-projects.js  +  geojson/  folder.
-       Step-by-step guide: MAP-GUIDE.md
+       INTERACTIVE PROJECT MAP (GeoJSON showcase) — v2
+       Projects are GROUPS of GeoJSON sub-layers (js/map-projects.js),
+       with a basemap switcher and a QGIS-style attribute panel.
+       Step-by-step guide: MAP-GUIDE-v2.md
        ============================================================ -->
   <div class="imap-block">
     <p class="imap-intro"
@@ -416,6 +417,7 @@
           </svg>
         </button>
         <div class="imap-legend" id="imapLegend" aria-hidden="true"></div>
+        <div class="imap-attr" id="imapAttr" hidden></div>
         <div class="imap-loading" id="imapLoading"><span class="imap-spinner"></span></div>
       </div>
     </div>
