@@ -124,12 +124,21 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
+/* PERF: rAF-throttled passive scroll handler with a cached nav element.
+   Identical visual behaviour, without re-querying the DOM on every scroll tick. */
+let navEl = null;
+let navTicking = false;
 window.addEventListener('scroll', () => {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
-  if (window.scrollY > 100) nav.classList.add('scrolled');
-  else nav.classList.remove('scrolled');
-});
+  if (navTicking) return;
+  navTicking = true;
+  requestAnimationFrame(() => {
+    navTicking = false;
+    if (!navEl) navEl = document.querySelector('.nav');
+    if (!navEl) return;
+    if (window.scrollY > 100) navEl.classList.add('scrolled');
+    else navEl.classList.remove('scrolled');
+  });
+}, { passive: true });
 
 /* ===========================
    INTERSECTION OBSERVER

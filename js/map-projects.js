@@ -90,9 +90,9 @@ window.MAP_PROJECTS = [
       {
         file: 'geojson/my-project/sites.geojson',
         label: { en: 'Sites', fr: 'Sites' },
-        color: '#8a5a00',          // optional shade override
+        color: '#8a5a00',          
         visible: true,
-        fields: ['site_id', 'type', 'grade']   // curated attribute order
+          
       }
     ]
   },
@@ -108,7 +108,7 @@ window.MAP_PROJECTS = [
     category: 'Mineral Exploration',
     year: '2025',
     color: '#F0B429',
-    visible: true,
+        visible: true,
     collapsed: true,
     layers: [
       {
@@ -134,7 +134,7 @@ window.MAP_PROJECTS = [
   },
 
   /* ---------- legacy single-file entries (v1 shape, still fine) ---------- */
-
+/*
   {
     id: 'lidar-survey-blocks',
     title: { en: 'LiDAR Classification — Survey Blocks', fr: 'Classification LiDAR — Blocs de relevé' },
@@ -162,19 +162,58 @@ window.MAP_PROJECTS = [
     color: '#19C9EB',
     visible: true
   },
-
-  {
-    id: 'urban-digitization',
-    title: { en: 'Urban Digitization — Parcels', fr: 'Numérisation Urbaine — Parcelles' },
+*/
+ {
+    id: 'Urban Digitize',
+    title: { en: 'Urban Digitize', fr: 'numérisation ' },
     desc: {
-      en: 'Check Drive or Dropbox for data.',
-      fr: 'Same message in french.'
+      en: 'High precision urban digitization project.',
+      fr: 'numérisation urbaine de haute précision.'
     },
-    category: 'Digitization',
-    year: '2024',
-    file: 'geojson/urban-digitization.geojson',
-    color: '#8B7CF6',
-    visible: true
-  }
+    category: 'Cartography',
+    year: '2025',
+    color: '#e90eda',
+    visible: true,
+    collapsed: true,
+    layers: [
+      {
+        file: 'geojson/Las/Buildings.geojson',
+        label: { en: 'Buildings', fr: 'Bâtiments' },
+        color: '#fe221b94',  
+        outerColor: '#36f029',        
+        visible: true,
+      },
+      {
+        file: 'geojson/Las/Cycleway.geojson',
+        label: { en: 'Cycleways', fr: 'Pistes cyclables' },
+        color: '#8a5a00',          
+        visible: true,
+           
+      },
+      {
+        file: 'geojson/Las/Pavements.geojson',
+        label: { en: 'Pavements', fr: 'Revêtements' },
+        color: '#f2fc3a',          
+        visible: true,
+          
+      },
+      
+      {
+        file: 'geojson/Las/Roads.geojson',
+        label: { en: 'Roads', fr: 'Routes' },
+        color: '#2098d8',          
+        visible: true,
+          
+      },
+      
+      {
+        file: 'geojson/Las/signalisation_horizontale.geojson',
+        label: { en: 'Horizontal Signage', fr: 'Signalisation routière horizontale' },
+        color: '#c00e99',          
+        visible: true,
+          
+      },
+    ]
+  },
 
 ];

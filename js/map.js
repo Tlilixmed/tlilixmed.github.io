@@ -15,6 +15,15 @@
    · Everything else from v1 kept: category filters, project
      list, legend, reset, bilingual EN/FR, graceful fallbacks.
    · Data model: window.MAP_PROJECTS (js/map-projects.js)
+
+   PERFORMANCE NOTES (no visual/behaviour change)
+   · The whole map stack (Leaflet CSS + JS + GeoJSON layers) now boots on
+     demand, when the map block approaches the viewport — visitors who
+     never scroll to #maps download none of it, and the page renders and
+     becomes interactive sooner for everyone else.
+   · UI rebuilds are coalesced to one per animation frame while the
+     GeoJSON layers arrive; the loading-veil logic uses a simple settle
+     counter instead of a polling interval.
    ============================================================ */
 (function () {
   'use strict';
@@ -304,17 +313,66 @@
     return tbl;
   }
 
-  /* ---------- init ---------- */
-  document.addEventListener('DOMContentLoaded', function () {
-    var mount = document.getElementById('imapMap');
-    if (!mount) return;                                  // block removed → do nothing
+  /* ---------- init ----------
+     PERFORMANCE: Leaflet CSS + JS are no longer hard-coded in <head>.
+     The map boots on demand — when .imap-block nears the viewport — and
+     loadLeaflet() injects the library, its stylesheet and a tile-host
+     preconnect at that moment. Visitors who never scroll to the map never
+     download it; everyone else gets the exact same map, with the same
+     loading veil while the GeoJSON layers arrive. */
+  var LEAFLET_CSS = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
+  var LEAFLET_JS  = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
+  var leafletRequested = false;
+
+  function loadLeaflet(done) {
+    if (window.L) { done(); return; }                    // already present (defensive)
+    if (leafletRequested) return;                        // inject only once
+    leafletRequested = true;
+
+    // warm up the default tile host while leaflet.min.js is downloading
+    var pre = document.createElement('link');
+    pre.rel = 'preconnect';
+    pre.href = 'https://tile.openstreetmap.org';
+    document.head.appendChild(pre);
+
+    if (!document.querySelector('link[data-leaflet-css]')) {
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = LEAFLET_CSS;
+      css.setAttribute('data-leaflet-css', '');
+      document.head.appendChild(css);
+    }
+
+    var js = document.createElement('script');
+    js.src = LEAFLET_JS;
+    js.async = true;
+    js.onload = function () { done(); };
+    js.onerror = function () { done(new Error('Leaflet failed to load from CDN.')); };
+    document.head.appendChild(js);
+  }
+
+  function bootMap(mount) {
     state.lang = detectLang();
 
-    var L = window.L;
-    if (!L || typeof window.MAP_PROJECTS !== 'object' || !Array.isArray(window.MAP_PROJECTS)) {
-      showFallback(mount, 'Leaflet');                     // CDN blocked / offline
+    if (typeof window.MAP_PROJECTS !== 'object' || !Array.isArray(window.MAP_PROJECTS)) {
+      showFallback(mount, 'Leaflet');                     // manifest missing / CDN blocked
       return;
     }
+
+    loadLeaflet(function (err) {
+      if (err || !window.L) {
+        if (err && err.message) console.warn('[portfolio map]', err.message);
+        showFallback(mount, 'Leaflet');
+        return;
+      }
+      startMap(mount);
+    });
+  }
+
+  function startMap(mount) {
+    state.lang = detectLang();                           // re-read in case it changed while loading
+
+    var L = window.L;
 
     var map = L.map(mount, {
       scrollWheelZoom: false,        // don't hijack page scroll
@@ -350,6 +408,25 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeAttrPanel();
     });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var mount = document.getElementById('imapMap');
+    if (!mount) return;                                  // block removed → do nothing
+
+    if (!('IntersectionObserver' in window)) { bootMap(mount); return; }
+
+    var trigger = (mount.closest && mount.closest('.imap-block')) || mount;
+    var io = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) {
+          io.disconnect();
+          bootMap(mount);
+          return;
+        }
+      }
+    }, { rootMargin: '600px 0px' });                     // start loading just before it is seen
+    io.observe(trigger);
   });
 
   /* ---------- base map switcher ---------- */
@@ -458,6 +535,16 @@
   }
 
   /* ---------- project groups (fetch + render) ---------- */
+  var totalRequestsExpected = 0;
+  var settledRequests = 0;
+
+  // PERF: the loading veil hides as soon as every fetch has settled —
+  // a simple counter replaces the old 120 ms polling interval.
+  function settleRequest() {
+    settledRequests++;
+    if (settledRequests >= totalRequestsExpected) finishLoading();
+  }
+
   function normalizeGroup(cfg) {
     var raw = (cfg.layers && cfg.layers.length) ? cfg.layers
       : (cfg.file ? [{ file: cfg.file, label: cfg.title, color: cfg.color, visible: true }] : []);
@@ -505,17 +592,10 @@
       group.layers.forEach(function (l) { fetchLayer(map, group, l); totalRequests++; });
     });
 
+    // hide the loading veil once every request has settled (see settleRequest)
+    totalRequestsExpected = totalRequests;
+    settledRequests = 0;
     if (!totalRequests) finishLoading();
-    else {
-      // hide the loading veil once every request has settled
-      var check = setInterval(function () {
-        var settled = 0;
-        state.groups.forEach(function (g) {
-          g.layers.forEach(function (l) { if (l.layer || l.failed) settled++; });
-        });
-        if (settled >= totalRequests) { clearInterval(check); finishLoading(); }
-      }, 120);
-    }
   }
 
   function layerStyle(l) {
@@ -562,12 +642,14 @@
 
         if (groupEffective(group) && l.visible) layer.addTo(map);
         rerenderUI();
+        settleRequest();
       })
       .catch(function (err) {
         l.failed = true;
         group.failed++;
         console.warn('[portfolio map]', err.message);
         rerenderUI();
+        settleRequest();
       });
   }
 
@@ -882,22 +964,31 @@
     return seen;
   }
 
+  // PERF: coalesce bursts of rerenders (one per animation frame) while the
+  // GeoJSON layers arrive — the end state on screen is identical.
+  var rerenderQueued = false;
+
   function rerenderUI() {
-    renderFilters();
-    renderList();
-    renderLegend();
-    renderBasemapPanel();
+    if (rerenderQueued) return;
+    rerenderQueued = true;
+    requestAnimationFrame(function () {
+      rerenderQueued = false;
+      renderFilters();
+      renderList();
+      renderLegend();
+      renderBasemapPanel();
 
-    if (state.panelCtx) {           // keep the panel content in sync with language
-      openAttrPanel(state.panelCtx.group, state.panelCtx.layer, state.panelCtx.feat);
-    }
+      if (state.panelCtx) {         // keep the panel content in sync with language
+        openAttrPanel(state.panelCtx.group, state.panelCtx.layer, state.panelCtx.feat);
+      }
 
-    var reset = document.getElementById('imapReset');
-    if (reset) {
-      reset.title = state.lang === 'fr'
-        ? (reset.getAttribute('data-fr-title') || 'Afficher tous les projets')
-        : (reset.getAttribute('data-en-title') || 'Show all projects');
-    }
+      var reset = document.getElementById('imapReset');
+      if (reset) {
+        reset.title = state.lang === 'fr'
+          ? (reset.getAttribute('data-fr-title') || 'Afficher tous les projets')
+          : (reset.getAttribute('data-en-title') || 'Show all projects');
+      }
+    });
   }
 
   function renderFilters() {
