@@ -120,7 +120,7 @@ window.MAP_PROJECTS = [
       
       },
       {
-        file: 'geojson/Something-open-ground/Something Favorable Geology.json',
+        file: 'geojson/Something-open-ground/something Favorable Geology.json',
         label: { en: 'Favorable Geology', fr: 'Géologie Favorable' },
         
       },
