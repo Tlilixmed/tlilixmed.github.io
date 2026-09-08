@@ -1,0 +1,18 @@
+{
+  "_comment": "Attributes to STRIP from the public derived copies (originals in gis-private keep everything). Drop internal IDs, shapefile artifacts and duplicate coordinates. Edit freely, then re-run scripts/import_geojson.py.",
+  "drop": {
+    "Something-open-ground/Faults.json": ["FID"],
+    "Something-open-ground/Ocurrences.json": ["FID", "ALIAS", "X", "Y"],
+    "Something-open-ground/something Favorable Geology.json": ["FID", "SHAPE_Leng", "SHAPE_Area"],
+    "Las/Buildings.geojson": ["FID", "id"],
+    "Las/Cycleway.geojson": ["FID", "id"],
+    "Las/Limit.geojson": ["FID", "id"],
+    "Las/Pavements.geojson": ["FID", "id"],
+    "Las/Roads.geojson": ["FID", "id"],
+    "Las/signalisation_horizontale.geojson": ["FID", "FID_1", "id"],
+    "Las/segnaletica_verticale_Z.geojson": ["FID", "FID_1", "_id", "lat", "long"],
+    "lidar-survey-blocks.geojson": [],
+    "fiber-network.geojson": [],
+    "urban-digitization.geojson": []
+  }
+}

@@ -1,0 +1,12 @@
+# Files/folders below are NOT uploaded as static site assets.
+# (wrangler reads .assetsignore from the assets directory — same syntax as .gitignore)
+.git
+worker
+scripts
+docs
+derived
+schema.sql
+wrangler.jsonc
+.dev.vars
+.assetsignore
+CNAME

@@ -351,21 +351,47 @@
     document.head.appendChild(js);
   }
 
+  /* ---------- live manifest ----------
+     Phase 4 of the Cloudflare migration: the map prefers the D1-driven
+     manifest from the Worker API (/api/manifest). If the API is not
+     reachable (e.g. the site is served from GitHub Pages) it silently
+     falls back to the static js/map-projects.js manifest. */
+  function loadLiveManifest(done) {
+    if (location.protocol === 'file:') { done(); return; }
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl && setTimeout(function () { ctrl.abort(); }, 4000);
+    fetch('/api/manifest', ctrl ? { signal: ctrl.signal } : undefined)
+      .then(function (r) {
+        if (timer) clearTimeout(timer);
+        return r.ok ? r.json() : null;
+      })
+      .then(function (data) {
+        if (data && Array.isArray(data.projects) && data.projects.length) {
+          window.MAP_PROJECTS = data.projects;
+          console.info('[portfolio map] live manifest loaded — ' + data.projects.length + ' project(s) from API');
+        }
+      })
+      .catch(function () { /* static fallback stays */ })
+      .then(function () { done(); });
+  }
+
   function bootMap(mount) {
     state.lang = detectLang();
 
-    if (typeof window.MAP_PROJECTS !== 'object' || !Array.isArray(window.MAP_PROJECTS)) {
-      showFallback(mount, 'Leaflet');                     // manifest missing / CDN blocked
-      return;
-    }
-
-    loadLeaflet(function (err) {
-      if (err || !window.L) {
-        if (err && err.message) console.warn('[portfolio map]', err.message);
-        showFallback(mount, 'Leaflet');
+    loadLiveManifest(function () {
+      if (typeof window.MAP_PROJECTS !== 'object' || !Array.isArray(window.MAP_PROJECTS)) {
+        showFallback(mount, 'Leaflet');                   // manifest missing / CDN blocked
         return;
       }
-      startMap(mount);
+
+      loadLeaflet(function (err) {
+        if (err || !window.L) {
+          if (err && err.message) console.warn('[portfolio map]', err.message);
+          showFallback(mount, 'Leaflet');
+          return;
+        }
+        startMap(mount);
+      });
     });
   }
 

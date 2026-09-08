@@ -1,8 +1,40 @@
+// ============================================================
+// Cloudflare Worker configuration — GIS portfolio
+// ============================================================
+// Name MUST match the existing git-connected Worker so that
+// `wrangler deploy` updates the same Worker (tlilixmed-github-io).
+// The Workers Builds CI on the `cloudflare` branch runs
+// `npx wrangler deploy` automatically and reads this file.
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tlilixmed-github-io",
-  "compatibility_date": "2026-09-07",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-08-01",
+
+  // Static site: everything at repo root is served as an asset.
+  // Files/folders listed in .assetsignore are NOT uploaded.
   "assets": {
-    "directory": "."
-  }
+    "directory": ".",
+    "binding": "ASSETS",
+    // /api/* always runs the Worker (never an asset lookup)
+    "run_worker_first": ["/api/*"]
+  },
+
+  // D1 — structured metadata (projects / layers / point-cloud catalog).
+  // STEP REQUIRED: create the database in the dashboard, then paste its ID here.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gis-db",
+      "database_id": "e9da2f65-a777-48af-b715-c80195e4f2b9"
+    }
+  ],
+
+  // R2 — the three buckets you already created.
+  "r2_buckets": [
+    { "binding": "R2_PRIVATE", "bucket_name": "gis-private" },   // originals, never exposed
+    { "binding": "R2_MEDIA",   "bucket_name": "repo" },          // derived public GeoJSON + oversized media
+    { "binding": "R2_CLOUDS",  "bucket_name": "clouds-public" }  // Potree octrees (Phase 5, data.tliligis.me)
+  ]
+  // Secrets (set once, survive every deploy):
+  //   npx wrangler secret put ADMIN_TOKEN
 }
