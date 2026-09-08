@@ -88,7 +88,13 @@
   body.embed #stage{inset:0}
   body.embed .overlay{inset:0}
   body.embed .info-card{display:none}
+  body.embed .overlay a.btn{display:none}  /* extra guard: never nest the portfolio inside the map */
   body.embed .potree_container{inset:0}
+  /* Keep Potree chrome clear of the portfolio's 2D/3D pill (top-left of the
+     map frame): the ☰ / mini-map buttons and the opened sidebar start below
+     it. The sidebar also gets inline top/height in the embed loadGUI callback
+     because loadGUI itself writes an inline height:100% that would win. */
+  body.embed #potree_quick_buttons{top:56px}
 
   @media (max-width:900px){
     .page-title,.srs-badge{display:none}
@@ -102,6 +108,16 @@
 </style>
 </head>
 <body>
+
+<script>
+  // Embed class must be applied BEFORE first paint. The Potree library stack
+  // below (jquery-ui, three, potree, d3, …) takes seconds to download, and the
+  // main script that also sets this class only runs AFTER those <script src>
+  // tags finish — so the non-embed layout (topbar with "Color by / Portfolio"
+  // + 58px stage offset) would flash inside the portfolio's map frame on every
+  // 3D open. A parser-blocking script here runs before the header is parsed.
+  if (new URLSearchParams(location.search).get("embed") === "1") document.body.classList.add("embed");
+</script>
 
 <header class="topbar">
   <a class="brand" href="/">Tlili<span>Mohamed</span></a>
@@ -173,6 +189,11 @@
   if (EMBED) document.body.classList.add("embed");
   if (params.get("srs")) document.getElementById("srsLabel").textContent = params.get("srs");
 
+  // Inside the portfolio's map frame there is nowhere to "go back" — the
+  // portfolio IS the parent. Offering the link would nest the whole site
+  // inside the iframe, so error overlays simply omit it in embed mode.
+  const BACK_BTN = EMBED ? "" : "<a class='btn' href='/'>Back to portfolio</a>";
+
   // ---- local-dev fallback -------------------------------------------------
   // Static dev servers (VS Code Live Server, python http.server, …) have no
   // /api/* routes: the catalog call would 404 and the 3D view would stay
@@ -231,7 +252,15 @@
       if (window.innerWidth > 1100) viewer.toggleSidebar();
     });
   } else if (window.jQuery && EMBED) {
-    viewer.loadGUI(); // menu available via the toggle button, starts closed
+    // Menu stays available via the ☰ toggle (starts closed). Offset the
+    // sidebar below the portfolio's 2D/3D pill so opening it never overlaps
+    // the pill or hides its own header — all sections remain scroll-reachable.
+    viewer.loadGUI(function () {
+      viewer.setLanguage("en");
+      const sb = document.getElementById("potree_sidebar_container");
+      sb.style.top = "56px";
+      sb.style.height = "calc(100% - 56px)";
+    });
   }
 
   let activeSlug = null;
@@ -367,14 +396,13 @@
           "<div class='err-icon'>&#9723;</div><b>Octree not uploaded yet</b><br>" +
           "The catalog entry exists, but the converted point cloud files are not in storage.<br>" +
           "<span style='font-size:12px'>Upload the PotreeConverter output to the <b>clouds-public</b> bucket (prefix " +
-          "<code>" + (entry.prefix || "?") + "</code>), then reload this page.</span>" +
-          "<a class='btn' href='/'>Back to portfolio</a>");
+          "<code>" + (entry.prefix || "?") + "</code>), then reload this page.</span>" + BACK_BTN);
       } else {
         showOverlay(false,
           "<div class='err-icon'>&#9888;</div><b>Could not load the point cloud</b><br>" +
           String(err && err.message || err) +
           "<span style='font-size:12px;display:block;margin-top:6px'>If you just uploaded it, wait a few seconds and reload.</span>" +
-          "<a class='btn' href='/'>Back to portfolio</a>");
+          BACK_BTN);
       }
       document.getElementById("iStatus").textContent = "unavailable";
     }
@@ -405,7 +433,7 @@
       showOverlay(false, "<div class='err-icon'>&#9888;</div><b>Catalog unavailable</b><br>" +
         String(err && err.message || err) +
         "<span style='font-size:12px;display:block;margin-top:6px'>Tried the local API and the deployed one &mdash; check your internet connection, then reload.</span>" +
-        "<a class='btn' href='/'>Back to portfolio</a>");
+        BACK_BTN);
     }
   })();
 })();

@@ -2165,6 +2165,13 @@ footer {
   outline: none;
 }
 
+/* Leaflet puts its zoom control in the frame's top-left corner — exactly
+   where the 2D/3D pill sits, which hid the "+" and left "−" unreachable.
+   Drop the control below the pill (pill bottom ≈ 53px in map coordinates). */
+.imap-map .leaflet-top.leaflet-left {
+  top: 60px;
+}
+
 /* --- 2D / 3D view toggle --------------------------------------------
    The same frame alternates between the Leaflet project map (2D) and the
    Potree point-cloud viewer (3D, lazy iframe to /lidar/?embed=1). */
