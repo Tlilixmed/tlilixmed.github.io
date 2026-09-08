@@ -138,6 +138,7 @@
   <div class="kv"><span class="k">Z (min / max)</span><span class="v" id="iZ">&mdash;</span></div>
   <div class="kv"><span class="k">Center (WGS84)</span><span class="v" id="iWGS">&mdash;</span></div>
   <div class="hint">Drag: orbit &nbsp;&middot;&nbsp; Right-drag: pan &nbsp;&middot;&nbsp; Scroll: zoom<br>Coordinates shown in CH1903+/LV95 (EPSG:2056).</div>
+  <div class="hint" id="devNote" hidden style="color:var(--accent2)">Local preview &mdash; streaming the catalog &amp; point cloud from the deployed API.</div>
 </aside>
 
 <div class="overlay" id="overlay">
@@ -171,6 +172,29 @@
   const EMBED = params.get("embed") === "1";
   if (EMBED) document.body.classList.add("embed");
   if (params.get("srs")) document.getElementById("srsLabel").textContent = params.get("srs");
+
+  // ---- local-dev fallback -------------------------------------------------
+  // Static dev servers (VS Code Live Server, python http.server, …) have no
+  // /api/* routes: the catalog call would 404 and the 3D view would stay
+  // empty. When the same-origin API is unreachable we retry against the
+  // deployed Worker, which serves CORS-enabled JSON + octrees. The same
+  // fallback powers the 2D/3D toggle iframe on a locally-served portfolio.
+  const REMOTE_ORIGIN = (params.get("api") || "https://tlilixmed-github-io.tlilixmed.workers.dev")
+    .replace(/\/+$/, ""); // update after Phase 8 if desired; ?api= override is handy for staging/testing
+  let remoteMode = false;
+
+  async function fetchCatalog() {
+    try {
+      const data = await fetchJSON("/api/pointclouds");
+      remoteMode = false;
+      return data;
+    } catch (localErr) {
+      const data = await fetchJSON(REMOTE_ORIGIN + "/api/pointclouds");
+      remoteMode = location.origin !== REMOTE_ORIGIN;
+      if (remoteMode) console.info("[lidar] local API unavailable — using deployed API at", REMOTE_ORIGIN);
+      return data;
+    }
+  }
 
   const overlay = document.getElementById("overlay");
   const ovSpinner = document.getElementById("ovSpinner");
@@ -300,6 +324,7 @@
     tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
       b.classList.toggle("active", b.dataset.slug === entry.slug));
     infoCard.hidden = false;
+    document.getElementById("devNote").hidden = !remoteMode;
     document.getElementById("iTitle").textContent = entry.title_en || entry.slug;
     document.getElementById("iStatus").textContent = "Loading octree\u2026";
 
@@ -307,7 +332,7 @@
       "<span style='font-size:12px'>First load downloads the full octree once &mdash; then it is cached.</span>");
 
     try {
-      const base = "/clouds/" + entry.prefix;                    // e.g. /clouds/las-1/
+      const base = (remoteMode ? REMOTE_ORIGIN : "") + "/clouds/" + entry.prefix;  // e.g. /clouds/las-1/
       activeMeta = await fetchJSON(base + "metadata.json");
 
       // remove previous clouds (single-page multi-cloud switch)
@@ -358,7 +383,7 @@
   // ---- catalog ------------------------------------------------------------
   (async function init() {
     try {
-      const data = await fetchJSON("/api/pointclouds");
+      const data = await fetchCatalog();
       const clouds = (data && data.pointclouds) || [];
       if (!clouds.length) {
         showOverlay(false, "<div class='err-icon'>&#9723;</div><b>No point clouds published yet</b><br>" +
@@ -379,7 +404,7 @@
     } catch (err) {
       showOverlay(false, "<div class='err-icon'>&#9888;</div><b>Catalog unavailable</b><br>" +
         String(err && err.message || err) +
-        "<span style='font-size:12px;display:block;margin-top:6px'>The API did not answer &mdash; check the deployment, or reload.</span>" +
+        "<span style='font-size:12px;display:block;margin-top:6px'>Tried the local API and the deployed one &mdash; check your internet connection, then reload.</span>" +
         "<a class='btn' href='/'>Back to portfolio</a>");
     }
   })();

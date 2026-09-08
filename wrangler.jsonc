@@ -15,8 +15,12 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    // /api/* always runs the Worker (never an asset lookup)
-    "run_worker_first": ["/api/*"]
+    // These routes ALWAYS run the Worker (never an asset lookup):
+    //   /api/*    -> the API itself
+    //   /clouds/* -> R2 octree streaming (CORS + range + cache rules)
+    //   HTML pages -> so `cache-control: no-cache` can be applied and
+    //                 deploys are never hidden behind a stale browser cache
+    "run_worker_first": ["/api/*", "/clouds/*", "/", "/index.html", "/lidar", "/lidar/", "/admin", "/admin/"]
   },
 
   // D1 — structured metadata (projects / layers / point-cloud catalog).

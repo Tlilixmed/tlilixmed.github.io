@@ -13,8 +13,19 @@ import { handleAdmin } from './admin.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
 
+// Public read endpoints are CORS-enabled so local dev servers (VS Code Live
+// Server on 127.0.0.1:5500, python http.server, …) can fall back to the
+// deployed Worker for the catalog and octrees. Read-only + token-guarded
+// admin routes stay safe: CORS never bypasses the X-Admin-Token check.
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, HEAD, OPTIONS',
+  'access-control-allow-headers': 'content-type, range, x-admin-token',
+  'access-control-max-age': '86400',
+};
+
 function json(data, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
+  return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...CORS_HEADERS, ...extraHeaders } });
 }
 
 function fail(status, message) {
@@ -138,6 +149,13 @@ function typeForCloudKey(key) {
   return 'application/octet-stream';
 }
 
+// Octree .bin files never change for a given conversion -> cache hard.
+// metadata.json DOES change on re-conversion/re-upload -> keep it on a
+// short leash so viewers pick up the new cloud without a manual purge.
+function cacheControlForCloudKey(key) {
+  return key.endsWith('.json') ? 'public, max-age=120' : 'public, max-age=31536000, immutable';
+}
+
 async function cloudAsset(env, path, request) {
   const key = decodeURIComponent(path.replace(/^\/clouds\//, ''));
   if (!key || key.includes('..') || key.startsWith('/')) return fail(400, 'bad object key');
@@ -147,10 +165,9 @@ async function cloudAsset(env, path, request) {
     return fail(404, 'no published point cloud matches this path');
   }
 
-  // Octree files never change for a given conversion -> cache hard.
   const baseHeaders = {
     'access-control-allow-origin': '*',
-    'cache-control': 'public, max-age=31536000, immutable',
+    'cache-control': cacheControlForCloudKey(key),
     'accept-ranges': 'bytes',
   };
 
@@ -203,6 +220,11 @@ export default {
     const path = url.pathname;
 
     try {
+      // CORS preflight for cross-origin reads (local dev servers).
+      if (request.method === 'OPTIONS' && (path.startsWith('/api/') || path.startsWith('/clouds/'))) {
+        return new Response(null, { status: 204, headers: CORS_HEADERS });
+      }
+
       if (path === '/api/health') return await health(env);
       if (path === '/api/manifest') return await manifest(env);
       if (path === '/api/pointclouds') return await pointclouds(env);
@@ -220,7 +242,19 @@ export default {
       return fail(500, String(e && e.message ? e.message : e));
     }
 
-    // static site
-    return env.ASSETS.fetch(request);
+    // static site — HTML must always revalidate so deploys are picked up
+    // immediately instead of serving a stale page from the browser cache.
+    const assetRes = await env.ASSETS.fetch(request);
+    const ctype = assetRes.headers.get('content-type') || '';
+    if (ctype.startsWith('text/html')) {
+      const headers = new Headers(assetRes.headers);
+      headers.set('cache-control', 'no-cache');
+      return new Response(assetRes.body, {
+        status: assetRes.status,
+        statusText: assetRes.statusText,
+        headers,
+      });
+    }
+    return assetRes;
   },
 };
