@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <title>LiDAR — 3D Point Cloud | Tlili Mohamed</title>
+        <meta name="description" content="Interactive 3D point cloud viewer (Potree) — LiDAR surveys rendered straight from Cloudflare R2.">
+        <link rel="icon" href="/favicon.ico">
+        <style>
+                :root { --bg: #0d1520; --panel: rgba(10, 16, 24, .82); --line: rgba(255,255,255,.12); --txt: #e8eef4; --dim: #93a4b5; --accent: #4da8da; }
+                * { box-sizing: border-box; }
+                html, body { height: 100%; }
+                body { margin: 0; background: var(--bg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--txt); overflow: hidden; }
+                #potree_render_area { position: absolute; inset: 0; background: var(--bg); }
+                #potree_sidebar_container { z-index: 5; }
+
+                .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 12px;
+                        padding: 10px 16px; background: var(--panel); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+                .topbar a.brand { color: var(--txt); text-decoration: none; font-weight: 600; font-size: 14px; white-space: nowrap; }
+                .topbar a.brand span { color: var(--accent); }
+                .topbar .sep { width: 1px; height: 20px; background: var(--line); }
+                .topbar .title { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .topbar .badges { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+                .badge { font-size: 11px; letter-spacing: .4px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+                .badge b { color: var(--txt); font-weight: 600; }
+
+                .status { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center;
+                        z-index: 30; background: var(--bg); text-align: center; padding: 24px; }
+                .status.hidden { display: none; }
+                .status .spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                .status h2 { margin: 0; font-size: 17px; font-weight: 600; }
+                .status p { margin: 0; color: var(--dim); font-size: 13px; max-width: 460px; line-height: 1.6; }
+                .status a { color: var(--accent); }
+
+                @media (max-width: 640px) {
+                        .topbar .title { display: none; }
+                        .topbar .sep { display: none; }
+                }
+        </style>
+
+        <link rel="stylesheet" type="text/css" href="./libs/potree/potree.css">
+        <link rel="stylesheet" type="text/css" href="./libs/jquery-ui/jquery-ui.min.css">
+        <link rel="stylesheet" type="text/css" href="./libs/spectrum/spectrum.css">
+        <link rel="stylesheet" type="text/css" href="./libs/jstree/themes/mixed/style.css">
+</head>
+
+<body>
+        <script src="./libs/jquery/jquery-3.1.1.min.js"></script>
+        <script src="./libs/spectrum/spectrum.js"></script>
+        <script src="./libs/jquery-ui/jquery-ui.min.js"></script>
+        <script src="./libs/other/BinaryHeap.js"></script>
+        <script src="./libs/tween/tween.min.js"></script>
+        <script src="./libs/d3/d3.js"></script>
+        <script src="./libs/proj4/proj4.js"></script>
+        <script src="./libs/openlayers3/ol.js"></script>
+        <script src="./libs/i18next/i18next.js"></script>
+        <script src="./libs/jstree/jstree.js"></script>
+        <script src="./libs/potree/potree.js"></script>
+        <script src="./libs/plasio/js/laslaz.js"></script>
+
+        <div class="topbar">
+                <a class="brand" href="/">Tlili <span>Mohamed</span></a>
+                <div class="sep"></div>
+                <div class="title" id="cloudTitle">3D Point Cloud</div>
+                <div class="badges">
+                        <div class="badge" id="badgePoints" style="display:none"><b>—</b> pts</div>
+                        <div class="badge" id="badgeSrs" style="display:none"><b>—</b></div>
+                </div>
+        </div>
+
+        <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px;">
+                <div id="potree_render_area"></div>
+                <div id="potree_sidebar_container"></div>
+        </div>
+
+        <div class="status" id="statusBox">
+                <div class="spin"></div>
+                <h2 id="statusTitle" data-en="Loading point cloud…" data-fr="Chargement du nuage de points…">Loading point cloud…</h2>
+                <p id="statusText">Preparing the octree.</p>
+        </div>
+
+        <script>
+                // ---- bilingual labels ---------------------------------------------
+                const LANG = (new URLSearchParams(location.search).get('lang')
+                        || (navigator.language || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en');
+                document.querySelectorAll('[data-en]').forEach(el => {
+                        el.textContent = LANG === 'fr' ? el.dataset.fr : el.dataset.en;
+                });
+
+                function setStatus(title, text, spinner) {
+                        const box = document.getElementById('statusBox');
+                        box.classList.remove('hidden');
+                        box.querySelector('.spin').style.display = spinner ? 'block' : 'none';
+                        document.getElementById('statusTitle').textContent = title;
+                        document.getElementById('statusText').innerHTML = text || '';
+                }
+                function hideStatus() { document.getElementById('statusBox').classList.add('hidden'); }
+
+                // ---- Swiss projections so proj4/potree never throw -----------------
+                // (an unregistered EPSG makes the PC2 potree bundle throw during load
+                //  and kills the render loop — registering defs fixes it)
+                if (window.proj4) {
+                        if (!proj4.defs('EPSG:2056')) {
+                                proj4.defs('EPSG:2056', '+proj=somerc +lat_0=46.9524055555556 +lon_0=7.43958333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs');
+                        }
+                        if (!proj4.defs('EPSG:21781')) {
+                                proj4.defs('EPSG:21781', '+proj=somerc +lat_0=46.9524055555556 +lon_0=7.43958333333333 +k_0=1 +x_0=600000 +y_0=200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs');
+                        }
+                }
+
+                // ---- pick the cloud ------------------------------------------------
+                const params = new URLSearchParams(location.search);
+                const wanted = params.get('id');
+                const directSrc = params.get('src'); // e.g. /lidar/?src=/clouds/las-1/metadata.json
+
+                const load = (src, slug, cloud) => {
+                        window.viewer = new Potree.Viewer(document.getElementById('potree_render_area'));
+                        viewer.setEDLEnabled(true);
+                        viewer.setFOV(60);
+                        viewer.setPointBudget(2_000_000);
+                        viewer.loadSettingsFromURL();
+                        viewer.setBackground('gradient');
+
+                        viewer.loadGUI(() => {
+                                viewer.setLanguage('en');
+                                $('#menu_appearance').next().show();
+                                $('#menu_tools').next().show();
+                                $('#menu_clipping').next().show();
+                        });
+
+                        Potree.loadPointCloud(src, slug, e => {
+                                const scene = viewer.scene;
+                                const pointcloud = e.pointcloud;
+                                const material = pointcloud.material;
+                                material.size = 1;
+                                material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                                material.shape = Potree.PointShape.SQUARE;
+                                material.activeAttributeName = 'rgba';
+
+                                scene.addPointCloud(pointcloud);
+                                viewer.fitToScreen();
+                                hideStatus();
+                        }).catch(err => {
+                                setStatus(
+                                        LANG === 'fr' ? "Impossible de charger le nuage" : 'Could not load the point cloud',
+                                        String(err && err.message || err),
+                                        false);
+                        });
+                };
+
+                if (directSrc) {
+                        const slug = (directSrc.split('/').filter(Boolean).slice(-2)[0]) || 'cloud';
+                        document.getElementById('cloudTitle').textContent = slug;
+                        load(directSrc, slug, null);
+                } else
+                fetch('/api/pointclouds')
+                        .then(r => { if (!r.ok) throw new Error('catalog HTTP ' + r.status); return r.json(); })
+                        .then(cat => {
+                                const clouds = (cat && cat.pointclouds) || [];
+                                const cloud = clouds.find(c => c.slug === wanted) || clouds[0];
+                                if (!cloud) {
+                                        setStatus(
+                                                LANG === 'fr' ? "Aucun nuage de points publié" : 'No point cloud published yet',
+                                                LANG === 'fr'
+                                                        ? "Le nuage arrive bientôt — revenez dans quelques jours."
+                                                        : "The first cloud is coming soon — check back shortly.",
+                                                false);
+                                        return;
+                                }
+
+                                document.getElementById('cloudTitle').textContent = (LANG === 'fr' ? (cloud.title_fr || cloud.title_en) : cloud.title_en) || cloud.slug;
+                                if (cloud.desc_en || cloud.desc_fr) {
+                                        document.title = (LANG === 'fr' ? (cloud.title_fr || cloud.title_en) : cloud.title_en) + ' — LiDAR | Tlili Mohamed';
+                                }
+                                if (cloud.point_count) {
+                                        document.getElementById('badgePoints').style.display = 'block';
+                                        document.querySelector('#badgePoints b').textContent = Number(cloud.point_count).toLocaleString(LANG === 'fr' ? 'fr-CH' : 'en-US');
+                                }
+                                if (cloud.srs) {
+                                        document.getElementById('badgeSrs').style.display = 'block';
+                                        document.querySelector('#badgeSrs b').textContent = cloud.srs;
+                                }
+
+                                window.viewer = new Potree.Viewer(document.getElementById('potree_render_area'));
+                                viewer.setEDLEnabled(true);
+                                viewer.setFOV(60);
+                                viewer.setPointBudget(2_000_000);
+                                viewer.loadSettingsFromURL();
+                                viewer.setBackground('gradient');
+
+                                viewer.loadGUI(() => {
+                                        viewer.setLanguage('en');
+                                        $('#menu_appearance').next().show();
+                                        $('#menu_tools').next().show();
+                                        $('#menu_clipping').next().show();
+                                });
+
+                                Potree.loadPointCloud('/clouds/' + cloud.slug + '/metadata.json', cloud.slug, e => {
+                                        const scene = viewer.scene;
+                                        const pointcloud = e.pointcloud;
+                                        const material = pointcloud.material;
+                                        material.size = 1;
+                                        material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                                        material.shape = Potree.PointShape.SQUARE;
+                                        material.activeAttributeName = 'rgba';
+
+                                        scene.addPointCloud(pointcloud);
+                                        viewer.fitToScreen();
+                                        hideStatus();
+                                }).catch(err => {
+                                        setStatus(
+                                                LANG === 'fr' ? "Impossible de charger le nuage" : 'Could not load the point cloud',
+                                                String(err && err.message || err),
+                                                false);
+                                });
+                        })
+                        .catch(err => {
+                                setStatus(
+                                        LANG === 'fr' ? "Catalogue indisponible" : 'Catalog unavailable',
+                                        String(err && err.message || err),
+                                        false);
+                        });
+        </script>
+</body>
+</html>

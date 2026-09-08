@@ -1,1 +1,5 @@
 .wrangler/
+converted-las1/
+*.las
+*.laz
+*.copc.laz

@@ -6,12 +6,28 @@
 //   /api/manifest        public map manifest (published only, D1-driven)
 //   /api/layer-data/:id  derived GeoJSON streamed from R2 (`repo` bucket)
 //   /api/pointclouds     public point-cloud catalog (published only)
+//   /clouds/*            Potree octrees streamed from R2 (clouds-public bucket)
 //   /api/admin/*         admin CRUD (token-guarded until Cloudflare Access, Phase 7)
 // Everything else -> static assets (ASSETS binding).
 // ============================================================
 import { handleAdmin } from './admin.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
+
+const MIME_BY_EXT = {
+  json: 'application/json; charset=utf-8',
+  bin: 'application/octet-stream',
+  html: 'text/html; charset=utf-8',
+  js: 'text/javascript; charset=utf-8',
+  css: 'text/css; charset=utf-8',
+  png: 'image/png',
+  svg: 'image/svg+xml',
+};
+
+function extMime(key) {
+  const m = key.toLowerCase().match(/\.([a-z0-9]+)$/);
+  return (m && MIME_BY_EXT[m[1]]) || 'application/octet-stream';
+}
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
@@ -122,6 +138,40 @@ async function pointclouds(env) {
 }
 
 // ------------------------------------------------------------
+// GET /clouds/<key> — stream Potree octree files from R2 (Phase 5)
+// Supports Range requests (Potree lazy-loads slices of octree.bin).
+// Same-origin => no CORS needed. data.tliligis.me can front this later.
+// ------------------------------------------------------------
+async function cloudAsset(env, request, rawKey) {
+  const key = rawKey.replace(/\/{2,}/g, '/');
+  if (!key || key.includes('..') || key.startsWith('/')) return fail(404, 'not found');
+
+  const hasRange = request.headers.has('range');
+  const opts = hasRange ? { range: request.headers } : undefined;
+  const obj = await env.R2_CLOUDS.get(key, opts);
+  if (!obj) return fail(404, 'not found in clouds-public: ' + key);
+
+  const headers = new Headers();
+  headers.set('content-type', extMime(key));
+  headers.set('accept-ranges', 'bytes');
+  headers.set('etag', obj.httpEtag);
+  // octree chunks are immutable -> cache hard; metadata.json -> short cache
+  headers.set('cache-control', key.endsWith('.bin')
+    ? 'public, max-age=31536000, immutable'
+    : 'public, max-age=300, stale-while-revalidate=86400');
+  obj.writeHttpMetadata(headers);
+
+  if (hasRange && obj.range && (obj.range.offset !== undefined || obj.range.length !== undefined)) {
+    const size = obj.size;
+    const start = obj.range.offset !== undefined ? obj.range.offset : (obj.range.length !== undefined ? size - obj.range.length : 0);
+    const len = obj.range.length !== undefined ? obj.range.length : (size - start);
+    headers.set('content-range', `bytes ${start}-${start + len - 1}/${size}`);
+    return new Response(obj.body, { status: 206, headers });
+  }
+  return new Response(obj.body, { status: 200, headers });
+}
+
+// ------------------------------------------------------------
 // Router
 // ------------------------------------------------------------
 export default {
@@ -136,6 +186,9 @@ export default {
 
       const m = path.match(/^\/api\/layer-data\/(\d+)$/);
       if (m) return await layerData(env, Number(m[1]));
+
+      const c = path.match(/^\/clouds\/(.+)$/);
+      if (c) return await cloudAsset(env, request, decodeURIComponent(c[1]));
 
       if (path.startsWith('/api/admin/')) return await handleAdmin(request, env, path);
 
