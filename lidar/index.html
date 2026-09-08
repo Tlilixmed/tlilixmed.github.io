@@ -83,18 +83,25 @@
   .overlay a.btn{display:inline-block;margin-top:6px;padding:9px 18px;border-radius:10px;background:var(--accent);
     color:#06121d;font-weight:600;font-size:13px;text-decoration:none}
 
-  /* ---------- embed mode (2D/3D toggle in the portfolio map) ---------- */
-  body.embed .topbar{display:none}
-  body.embed #stage{inset:0}
-  body.embed .overlay{inset:0}
-  body.embed .info-card{display:none}
+  /* ---------- embed mode (inside the portfolio's map frame) ----------
+     Same chrome as the standalone viewer for full parity: topbar (cloud tab,
+     Color by, EPSG badge) and the info card. Embed-only tweaks:
+       - no brand / title / back-link: the portfolio page IS the context, and
+         the pill's "2D Map" is the way back — navigating this frame to /
+         would nest the whole site inside the map;
+       - the bar's left side is padded so nothing slides under the portfolio's
+         floating 2D/3D pill (pill right edge ≈ 190px from the frame edge);
+       - ☰ / mini-map buttons and the opened sidebar start below the 58px bar
+         AND the pill. The sidebar also gets inline top/height in the embed
+         loadGUI callback because loadGUI itself writes an inline height:100%
+         that would win. */
+  body.embed .topbar{padding-left:280px}
+  body.embed .brand,body.embed .sep,body.embed .page-title,body.embed .back-link{display:none}
   body.embed .overlay a.btn{display:none}  /* extra guard: never nest the portfolio inside the map */
-  body.embed .potree_container{inset:0}
-  /* Keep Potree chrome clear of the portfolio's 2D/3D pill (top-left of the
-     map frame): the ☰ / mini-map buttons and the opened sidebar start below
-     it. The sidebar also gets inline top/height in the embed loadGUI callback
-     because loadGUI itself writes an inline height:100% that would win. */
-  body.embed #potree_quick_buttons{top:56px}
+  body.embed #potree_quick_buttons{top:64px}
+  @media (max-width:640px){
+    body.embed .topbar{padding-left:236px}
+  }
 
   @media (max-width:900px){
     .page-title,.srs-badge{display:none}
@@ -113,9 +120,10 @@
   // Embed class must be applied BEFORE first paint. The Potree library stack
   // below (jquery-ui, three, potree, d3, …) takes seconds to download, and the
   // main script that also sets this class only runs AFTER those <script src>
-  // tags finish — so the non-embed layout (topbar with "Color by / Portfolio"
-  // + 58px stage offset) would flash inside the portfolio's map frame on every
-  // 3D open. A parser-blocking script here runs before the header is parsed.
+  // tags finish — so the standalone layout (brand / title / back-link shown,
+  // bar unpadded) would flash inside the portfolio's map frame on every 3D
+  // open before the embed tweaks kick in. A parser-blocking script here runs
+  // before the header is parsed.
   if (new URLSearchParams(location.search).get("embed") === "1") document.body.classList.add("embed");
 </script>
 
@@ -258,8 +266,8 @@
     viewer.loadGUI(function () {
       viewer.setLanguage("en");
       const sb = document.getElementById("potree_sidebar_container");
-      sb.style.top = "56px";
-      sb.style.height = "calc(100% - 56px)";
+      sb.style.top = "64px";   // 58px topbar + pill clearance
+      sb.style.height = "calc(100% - 64px)";
     });
   }
 
