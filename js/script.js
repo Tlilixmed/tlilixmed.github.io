@@ -143,12 +143,26 @@ window.addEventListener('scroll', () => {
 /* ===========================
    INTERSECTION OBSERVER
    =========================== */
-const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+const observerOptions = { threshold: 0.05, rootMargin: '0px 0px -30px 0px' };
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) entry.target.classList.add('animate-in');
   });
 }, observerOptions);
+
+/* Reliability failsafe - content must NEVER stay invisible.
+   The scroll-reveal initial state only exists under html.js (see <head>),
+   and if anything still blocks the observer (an extension, battery saver,
+   a restored scroll position, ...) this force-reveals everything shortly
+   after load. Worst case: no scroll animation, page fully visible. */
+function forceRevealAll() {
+  document.querySelectorAll(
+    'section, .section-title, .result-category, .skill-item, .project-card, ' +
+    '.freelance-section, .map-gallery-section, .service-card, .map-item'
+  ).forEach(function (el) { el.classList.add('animate-in'); });
+}
+window.addEventListener('load', function () { setTimeout(forceRevealAll, 2500); });
+setTimeout(forceRevealAll, 4000); // in case the window 'load' event stalls
 
 /* ===========================
    MOBILE NAVIGATION

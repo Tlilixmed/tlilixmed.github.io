@@ -177,6 +177,21 @@ export async function handleAdmin(request, env, path) {
 
   // ---- layers ----
   if (what === 'layers') {
+    // GET /api/admin/layers/:id/data — preview payload (published or not)
+    if (method === 'GET' && id && action === 'data') {
+      const row = await env.DB.prepare(
+        `SELECT r2_key FROM layers WHERE id = ? AND r2_key IS NOT NULL`
+      ).bind(id).first();
+      if (!row) return fail(404, 'layer has no data in R2 (upload it first)');
+      const obj = await env.R2_MEDIA.get(row.r2_key);
+      if (!obj) return fail(404, 'derived data missing in R2 (key: ' + row.r2_key + ')');
+      const headers = {
+        'content-type': 'application/geo+json; charset=utf-8',
+        'cache-control': 'no-store',
+      };
+      if (obj.size !== undefined) headers['content-length'] = String(obj.size);
+      return new Response(obj.body, { headers });
+    }
     if (method === 'POST' && id === null && !action) {
       const b = await readBody(request);
       if (!b.project_id || !b.slug || !b.label_en) return fail(400, 'project_id, slug and label_en are required');

@@ -8,7 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Potree GUI stack (order matters: jquery -> spectrum -> jquery-ui -> potree) -->
+<link rel="stylesheet" href="./libs/jquery-ui/jquery-ui.min.css">
 <link rel="stylesheet" href="./libs/potree/potree.css">
+<link rel="stylesheet" href="./libs/spectrum/spectrum.css">
+<link rel="stylesheet" href="./libs/jstree/themes/mixed/style.css">
 <style>
   :root{
     --bg:#0e1420; --panel:rgba(13,20,32,.92); --line:rgba(255,255,255,.09);
@@ -25,7 +29,7 @@
   .brand span{color:var(--accent)}
   .topbar .sep{width:1px;height:24px;background:var(--line)}
   .page-title{font-size:13px;color:var(--muted);white-space:nowrap}
-  .cloud-tabs{display:flex;gap:8px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+  .cloud-tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
   .cloud-tabs::-webkit-scrollbar{display:none}
   .cloud-tab{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);
     font:inherit;font-size:12px;font-weight:500;padding:7px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;
@@ -35,14 +39,28 @@
   .srs-badge{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:var(--accent2);
     border:1px solid rgba(240,180,41,.35);background:rgba(240,180,41,.08);padding:6px 12px;border-radius:999px;white-space:nowrap}
   .srs-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2)}
+  .back-link{font-size:12.5px;color:var(--muted);text-decoration:none;white-space:nowrap;padding:6px 10px;
+    border:1px solid var(--line);border-radius:999px;transition:all .18s ease}
+  .back-link:hover{color:var(--text);border-color:var(--accent)}
+
+  /* attribute quick-select */
+  .attr-ctl{display:flex;align-items:center;gap:7px;margin-left:auto;flex:0 0 auto}
+  .attr-ctl label{font-size:11px;color:var(--muted);white-space:nowrap}
+  .attr-ctl select{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--line);
+    border-radius:9px;padding:6px 9px;font:inherit;font-size:12px;cursor:pointer;outline:none}
+  .attr-ctl select:hover{border-color:var(--accent)}
+  .attr-ctl select option{background:#101a29;color:var(--text)}
 
   /* ---------- viewer ---------- */
   #stage{position:fixed;inset:58px 0 0 0}
+  .potree_container{position:absolute;inset:0}
   #potree_render_area{position:absolute;inset:0;width:100%;height:100%}
+  #potree_sidebar_container{top:0;height:100%;border-right:1px solid var(--line);
+    background:rgba(10,16,26,.97) !important}
   canvas{display:block}
 
   /* ---------- info card ---------- */
-  .info-card{position:fixed;left:16px;bottom:16px;z-index:40;width:min(330px,calc(100vw - 32px));
+  .info-card{position:fixed;right:16px;bottom:16px;z-index:40;width:min(330px,calc(100vw - 32px));
     background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
     box-shadow:0 12px 40px rgba(0,0,0,.45)}
   .info-card h2{font-size:14px;font-weight:600;margin-bottom:2px}
@@ -65,10 +83,21 @@
   .overlay a.btn{display:inline-block;margin-top:6px;padding:9px 18px;border-radius:10px;background:var(--accent);
     color:#06121d;font-weight:600;font-size:13px;text-decoration:none}
 
-  @media (max-width:640px){
+  /* ---------- embed mode (2D/3D toggle in the portfolio map) ---------- */
+  body.embed .topbar{display:none}
+  body.embed #stage{inset:0}
+  body.embed .overlay{inset:0}
+  body.embed .info-card{display:none}
+  body.embed .potree_container{inset:0}
+
+  @media (max-width:900px){
     .page-title,.srs-badge{display:none}
     .info-card{left:10px;bottom:10px;right:10px;width:auto;padding:12px 14px}
     .kv{font-size:11px}
+  }
+  @media (max-width:640px){
+    .back-link{padding:5px 8px}
+    .attr-ctl label{display:none}
   }
 </style>
 </head>
@@ -79,12 +108,24 @@
   <div class="sep"></div>
   <div class="page-title">LiDAR &mdash; 3D Point Cloud Viewer</div>
   <nav class="cloud-tabs" id="cloudTabs" aria-label="Point clouds"></nav>
+  <div class="attr-ctl">
+    <label for="attrSelect">Color by</label>
+    <select id="attrSelect" aria-label="Point color attribute" disabled>
+      <option value="intensity">Intensity</option>
+      <option value="classification">Classification</option>
+      <option value="elevation">Elevation</option>
+      <option value="rgba">RGB</option>
+    </select>
+  </div>
   <div class="srs-badge" id="srsBadge"><span class="dot"></span><span id="srsLabel">EPSG:2056 &middot; CH1903+/LV95</span></div>
+  <a class="back-link" href="/#maps" id="backLink">&larr; Portfolio</a>
 </header>
 
 <div id="stage">
-  <div class="potree_container" style="position:absolute;inset:0;">
+  <div class="potree_container">
+    <div id="potree_sidebar_container"></div>
     <div id="potree_render_area"></div>
+    <div id="potree_quick_buttons"></div>
   </div>
 </div>
 
@@ -104,11 +145,17 @@
   <div class="msg" id="ovMsg">Loading point cloud catalog&hellip;</div>
 </div>
 
+<!-- Potree + GUI dependencies (same include order as the official Potree 1.8 viewer) -->
 <script src="./libs/jquery/jquery-3.1.1.min.js"></script>
-<script src="./libs/three/three.min.js"></script>
-<script src="./libs/tween/tween.min.js"></script>
+<script src="./libs/spectrum/spectrum.js"></script>
+<script src="./libs/jquery-ui/jquery-ui.min.js"></script>
 <script src="./libs/other/BinaryHeap.js"></script>
+<script src="./libs/tween/tween.min.js"></script>
+<script src="./libs/d3/d3.js"></script>
 <script src="./libs/proj4/proj4.js"></script>
+<script src="./libs/i18next/i18next.js"></script>
+<script src="./libs/jstree/jstree.min.js"></script>
+<script src="./libs/three/three.min.js"></script>
 <script src="./libs/potree/potree.js"></script>
 <script>
 (function () {
@@ -120,11 +167,17 @@
     "+x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346 " +
     "+units=m +no_defs");
 
+  const params = new URLSearchParams(location.search);
+  const EMBED = params.get("embed") === "1";
+  if (EMBED) document.body.classList.add("embed");
+  if (params.get("srs")) document.getElementById("srsLabel").textContent = params.get("srs");
+
   const overlay = document.getElementById("overlay");
   const ovSpinner = document.getElementById("ovSpinner");
   const ovMsg = document.getElementById("ovMsg");
   const tabsEl = document.getElementById("cloudTabs");
   const infoCard = document.getElementById("infoCard");
+  const attrSel = document.getElementById("attrSelect");
 
   function fmt(n, d) {
     return Number(n).toLocaleString("en-US", { maximumFractionDigits: d === undefined ? 1 : d });
@@ -138,20 +191,92 @@
 
   // ---- Potree viewer bootstrap -------------------------------------------
   const viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+  window.viewer = viewer; // handy for live debugging in devtools
   viewer.setFOV(60);
   viewer.setPointBudget(1500000);
   viewer.setEDLEnabled(false);   // RGB clouds read better without EDL
   viewer.setBackground("gradient");
   viewer.loadSettingsFromURL();
 
+  // Restore the Potree menu (appearance / navigation / filters / scene tree).
+  // The sidebar toggle button is injected into #potree_quick_buttons by loadGUI.
+  if (window.jQuery && !EMBED) {
+    viewer.loadGUI(function () {
+      viewer.setLanguage("en");
+      jQuery("#menu_scene").next().show();
+      if (window.innerWidth > 1100) viewer.toggleSidebar();
+    });
+  } else if (window.jQuery && EMBED) {
+    viewer.loadGUI(); // menu available via the toggle button, starts closed
+  }
+
   let activeSlug = null;
   let activeMeta = null;
+  let activePC = null;
+  let activeMode = "intensity";
 
   async function fetchJSON(url) {
     const r = await fetch(url, { headers: { "accept": "application/json" } });
     if (!r.ok) throw Object.assign(new Error("HTTP " + r.status), { status: r.status });
     return r.json();
   }
+
+  // ---- color attribute handling -------------------------------------------
+  // LiDAR LAS files often carry NO RGB. Forcing "rgba" there renders every
+  // point black. Availability check + smart defaults keep the view readable:
+  //   RGB -> Intensity (gamma-lifted) -> Classification -> Elevation.
+  // The intensity lift matters: raw LiDAR intensity tends to sit far below
+  // its theoretical max, so Potree's linear mapping renders ~black without it.
+  const INTENSITY_LIFT = { gamma: 0.15, brightness: 0.15, contrast: 1.6 };
+
+  function availableModes(meta) {
+    const names = (meta.attributes || []).map(a => a.name);
+    const has = (n) => names.indexOf(n) !== -1;
+    const modes = [];
+    if (has("rgb") || has("rgba")) modes.push("rgba");
+    if (has("intensity")) modes.push("intensity");
+    if (has("classification")) modes.push("classification");
+    modes.push("elevation"); // always available (derived from z)
+    return modes;
+  }
+
+  function applyMode(pc, meta, mode) {
+    const modes = availableModes(meta);
+    if (modes.indexOf(mode) === -1) mode = modes[0];
+    activeMode = mode;
+
+    if (mode === "elevation") pc.material.activeAttributeName = "elevation";
+    else pc.material.activeAttributeName = mode;
+
+    if (mode === "intensity") {
+      const ia = (meta.attributes || []).find(a => a.name === "intensity") || {};
+      const lo = Array.isArray(ia.min) ? ia.min[0] : (ia.min !== undefined ? ia.min : 0);
+      const hi = Array.isArray(ia.max) ? ia.max[0] : (ia.max !== undefined ? ia.max : 65535);
+      if (isFinite(lo) && isFinite(hi) && hi > lo) pc.material.intensityRange = [lo, hi];
+      pc.material.intensityGamma = INTENSITY_LIFT.gamma;
+      pc.material.intensityBrightness = INTENSITY_LIFT.brightness;
+      pc.material.intensityContrast = INTENSITY_LIFT.contrast;
+    } else {
+      // reset to Potree defaults so switching back and forth is predictable
+      pc.material.intensityGamma = 1.0;
+      pc.material.intensityBrightness = 0.0;
+      pc.material.intensityContrast = 1.0;
+    }
+    return mode;
+  }
+
+  function fillAttrSelect(meta, current) {
+    const modes = availableModes(meta);
+    const labels = { rgba: "RGB", intensity: "Intensity", classification: "Classification", elevation: "Elevation" };
+    attrSel.innerHTML = modes.map(m =>
+      "<option value=\"" + m + "\"" + (m === current ? " selected" : "") + ">" + (labels[m] || m) + "</option>").join("");
+    attrSel.disabled = false;
+  }
+
+  attrSel.addEventListener("change", function () {
+    if (!activePC || !activeMeta) return;
+    applyMode(activePC, activeMeta, attrSel.value);
+  });
 
   function describe(meta) {
     const bb = meta.boundingBox || {};
@@ -190,30 +315,17 @@
 
       const e = await Potree.loadPointCloud(base + "metadata.json", entry.slug);
       const pc = e.pointcloud;
+      activePC = pc;
       pc.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
       pc.material.size = 0.7;
       pc.material.minSize = 1.5;
 
-      // Pick the best available color attribute.
-      // LiDAR LAS files often carry NO RGB at all — forcing "rgba" there
-      // renders every point black. Fall back: RGB -> intensity -> classification.
-      const names = (activeMeta.attributes || []).map(a => a.name);
-      const hasRGB = names.indexOf("rgb") !== -1 || names.indexOf("rgba") !== -1;
-      const hasInt = names.indexOf("intensity") !== -1;
-      const hasCls = names.indexOf("classification") !== -1;
-      pc.material.activeAttributeName =
-        hasRGB ? "rgba" : hasInt ? "intensity" : hasCls ? "classification" : "intensity";
-
-      // Potree 1.8.2 ships intensityRange = [Infinity, -Infinity], which makes
-      // the intensity shader output NaN (black). Seed it from the metadata
-      // ranges recorded by PotreeConverter, plus a mild gamma lift.
-      if (!hasRGB && hasInt) {
-        const ia = (activeMeta.attributes || []).find(a => a.name === "intensity") || {};
-        const lo = Array.isArray(ia.min) ? ia.min[0] : (ia.min !== undefined ? ia.min : 0);
-        const hi = Array.isArray(ia.max) ? ia.max[0] : (ia.max !== undefined ? ia.max : 65535);
-        if (isFinite(lo) && isFinite(hi) && hi > lo) pc.material.intensityRange = [lo, hi];
-        pc.material.intensityGamma = 0.85;
-      }
+      // Pick the best default color attribute (never "rgba" when absent).
+      const modes = availableModes(activeMeta);
+      const preferred = modes.indexOf("rgba") !== -1 ? "rgba"
+        : modes.indexOf("intensity") !== -1 ? "intensity" : "classification";
+      applyMode(pc, activeMeta, preferred);
+      fillAttrSelect(activeMeta, preferred);
 
       viewer.scene.addPointCloud(pc);
       viewer.fitToScreen();
@@ -253,6 +365,7 @@
           "This page will list every published dataset from the catalog.");
         return;
       }
+      // Tabs stay visible even with a single cloud (this bar is the page menu).
       clouds.forEach((entry, i) => {
         const b = document.createElement("button");
         b.type = "button";
@@ -262,7 +375,6 @@
         b.addEventListener("click", () => loadCloud(entry));
         tabsEl.appendChild(b);
       });
-      if (clouds.length === 1) tabsEl.style.display = "none";
       await loadCloud(clouds[0]);
     } catch (err) {
       showOverlay(false, "<div class='err-icon'>&#9888;</div><b>Catalog unavailable</b><br>" +

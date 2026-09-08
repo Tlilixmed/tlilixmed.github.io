@@ -97,6 +97,53 @@
   .hint { color:var(--dim); font-size:11.5px; line-height:1.5; margin-top:8px; }
   .spin { width:22px; height:22px; border-radius:50%; border:2px solid var(--line);
           border-top-color:var(--accent); animation:spin 1s linear infinite; display:inline-block; }
+  /* ---- style studio ---- */
+  .studio { display:grid; grid-template-columns: 1.25fr 1fr; gap:18px; align-items:start; }
+  @media (max-width:980px){ .studio{ grid-template-columns:1fr; } }
+  .studio-map-card { position:sticky; top:70px; }
+  .preview-map { height:560px; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:#dfe8f4; }
+  .preview-map .leaflet-container { background:#dfe8f4; }
+  .preview-note { color:var(--dim); font-size:11.5px; margin-top:8px; display:flex; gap:10px; flex-wrap:wrap; }
+  .geo-badge { font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--accent); letter-spacing:.4px; }
+  .preview-legend { position:absolute; left:10px; bottom:10px; z-index:800; max-width:240px; max-height:46%;
+    overflow:auto; background:rgba(13,21,32,.92); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+    font-size:11.5px; color:var(--txt); }
+  .preview-legend:empty { display:none; }
+  .preview-legend .lg-title { color:var(--dim); font-size:10px; letter-spacing:.4px; margin-bottom:4px; text-transform:uppercase; }
+  .preview-legend .lg-row { display:flex; align-items:center; gap:7px; padding:1.5px 0; }
+  .preview-legend .lg-sw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 0 1px rgba(255,255,255,.25); }
+  .preview-legend .lg-lbl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .sym-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .sym-section { border-top:1px solid var(--line); padding-top:12px; margin-top:12px; }
+  .sym-section h4 { margin:0 0 10px; font-size:11px; letter-spacing:.8px; text-transform:uppercase; color:var(--dim); }
+  .sym-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+  @media (max-width:560px){ .sym-grid{ grid-template-columns:1fr; } }
+  .swatch { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line);
+    border-radius:10px; background:var(--panel2); }
+  .swatch .sw { width:38px; height:26px; border-radius:6px; flex:0 0 auto;
+    box-shadow:0 0 0 1px rgba(255,255,255,.2); }
+  .swatch small { color:var(--dim); display:block; }
+  .valrow { display:flex; align-items:center; gap:8px; padding:5px 6px; border:1px solid var(--line);
+    border-radius:9px; margin-bottom:6px; background:var(--panel2); }
+  .valrow input[type=color] { width:34px; height:28px; padding:1px; flex:0 0 auto; }
+  .valrow .vlabel { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px; }
+  .valrow .vcount { color:var(--dim); font-size:11px; flex:0 0 auto; }
+  .ramps { display:flex; gap:8px; flex-wrap:wrap; }
+  .ramp { width:74px; cursor:pointer; border:2px solid transparent; border-radius:8px; padding:2px; }
+  .ramp.active { border-color:var(--accent); }
+  .ramp .bar { height:16px; border-radius:5px; }
+  .ramp .rname { font-size:9.5px; color:var(--dim); text-align:center; margin-top:2px; letter-spacing:.3px; }
+  .stepper { display:inline-flex; align-items:center; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .stepper button { border:none; background:var(--panel2); color:var(--txt); width:30px; height:32px; cursor:pointer; font-size:15px; }
+  .stepper button:hover { color:var(--accent); }
+  .stepper .steptxt { min-width:34px; text-align:center; font-size:13px; padding:0 4px; }
+  .range-label { color:var(--dim); font-size:11px; }
+  input[type=range] { padding:0; height:26px; accent-color:var(--accent); }
+  .studio-actions { position:sticky; bottom:0; background:rgba(13,21,32,.94); backdrop-filter:blur(6px);
+    border-top:1px solid var(--line); margin:14px -16px -16px; padding:12px 16px; border-radius:0 0 14px 14px; }
+  .sym-empty { color:var(--dim); font-size:13px; line-height:1.6; padding:30px 10px; text-align:center; }
+
   @keyframes spin { to { transform:rotate(360deg); } }
   .hidden { display:none !important; }
 </style>
@@ -108,6 +155,7 @@
   <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="projects">Projects &amp; layers</button>
     <button class="tab" data-tab="clouds">Point clouds</button>
+    <button class="tab" data-tab="style">Style Studio</button>
   </nav>
   <div class="health" title="GET /api/health"><span class="dot" id="healthDot"></span><span id="healthTxt">checking…</span>
     <button class="logout" id="logout" type="button">sign out</button>
@@ -220,6 +268,113 @@
       </form>
     </div>
   </section>
+
+  <!-- ---- style studio tab ---- -->
+  <section id="tab-style" class="hidden">
+    <div id="studioEmpty" class="card"><p class="sym-empty">Pick a layer in <b>Projects &amp; layers</b> and press
+      <b>style</b> — or select a project first. The studio previews the layer's real geometry from storage and lets you
+      design its symbology: single symbol, unique values, or graduated colors, saved per layer.</p></div>
+    <div id="studioWrap" class="hidden">
+      <div class="studio">
+        <div class="card studio-map-card">
+          <div class="sym-head">
+            <h3 style="margin:0" id="stTitle">Layer preview</h3>
+            <span class="geo-badge" id="stGeo">—</span>
+          </div>
+          <div class="preview-map" id="stMap"></div>
+          <div class="preview-legend" id="stLegend"></div>
+          <div class="preview-note">
+            <span id="stFeatNote">—</span>
+            <a href="/" target="_blank" rel="noopener">open portfolio map ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sym-head">
+            <h3 style="margin:0">Symbology</h3>
+            <span style="color:var(--dim);font-size:11.5px" id="stDirty"></span>
+          </div>
+          <div class="sym-section" style="border-top:none;padding-top:0;margin-top:0">
+            <div class="sym-grid">
+              <label>Renderer
+                <select id="stRenderer">
+                  <option value="single">Single Symbol</option>
+                  <option value="unique">Unique Values</option>
+                  <option value="graduated">Graduated Colors</option>
+                </select>
+              </label>
+              <label id="stFieldWrap" class="hidden">Field
+                <select id="stField"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="sym-section">
+            <h4>Symbol</h4>
+            <div class="swatch" style="margin-bottom:10px">
+              <span class="sw" id="stSymbolSw"></span>
+              <span><b style="font-size:12.5px">Preview</b><small id="stSymbolTxt">fill + outline</small></span>
+            </div>
+            <div class="sym-grid">
+              <label>Fill / line color <input type="color" id="stFill"></label>
+              <label>Outline color <input type="color" id="stStroke"></label>
+              <label>Outline width <input type="range" id="stWeight" min="0" max="8" step="0.5"><span class="range-label" id="stWeightTxt"></span></label>
+              <label>Fill opacity <input type="range" id="stFillOp" min="0" max="100" step="5"><span class="range-label" id="stFillOpTxt"></span></label>
+              <label>Dash style
+                <select id="stDash">
+                  <option value="">solid</option>
+                  <option value="4 5">dashed</option>
+                  <option value="1 5">dotted</option>
+                  <option value="8 5 1 5">dash-dot</option>
+                </select>
+              </label>
+              <label id="stRadiusWrap">Point size <input type="range" id="stRadius" min="2" max="14" step="0.5"><span class="range-label" id="stRadiusTxt"></span></label>
+            </div>
+          </div>
+
+          <div class="sym-section hidden" id="stUniqueSec">
+            <h4>Unique values</h4>
+            <div id="stUniqueList"></div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn small" id="stShuffle" type="button">Shuffle palette</button>
+              <label class="row" style="gap:6px;font-size:11.5px;color:var(--dim)">other values
+                <input type="color" id="stUnmatched" style="width:34px;height:28px;padding:1px"></label>
+            </div>
+          </div>
+
+          <div class="sym-section hidden" id="stGradSec">
+            <h4>Graduated colors</h4>
+            <div class="sym-grid" style="margin-bottom:10px">
+              <label>Classes
+                <span class="stepper"><button type="button" id="stClsMinus">−</button><span class="steptxt" id="stClsTxt">5</span><button type="button" id="stClsPlus">+</button></span>
+              </label>
+              <label>Method
+                <select id="stMethod">
+                  <option value="quantile">Quantile</option>
+                  <option value="equal">Equal interval</option>
+                  <option value="kmeans">Natural breaks (Jenks-lite)</option>
+                </select>
+              </label>
+            </div>
+            <h4 style="margin-top:2px">Color scheme</h4>
+            <div class="ramps" id="stRamps"></div>
+            <label class="checkline" style="margin-top:10px"><input type="checkbox" id="stReverse"> reverse color order</label>
+            <div id="stClassList" style="margin-top:10px"></div>
+          </div>
+
+          <div class="studio-actions">
+            <div class="row">
+              <button class="btn primary" id="stSave" type="button">Save style</button>
+              <button class="btn primary" id="stSavePub" type="button">Save + publish</button>
+              <button class="btn" id="stRevert" type="button">Revert</button>
+              <span class="chip" id="stPubChip">—</span>
+            </div>
+            <p class="hint">Saving writes <code>style_json</code> for this layer only — each layer keeps its own
+              symbology. The portfolio map and its legend pick it up from <code>/api/manifest</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -305,7 +460,9 @@
     state.tab = b.dataset.tab;
     $("tab-projects").classList.toggle("hidden", state.tab !== "projects");
     $("tab-clouds").classList.toggle("hidden", state.tab !== "clouds");
+    if ($("tab-style")) $("tab-style").classList.toggle("hidden", state.tab !== "style");
     if (state.tab === "clouds") loadClouds();
+    if (state.tab === "style") document.dispatchEvent(new CustomEvent("gis-studio-activated"));
   });
 
   // ---------- projects ----------
@@ -429,6 +586,7 @@
         "</td>" +
         "<td><div class='row'>" +
           "<button class='btn small' data-act='edit' data-id='" + l.id + "'>edit</button>" +
+          "<button class='btn small' data-act='style' data-id='" + l.id + "'>style</button>" +
           "<button class='btn small' data-act='pub' data-id='" + l.id + "'>" + (l.published ? "unpublish" : "publish") + "</button>" +
           "<label class='btn small' style='margin:0'>upload<input type='file' accept='.geojson,.json,application/geo+json,application/json' data-act='up' data-id='" + l.id + "' style='display:none'></label>" +
           "<button class='btn small danger' data-act='del' data-id='" + l.id + "'>del</button>" +
@@ -445,6 +603,9 @@
     var l = p && p.layers.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!l) return;
     var act = b.dataset.act;
+    if (act === "style") {
+      document.dispatchEvent(new CustomEvent("gis-open-studio", { detail: { layerId: Number(id) } }));
+    }
     if (act === "edit") {
       $("l_id").value = l.id;
       $("layerForm").elements.slug.value = l.slug || "";
@@ -581,6 +742,702 @@
   if (TOKEN) {
     unlock(TOKEN, function () { /* restored session */ });
   }
+})();
+</script>
+
+<script>
+/* ============================================================
+   STYLE STUDIO — per-layer symbology editor with live preview
+   (ArcGIS Pro-style: Single Symbol / Unique Values / Graduated
+   Colors). Writes layers.style_json; the portfolio map applies
+   the same style object from /api/manifest.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+  // read lazily — the gate stores the token after this script has loaded
+  function TOKEN() { return sessionStorage.getItem("gis_admin_token") || ""; }
+
+  var S = {
+    layer: null, project: null, map: null, base: null, gjLayer: null,
+    geojson: null, analysis: null, style: null, saved: null, pendingId: null,
+    sampleN: 0, booted: false
+  };
+  var PREVIEW_MAX = 30000;
+
+  function api(method, url, body, raw) {
+    var opts = { method: method, headers: { "x-admin-token": TOKEN() } };
+    if (body !== undefined && body !== null) {
+      opts.body = raw ? body : JSON.stringify(body);
+      if (!raw) opts.headers["content-type"] = "application/json";
+    }
+    return fetch(url, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error(j.error || ("HTTP " + r.status)); e.status = r.status; throw e; }
+        return j;
+      });
+    });
+  }
+  function toast(msg, kind) {
+    var el = $("toast"); if (!el) return;
+    el.textContent = msg; el.className = "toast show " + (kind || "");
+    clearTimeout(toast._t); toast._t = setTimeout(function () { el.className = "toast"; }, 3400);
+  }
+  function esc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------- color helpers (mirrors js/map.js) ---------- */
+  var RAMPS = {
+    ylorrd:  ["#ffffcc", "#ffeda0", "#feb24c", "#f03b20", "#bd0026"],
+    blues:   ["#eff3ff", "#c6dbef", "#9ecae1", "#6baed6", "#2171b5"],
+    reds:    ["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],
+    greens:  ["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"],
+    purples: ["#f2f0f7", "#cbc9e2", "#9e9ac8", "#756bb1", "#54278f"],
+    viridis: ["#440154", "#414487", "#2a788e", "#22a884", "#fde725"],
+    gray:    ["#f5f5f5", "#d9d9d9", "#bdbdbd", "#969696", "#636363"]
+  };
+  var RAMP_NAMES = [["ylorrd","YlOrRd"],["blues","Blues"],["reds","Reds"],["greens","Greens"],
+                    ["purples","Purples"],["viridis","Viridis"],["gray","Grayscale"]];
+  var CAT_PALETTE = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#b07aa1",
+                     "#76b7b2", "#edc948", "#ff9da7", "#9c755f", "#bab0ac"];
+
+  function hexToRgb(hex) {
+    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex));
+    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [128, 128, 128];
+  }
+  function rgbToHex(rgb) {
+    return "#" + rgb.map(function (v) {
+      var s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+      return s.length < 2 ? "0" + s : s; }).join("");
+  }
+  function shade(hex, f) { // f<0 darken, f>0 lighten
+    var c = hexToRgb(hex);
+    return rgbToHex(c.map(function (v) {
+      return f >= 0 ? v + (255 - v) * f : v * (1 + f); }));
+  }
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+  function rampColor(stops, t) {
+    t = clamp(t, 0, 1);
+    var seg = t * (stops.length - 1);
+    var i = Math.min(stops.length - 2, Math.floor(seg));
+    var f = seg - i;
+    var a = hexToRgb(stops[i]), b = hexToRgb(stops[i + 1]);
+    return rgbToHex([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]);
+  }
+  function fmtNum(n) {
+    if (!isFinite(n)) return "";
+    return Math.abs(n) >= 1000 ? Number(n.toFixed(0)).toLocaleString("en-US") : String(Number(n.toFixed(2)));
+  }
+
+  /* ---------- classification (mirrors js/map.js) ---------- */
+  function quantileBreaks(v, n) {
+    var s = v.slice().sort(function (a, b) { return a - b; }); var out = [];
+    for (var i = 1; i < n; i++) out.push(s[Math.round((i / n) * (s.length - 1))]);
+    return out;
+  }
+  function equalBreaks(v, n) {
+    var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+    if (!isFinite(lo) || !isFinite(hi) || hi <= lo) return [hi];
+    var out = []; for (var i = 1; i < n; i++) out.push(lo + (hi - lo) * i / n);
+    return out;
+  }
+  function kmeansBreaks(v, n) {
+    var s = v.slice().sort(function (a, b) { return a - b; });
+    if (!s.length) return [];
+    var centers = [];
+    for (var i = 1; i < n; i++) centers.push(s[Math.round((i / n) * (s.length - 1))]);
+    for (var it = 0; it < 24; it++) {
+      var sums = centers.map(function () { return [0, 0]; });
+      for (var j = 0; j < s.length; j++) {
+        var best = 0, bd = Infinity;
+        for (var c = 0; c < centers.length; c++) {
+          var d = Math.abs(s[j] - centers[c]);
+          if (d < bd) { bd = d; best = c; }
+        }
+        sums[best][0] += s[j]; sums[best][1]++;
+      }
+      var moved = false;
+      for (var c2 = 0; c2 < centers.length; c2++) {
+        if (sums[c2][1] > 0) {
+          var nc = sums[c2][0] / sums[c2][1];
+          if (nc !== centers[c2]) { centers[c2] = nc; moved = true; }
+        }
+      }
+      if (!moved) break;
+    }
+    return centers.sort(function (a, b) { return a - b; });
+  }
+  function computeBreaks(values, st) {
+    var n = clamp(st.classes || 5, 2, 9);
+    if (st.method === "equal") return equalBreaks(values, n);
+    if (st.method === "kmeans") return kmeansBreaks(values, n);
+    return quantileBreaks(values, n);
+  }
+  function gradStops(st) {
+    var stops = (RAMPS[st.ramp] || RAMPS.ylorrd).slice();
+    if (st.reverse) stops.reverse();
+    return stops;
+  }
+  function gradColors(st) {
+    var stops = gradStops(st);
+    var n = clamp(st.classes || 5, 2, 9);
+    var out = [];
+    for (var i = 0; i < n; i++) out.push(rampColor(stops, n === 1 ? 0 : i / (n - 1)));
+    return out;
+  }
+  function classLabel(i, breaks) {
+    var lo = i === 0 ? null : breaks[i - 1];
+    var hi = i === breaks.length ? null : breaks[i];
+    if (lo === null) return "< " + fmtNum(hi);
+    if (hi === null) return "\u2265 " + fmtNum(lo);
+    return fmtNum(lo) + " \u2013 < " + fmtNum(hi);
+  }
+
+  /* ---------- Leaflet (lazy) ---------- */
+  var LL = null;
+  function loadLeaflet() {
+    if (window.L) { LL = Promise.resolve(); return LL; }
+    if (!LL) {
+      LL = new Promise(function (resolve, reject) {
+        var css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css";
+        document.head.appendChild(css);
+        var sc = document.createElement("script");
+        sc.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet-src.min.js";
+        sc.onload = function () { resolve(); };
+        sc.onerror = function () { reject(new Error("Leaflet CDN failed to load")); };
+        document.head.appendChild(sc);
+      });
+    }
+    return LL;
+  }
+
+  /* ---------- analysis ---------- */
+  function analyze(geojson) {
+    var feats = (geojson && geojson.features) || [];
+    var kinds = {};
+    var fields = {};  // name -> {numeric:n, distinct:{}, total:n}
+    feats.forEach(function (f) {
+      var g = f.geometry && f.geometry.type;
+      if (g) {
+        if (g.indexOf("Point") >= 0) kinds.point = (kinds.point || 0) + 1;
+        else if (g.indexOf("Line") >= 0) kinds.line = (kinds.line || 0) + 1;
+        else kinds.polygon = (kinds.polygon || 0) + 1;
+      }
+      var p = f.properties || {};
+      Object.keys(p).forEach(function (k) {
+        var rec = fields[k] || (fields[k] = { numeric: 0, distinct: new Set(), total: 0 });
+        rec.total++;
+        var v = p[k];
+        if (typeof v === "number" && isFinite(v)) rec.numeric++;
+        if (rec.distinct.size < 400) rec.distinct.add(String(v));
+      });
+    });
+    return { count: feats.length, kinds: kinds, fields: fields };
+  }
+
+  function fieldOptions() {
+    var a = S.analysis; if (!a) return [];
+    return Object.keys(a.fields).map(function (k) {
+      var r = a.fields[k];
+      var numericish = r.numeric >= r.total * 0.9;
+      var distinctCt = r.distinct ? r.distinct.size : 0;
+      return { name: k, numericish: numericish, distinct: distinctCt, total: r.total };
+    });
+  }
+
+  /* ---------- style defaults ---------- */
+  function ensureStyle(raw) {
+    var st = raw || {};
+    st.renderer = st.renderer || "single";
+    st.color = st.color || "#2098d8";
+    st.outerColor = st.outerColor || shade(st.color, -0.35);
+    st.weight = (st.weight == null) ? 2 : st.weight;
+    st.fillOpacity = (st.fillOpacity == null) ? 0.18 : st.fillOpacity;
+    st.radius = (st.radius == null) ? 6.5 : st.radius;
+    st.dash = st.dash || "";
+    if (st.renderer === "unique") {
+      st.field = st.field || suggestCategoricalField();
+      st.uniqueColors = st.uniqueColors || {};
+      st.unmatchedColor = st.unmatchedColor || "#9aa7b8";
+    }
+    if (st.renderer === "graduated") {
+      st.field = st.field || suggestNumericField();
+      st.method = st.method || "quantile";
+      st.classes = clamp(st.classes || 5, 2, 9);
+      st.ramp = st.ramp || "ylorrd";
+      st.reverse = !!st.reverse;
+    }
+    return st;
+  }
+  function suggestNumericField() {
+    var opts = fieldOptions().filter(function (f) { return f.numericish && f.distinct > 2; });
+    opts.sort(function (a, b) { return b.distinct - a.distinct; });
+    return opts.length ? opts[0].name : "";
+  }
+  function suggestCategoricalField() {
+    var opts = fieldOptions().filter(function (f) { return f.distinct > 1 && f.distinct <= 30; });
+    opts.sort(function (a, b) { return a.distinct - b.distinct; });
+    return opts.length ? opts[0].name : "";
+  }
+
+  /* ---------- numeric values of current graduated field ---------- */
+  function numericValues(field) {
+    var out = [];
+    (S.geojson.features || []).forEach(function (f) {
+      var v = f.properties ? f.properties[field] : undefined;
+      if (typeof v === "number" && isFinite(v)) out.push(v);
+    });
+    return out;
+  }
+  function refreshBreaks() {
+    var st = S.style;
+    var vals = numericValues(st.field);
+    if (!vals.length) { st.breaks = []; return; }
+    st.breaks = computeBreaks(vals, st);
+  }
+
+  /* ---------- unique value stats ---------- */
+  function uniqueStats(field) {
+    var counts = {};
+    (S.geojson.features || []).forEach(function (f) {
+      var v = f.properties ? f.properties[field] : undefined;
+      if (v === undefined || v === null || v === "") return;
+      var k = String(v);
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    return Object.keys(counts)
+      .sort(function (a, b) { return counts[b] - counts[a]; })
+      .slice(0, 14)
+      .map(function (k) { return { value: k, count: counts[k] }; });
+  }
+
+  /* ---------- preview rendering ---------- */
+  function previewStyle(feat) {
+    var st = S.style;
+    var fill = st.color;
+    if (st.renderer === "unique" && st.field) {
+      var v = feat && feat.properties ? feat.properties[st.field] : undefined;
+      fill = st.uniqueColors[String(v)] || st.unmatchedColor;
+    } else if (st.renderer === "graduated" && st.field && st.breaks) {
+      var n = feat && feat.properties ? feat.properties[st.field] : undefined;
+      var colors = gradColors(st);
+      var i = 0;
+      while (i < st.breaks.length && typeof n === "number" && n > st.breaks[i]) i++;
+      fill = (st.classColors && st.classColors[i]) || colors[i] || colors[0];
+    }
+    var isLine = !!(feat && feat.geometry && /Line/i.test(feat.geometry.type));
+    return {
+      // line features: the class color IS the stroke (ArcGIS line symbol)
+      color: isLine ? fill : (st.outerColor || shade(fill, -0.35)),
+      weight: Number(st.weight) || 0,
+      dashArray: st.dash || null,
+      fillColor: fill,
+      fillOpacity: (st.fillOpacity == null) ? 0.18 : st.fillOpacity,
+      opacity: 0.9
+    };
+  }
+
+  function redraw() {
+    if (S.gjLayer) {
+      // restyle per-feature (setStyle(fn) is not reliable on GeoJSON layers)
+      S.gjLayer.eachLayer(function (lyr) {
+        if (!lyr.feature) return;
+        var sty = previewStyle(lyr.feature);
+        if (lyr.setRadius) {
+          // point markers render solid, same as the portfolio map (0.7)
+          sty.fillOpacity = 0.7;
+          lyr.setRadius(Number(S.style.radius) || 6.5);
+        }
+        lyr.setStyle(sty);
+      });
+    }
+    renderLegend();
+    renderSymbolSwatch();
+    markDirty();
+  }
+
+  function fitPreview() {
+    if (!S.map || !S.gjLayer) return;
+    try {
+      var b = S.gjLayer.getBounds();
+      if (b && b.isValid()) S.map.fitBounds(b, { padding: [22, 22] });
+    } catch (e) { /* empty layer */ }
+  }
+
+  function renderLegend() {
+    var el = $("stLegend"); if (!el) return;
+    var st = S.style;
+    var rows = "";
+    if (st.renderer === "unique" && st.field) {
+      rows = '<div class="lg-title">' + esc(st.field) + " — unique values</div>";
+      var stats = uniqueStats(st.field);
+      stats.slice(0, 10).forEach(function (s) {
+        rows += '<div class="lg-row"><span class="lg-sw" style="background:' +
+          (st.uniqueColors[s.value] || st.unmatchedColor) + '"></span><span class="lg-lbl">' +
+          esc(s.value) + "</span></div>";
+      });
+    } else if (st.renderer === "graduated" && st.field && st.breaks && st.breaks.length) {
+      rows = '<div class="lg-title">' + esc(st.field) + " — classes</div>";
+      gradColors(st).forEach(function (c, i) {
+        var cc = (st.classColors && st.classColors[i]) || c;
+        rows += '<div class="lg-row"><span class="lg-sw" style="background:' + cc +
+          '"></span><span class="lg-lbl">' + classLabel(i, st.breaks) + "</span></div>";
+      });
+    } else {
+      rows = '<div class="lg-title">Single symbol</div><div class="lg-row"><span class="lg-sw" style="background:' +
+        st.color + '"></span><span class="lg-lbl">all features</span></div>';
+    }
+    el.innerHTML = rows;
+  }
+
+  function renderSymbolSwatch() {
+    var st = S.style;
+    var sw = $("stSymbolSw");
+    sw.style.background = st.color;
+    sw.style.boxShadow = "0 0 0 3px " + (st.outerColor || shade(st.color, -0.35)) +
+      ", inset 0 0 0 30px rgba(0,0,0,0)";
+    sw.style.opacity = String(0.35 + (st.fillOpacity == null ? 0.18 : st.fillOpacity) * 0.65);
+    $("stSymbolTxt").textContent =
+      "outline " + (Number(st.weight) || 0) + "px · fill " +
+      Math.round((st.fillOpacity == null ? 0.18 : st.fillOpacity) * 100) + "%" +
+      (st.dash ? " · " + st.dash : "");
+  }
+
+  /* ---------- panel wiring ---------- */
+  function bindOnce() {
+    if (S.booted) return;
+    S.booted = true;
+
+    $("stRenderer").addEventListener("change", function () {
+      S.style.renderer = $("stRenderer").value;
+      if (S.style.renderer === "unique") {
+        if (!S.style.field) S.style.field = suggestCategoricalField();
+        S.style.uniqueColors = S.style.uniqueColors || {};
+        S.style.unmatchedColor = S.style.unmatchedColor || "#9aa7b8";
+        autoColorUniques(true);
+      }
+      if (S.style.renderer === "graduated") {
+        if (!S.style.field) S.style.field = suggestNumericField();
+        S.style.method = S.style.method || "quantile";
+        S.style.classes = clamp(S.style.classes || 5, 2, 9);
+        S.style.ramp = S.style.ramp || "ylorrd";
+        refreshBreaks();
+      }
+      syncSections(); redraw();
+    });
+
+    $("stField").addEventListener("change", function () {
+      S.style.field = $("stField").value;
+      if (S.style.renderer === "unique") autoColorUniques(true);
+      if (S.style.renderer === "graduated") { clearOverrides(); refreshBreaks(); }
+      syncSections(); redraw();
+    });
+
+    bindColor("stFill", function (v) { S.style.color = v; });
+    bindColor("stStroke", function (v) { S.style.outerColor = v; });
+    bindColor("stUnmatched", function (v) { S.style.unmatchedColor = v; redraw(); });
+
+    bindRange("stWeight", "stWeightTxt", function (v) { S.style.weight = v; }, function (v) { return v + " px"; });
+    bindRange("stFillOp", "stFillOpTxt", function (v) { S.style.fillOpacity = v / 100; }, function (v) { return v + " %"; });
+    bindRange("stRadius", "stRadiusTxt", function (v) { S.style.radius = v; }, function (v) { return v + " px"; });
+
+    $("stDash").addEventListener("change", function () { S.style.dash = $("stDash").value; redraw(); });
+
+    $("stClsMinus").addEventListener("click", function () { bumpClasses(-1); });
+    $("stClsPlus").addEventListener("click", function () { bumpClasses(1); });
+    $("stMethod").addEventListener("change", function () {
+      S.style.method = $("stMethod").value; clearOverrides(); refreshBreaks(); renderClassList(); redraw();
+    });
+    $("stReverse").addEventListener("change", function () {
+      S.style.reverse = $("stReverse").checked; clearOverrides(); renderClassList(); redraw();
+    });
+
+    $("stShuffle").addEventListener("click", function () { autoColorUniques(true); renderUniqueList(); redraw(); });
+
+    $("stSave").addEventListener("click", function () { saveStyle(false); });
+    $("stSavePub").addEventListener("click", function () { saveStyle(true); });
+    $("stRevert").addEventListener("click", function () {
+      S.style = JSON.parse(JSON.stringify(S.saved || {}));
+      S.style = ensureStyle(S.style);
+      panelFromStyle(); syncSections(); redraw();
+      toast("Reverted to last saved style");
+    });
+
+    document.addEventListener("gis-open-studio", function (ev) {
+      var id = ev.detail && ev.detail.layerId;
+      var tabBtn = document.querySelector('.tab[data-tab="style"]');
+      if (tabBtn) tabBtn.click();
+      S.pendingId = id;
+      openLayer(id);
+    });
+    document.addEventListener("gis-studio-activated", function () {
+      if (S.pendingId && (!S.layer || S.layer.id !== S.pendingId)) openLayer(S.pendingId);
+    });
+  }
+
+  function bindColor(id, setter) {
+    $(id).addEventListener("input", function () { setter($(id).value); redraw(); });
+  }
+  function bindRange(id, txtId, setter, fmtTxt) {
+    $(id).addEventListener("input", function () {
+      var v = Number($(id).value);
+      setter(v);
+      $(txtId).textContent = fmtTxt(v);
+      redraw();
+    });
+  }
+  function clearOverrides() { if (S.style.classColors) delete S.style.classColors; }
+  function bumpClasses(d) {
+    S.style.classes = clamp((S.style.classes || 5) + d, 2, 9);
+    clearOverrides();
+    $("stClsTxt").textContent = String(S.style.classes);
+    refreshBreaks(); renderClassList(); redraw();
+  }
+
+  function autoColorUniques(reassignAll) {
+    var st = S.style;
+    var stats = uniqueStats(st.field);
+    var keep = {};
+    if (!reassignAll) {
+      stats.forEach(function (s) { if (st.uniqueColors[s.value]) keep[s.value] = st.uniqueColors[s.value]; });
+    }
+    st.uniqueColors = keep;
+    var pi = 0;
+    stats.forEach(function (s) {
+      if (!st.uniqueColors[s.value]) st.uniqueColors[s.value] = CAT_PALETTE[pi % CAT_PALETTE.length];
+      pi++;
+    });
+  }
+
+  /* ---------- panel <-> style sync ---------- */
+  function syncSections() {
+    var st = S.style;
+    $("stRenderer").value = st.renderer;
+    $("stFieldWrap").classList.toggle("hidden", st.renderer === "single");
+    $("stUniqueSec").classList.toggle("hidden", st.renderer !== "unique");
+    $("stGradSec").classList.toggle("hidden", st.renderer !== "graduated");
+    $("stRadiusWrap").classList.toggle("hidden", !(S.analysis && S.analysis.kinds.point));
+
+    // field options
+    var sel = $("stField");
+    var opts = fieldOptions();
+    sel.innerHTML = opts.map(function (f) {
+      var tag = f.numericish ? "num" : (f.distinct + " val");
+      return '<option value="' + esc(f.name) + '"' + (f.name === st.field ? " selected" : "") + ">" +
+        esc(f.name) + "  (" + tag + ")</option>";
+    }).join("");
+    if (st.field && opts.some(function (f) { return f.name === st.field; })) sel.value = st.field;
+
+    $("stFill").value = /^#[0-9a-f]{6}$/i.test(st.color || "") ? st.color : "#2098d8";
+    var oc = st.outerColor || shade(st.color, -0.35);
+    $("stStroke").value = /^#[0-9a-f]{6}$/i.test(oc) ? oc : "#123c5c";
+    $("stWeight").value = st.weight; $("stWeightTxt").textContent = st.weight + " px";
+    $("stFillOp").value = Math.round((st.fillOpacity == null ? 0.18 : st.fillOpacity) * 100);
+    $("stFillOpTxt").textContent = Math.round((st.fillOpacity == null ? 0.18 : st.fillOpacity) * 100) + " %";
+    $("stDash").value = st.dash || "";
+    $("stRadius").value = st.radius; $("stRadiusTxt").textContent = st.radius + " px";
+
+    if (st.renderer === "unique") { renderUniqueList(); }
+    if (st.renderer === "graduated") {
+      $("stClsTxt").textContent = String(st.classes || 5);
+      $("stMethod").value = st.method || "quantile";
+      $("stReverse").checked = !!st.reverse;
+      renderRamps(); renderClassList();
+    }
+  }
+
+  function renderUniqueList() {
+    var st = S.style;
+    var wrap = $("stUniqueList");
+    var stats = uniqueStats(st.field);
+    wrap.innerHTML = stats.map(function (s) {
+      var c = st.uniqueColors[s.value] || st.unmatchedColor;
+      var cOk = /^#[0-9a-f]{6}$/i.test(c) ? c : "#9aa7b8";
+      return '<div class="valrow"><input type="color" value="' + cOk +
+        '" data-uv="' + esc(s.value) + '"><span class="vlabel" title="' + esc(s.value) + '">' + esc(s.value) +
+        '</span><span class="vcount">' + s.count + "</span></div>";
+    }).join("") || '<p class="hint">No values found for this field.</p>';
+    wrap.querySelectorAll("input[data-uv]").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        S.style.uniqueColors[inp.dataset.uv] = inp.value; redraw();
+      });
+    });
+  }
+
+  function renderRamps() {
+    var st = S.style;
+    var wrap = $("stRamps");
+    wrap.innerHTML = RAMP_NAMES.map(function (rn) {
+      var stops = RAMPS[rn[0]];
+      var grad = "linear-gradient(90deg," + stops.join(",") + ")";
+      return '<div class="ramp' + (st.ramp === rn[0] ? " active" : "") + '" data-ramp="' + rn[0] + '">' +
+        '<div class="bar" style="background:' + grad + '"></div><div class="rname">' + rn[1] + "</div></div>";
+    }).join("");
+    wrap.querySelectorAll("[data-ramp]").forEach(function (r) {
+      r.addEventListener("click", function () {
+        S.style.ramp = r.dataset.ramp;
+        clearOverrides();
+        wrap.querySelectorAll(".ramp").forEach(function (x) { x.classList.remove("active"); });
+        r.classList.add("active");
+        renderClassList(); redraw();
+      });
+    });
+  }
+
+  function renderClassList() {
+    var st = S.style;
+    var wrap = $("stClassList");
+    if (!st.breaks || !st.breaks.length) {
+      wrap.innerHTML = '<p class="hint">No numeric values found for this field.</p>';
+      return;
+    }
+    var colors = gradColors(st);
+    wrap.innerHTML = colors.map(function (c, i) {
+      return '<div class="valrow"><input type="color" value="' + c + '" data-ci="' + i + '">' +
+        '<span class="vlabel">' + classLabel(i, st.breaks) + "</span></div>";
+    }).join("");
+    wrap.querySelectorAll("input[data-ci]").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        S.style.classColors = S.style.classColors || {};
+        S.style.classColors[inp.dataset.ci] = inp.value;
+        redraw();
+      });
+    });
+  }
+
+  /* ---------- open + draw a layer ---------- */
+  function openLayer(layerId) {
+    if (!TOKEN()) return;
+    api("GET", "/api/admin/projects").then(function (j) {
+      var found = null, proj = null;
+      (j.projects || []).some(function (p) {
+        return (p.layers || []).some(function (l) {
+          if (Number(l.id) === Number(layerId)) { found = l; proj = p; return true; }
+          return false;
+        });
+      });
+      if (!found) { toast("Layer not found", "err"); return; }
+      S.layer = found; S.project = proj;
+      $("studioEmpty").classList.add("hidden");
+      $("studioWrap").classList.remove("hidden");
+      $("stTitle").textContent = (proj ? proj.title_en + " · " : "") + (found.label_en || found.slug);
+
+      if (!found.r2_key) {
+        $("stGeo").textContent = "no data";
+        $("stFeatNote").textContent = "This layer has no GeoJSON in storage yet — upload it in Projects & layers first.";
+        return;
+      }
+      return api("GET", "/api/admin/layers/" + found.id + "/data")
+        .then(function (geo) {
+          S.geojson = geo;
+          S.analysis = analyze(geo);
+          var kinds = S.analysis.kinds;
+          var geoLabel = (kinds.point ? "point " : "") + (kinds.line ? "line " : "") + (kinds.polygon ? "polygon" : "");
+          $("stGeo").textContent = geoLabel.trim() || "geometry?";
+          var raw = {}; try { raw = JSON.parse(found.style_json || "{}"); } catch (e) {}
+          S.style = ensureStyle(raw);
+          S.saved = JSON.parse(JSON.stringify(S.style));
+          return loadLeaflet();
+        })
+        .then(function () {
+          bootMap();
+          panelFromStyle();
+          $("stPubChip").textContent = Number(found.published) ? "published" : "draft";
+          $("stPubChip").className = "chip " + (Number(found.published) ? "on" : "off");
+        })
+        .catch(function (e) {
+          toast("Preview: " + e.message, "err");
+        });
+    }).catch(function (e) { toast("Load layer: " + e.message, "err"); });
+  }
+
+  function bootMap() {
+    if (!S.map) {
+      S.map = window.L.map("stMap", { preferCanvas: true, scrollWheelZoom: true });
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19, attribution: "&copy; OpenStreetMap"
+      }).addTo(S.map);
+    }
+    if (S.gjLayer) { S.map.removeLayer(S.gjLayer); S.gjLayer = null; }
+    setTimeout(function () { S.map.invalidateSize(); }, 60);
+
+    var feats = S.geojson.features || [];
+    var sample = feats;
+    S.sampleN = feats.length;
+    if (feats.length > PREVIEW_MAX) {
+      var step = Math.ceil(feats.length / PREVIEW_MAX);
+      sample = feats.filter(function (_, i) { return i % step === 0; });
+      S.sampleN = sample.length;
+    }
+    $("stFeatNote").textContent = Number(S.analysis.count).toLocaleString("en-US") + " features" +
+      (sample.length < feats.length ? " (previewing " + Number(sample.length).toLocaleString("en-US") + ")" : "");
+
+    S.gjLayer = window.L.geoJSON({ type: "FeatureCollection", features: sample }, {
+      style: function (feat) { return previewStyle(feat); },
+      pointToLayer: function (feat, latlng) {
+        var st = S.style;
+        return window.L.circleMarker(latlng, {
+          radius: Number(st.radius) || 6.5,
+          color: st.outerColor || shade(previewStyle(feat).fillColor, -0.3),
+          weight: 2, fillColor: previewStyle(feat).fillColor, fillOpacity: 0.75
+        });
+      }
+    }).addTo(S.map);
+    fitPreview();
+    renderLegend();
+    renderSymbolSwatch();
+  }
+
+  function panelFromStyle() {
+    var st = S.style;
+    $("stRenderer").value = st.renderer;
+    if (st.renderer === "graduated") refreshBreaks();
+    syncSections();
+  }
+
+  function markDirty() {
+    var dirty = JSON.stringify(normalizeForCompare(S.style)) !== JSON.stringify(normalizeForCompare(S.saved));
+    $("stDirty").textContent = dirty ? "unsaved changes" : "";
+  }
+
+  function normalizeForCompare(st) {
+    var c = JSON.parse(JSON.stringify(st));
+    delete c.classColors;
+    return c;
+  }
+
+  function saveStyle(andPublish) {
+    var st = S.style;
+    if (st.renderer === "graduated" && (!st.breaks || !st.breaks.length)) {
+      toast("Pick a numeric field with values first", "err"); return;
+    }
+    if (st.renderer === "unique" && !Object.keys(st.uniqueColors || {}).length) {
+      toast("No unique values captured — pick a field", "err"); return;
+    }
+    var body = { style_json: JSON.stringify(st) };
+    api("PUT", "/api/admin/layers/" + S.layer.id, body)
+      .then(function () {
+        S.saved = JSON.parse(JSON.stringify(st));
+        markDirty();
+        toast("Style saved for '" + (S.layer.label_en || S.layer.slug) + "'", "ok");
+        if (andPublish && !Number(S.layer.published)) {
+          return api("POST", "/api/admin/layers/" + S.layer.id + "/publish", { published: true })
+            .then(function () {
+              S.layer.published = 1;
+              $("stPubChip").textContent = "published";
+              $("stPubChip").className = "chip on";
+              toast("Layer published — live on the portfolio map", "ok");
+              document.dispatchEvent(new CustomEvent("gis-projects-changed"));
+            });
+        }
+      })
+      .catch(function (e) { toast("Save: " + e.message, "err"); });
+  }
+
+  bindOnce();
 })();
 </script>
 </body>

@@ -287,9 +287,15 @@ section {
   padding: 5rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+/* Scroll-reveal initial state ONLY when JS is running (html.js is set by an
+   inline <head> script). Without JS — or if the observer never fires — every
+   section stays fully visible. The page can never end up blank. */
+html.js section:not(.animate-in) {
   opacity: 0;
   transform: translateY(50px);
-  transition: all 0.8s ease;
 }
 
 section.animate-in {
@@ -304,10 +310,13 @@ section.animate-in {
   color: var(--ink);
   font-weight: 700;
   position: relative;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  text-shadow: 2px 2px 3px rgba(159, 178, 211, 0.35), -2px -2px 3px var(--shadow-light);
+}
+
+html.js .section-title:not(.animate-in) {
   opacity: 0;
   transform: translateY(30px);
-  transition: all 0.6s ease;
-  text-shadow: 2px 2px 3px rgba(159, 178, 211, 0.35), -2px -2px 3px var(--shadow-light);
 }
 
 .section-title.animate-in {
@@ -504,13 +513,16 @@ section.animate-in {
   background: var(--bg);
   border-radius: 20px;
   padding: 2rem;
-  transition: all 0.4s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
   border: 1px solid rgba(246, 250, 255, 0.65);
-  opacity: 0;
-  transform: translateY(30px);
   position: relative;
   overflow: hidden;
   box-shadow: var(--neu-raised);
+}
+
+html.js .project-card:not(.animate-in) {
+  opacity: 0;
+  transform: translateY(30px);
 }
 
 .project-card::before {
@@ -716,14 +728,17 @@ section.animate-in {
   border-radius: 14px;
   text-align: center;
   font-weight: 600;
-  transition: all 0.4s ease;
-  opacity: 0;
-  transform: translateY(30px) scale(0.9);
+  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
   position: relative;
   overflow: hidden;
   cursor: pointer;
   border: 1px solid rgba(246, 250, 255, 0.65);
   box-shadow: var(--neu-raised-sm);
+}
+
+html.js .skill-item:not(.animate-in) {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
 }
 
 .skill-item::before {
@@ -2150,6 +2165,70 @@ footer {
   outline: none;
 }
 
+/* --- 2D / 3D view toggle --------------------------------------------
+   The same frame alternates between the Leaflet project map (2D) and the
+   Potree point-cloud viewer (3D, lazy iframe to /lidar/?embed=1). */
+.imap-viewtoggle {
+  position: absolute;
+  top: 26px;
+  left: 26px;
+  z-index: 950;
+  display: inline-flex;
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: var(--neu-raised-sm);
+}
+
+.vt-btn {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+  padding: 0.42rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.vt-btn:hover {
+  color: var(--ink);
+}
+
+.vt-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2, #4da8da));
+  box-shadow: 0 3px 10px var(--accent-glow, rgba(32, 152, 216, 0.35));
+}
+
+.imap-lidar {
+  display: none;
+  width: 100%;
+  height: 560px;
+  border: none;
+  border-radius: 18px;
+  background: #0e1420;
+  box-shadow: 0 0 0 1px rgba(159, 178, 211, 0.35);
+  z-index: 2;
+}
+
+/* 3D mode: hide the 2D-only chrome, show the Potree iframe */
+.imap-frame.mode-3d .imap-map,
+.imap-frame.mode-3d .imap-legend,
+.imap-frame.mode-3d .imap-reset,
+.imap-frame.mode-3d .imap-attr,
+.imap-frame.mode-3d .imap-bm-btn,
+.imap-frame.mode-3d .imap-bm-panel {
+  display: none;
+}
+
+.imap-frame.mode-3d .imap-lidar {
+  display: block;
+}
+
 .imap-map.imap-soft .leaflet-tile {
   /* calm the colorful OSM-style basemaps toward the soft azure theme
      (satellite / dark basemaps opt out — see js/map.js .soft flag) */
@@ -2349,6 +2428,10 @@ footer {
     height: 380px;
   }
 
+  .imap-lidar {
+    height: 380px;
+  }
+
   .imap-panel {
     padding: 1.1rem;
   }
@@ -2356,6 +2439,10 @@ footer {
 
 @media (max-width: 480px) {
   .imap-map {
+    height: 330px;
+  }
+
+  .imap-lidar {
     height: 330px;
   }
 
@@ -2371,6 +2458,11 @@ footer {
   .imap-reset {
     top: 18px;
     right: 18px;
+  }
+
+  .imap-viewtoggle {
+    top: 18px;
+    left: 18px;
   }
 
   .imap-legend {
@@ -3201,3 +3293,35 @@ footer {
   }
 }
 
+
+/* --- symbology legend chips (graduated / unique values) --- */
+.imap-lg-symb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.15rem 0 0.35rem 1.7rem;
+}
+
+.imap-lg-symb-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.1rem;
+}
+
+.imap-lg-symb-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.66rem;
+  color: var(--ink);
+}
+
+.imap-lg-symb-sw {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 1px rgba(90, 105, 130, 0.35);
+}

@@ -83,7 +83,9 @@ async function manifest(env) {
       label: { en: r.label_en, fr: r.label_fr || r.label_en },
       visible: !!r.lvisible,
     };
-    // style keys the frontend understands, if present
+    // full symbology object (renderer, field, ramps, breaks, unique colors…)
+    // consumed by the portfolio map; legacy flat keys stay for compatibility
+    if (style && Object.keys(style).length) layer.style = style;
     for (const k of ['color', 'outerColor', 'weight', 'dash', 'fillOpacity', 'radius', 'minZoom', 'maxZoom']) {
       if (style[k] !== undefined && style[k] !== null) layer[k] = style[k];
     }

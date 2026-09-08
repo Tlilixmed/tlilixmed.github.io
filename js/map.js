@@ -634,15 +634,193 @@
     if (!totalRequests) finishLoading();
   }
 
-  function layerStyle(l) {
+  function layerStyle(l, feat) {
+    var c = (feat != null) ? rendererColor(l, feat) : null;
+    var base = c || l.color;
     return {
-      color: l.color,
+      color: (l.cfg.outerColor != null) ? l.cfg.outerColor : base,
       weight: (l.cfg.weight != null) ? l.cfg.weight : 2,
       opacity: 0.9,
       dashArray: l.cfg.dash || null,
-      fillColor: l.color,
+      fillColor: base,
       fillOpacity: (l.cfg.fillOpacity != null) ? l.cfg.fillOpacity : 0.18
     };
+  }
+
+  /* ---------- symbology renderers (ArcGIS-Pro-style, style JSON driven) ----
+     layer.style = {
+       renderer: 'single' | 'unique' | 'graduated',
+       field: '<attribute>',                (unique / graduated)
+       uniqueColors: { '<value>': '#hex' }, (unique)
+       unmatchedColor: '#9aa7b8',           (unique)
+       method: 'quantile'|'equal'|'kmeans', (graduated, breaks usually precomputed)
+       breaks: [n1, n2, ...],               (graduated, classes-1 upper bounds)
+       ramp: 'blues'|'ylorrd'|...,          (graduated)
+       reverse: false,                      (graduated)
+       + shared: color, outerColor, weight, dash, fillOpacity, radius
+     } */
+  var RAMPS = {
+    ylorrd:  ['#ffffcc', '#ffeda0', '#feb24c', '#f03b20', '#bd0026'],
+    blues:   ['#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#2171b5'],
+    reds:    ['#fee5d9', '#fcae91', '#fb6a4a', '#de2d26', '#a50f15'],
+    greens:  ['#edf8e9', '#bae4b3', '#74c476', '#31a354', '#006d2c'],
+    purples: ['#f2f0f7', '#cbc9e2', '#9e9ac8', '#756bb1', '#54278f'],
+    viridis: ['#440154', '#414487', '#2a788e', '#22a884', '#fde725'],
+    gray:    ['#f5f5f5', '#d9d9d9', '#bdbdbd', '#969696', '#636363']
+  };
+  var CAT_PALETTE = ['#4e79a7', '#f28e2b', '#59a14f', '#e15759', '#b07aa1',
+                     '#76b7b2', '#edc948', '#ff9da7', '#9c755f', '#bab0ac'];
+
+  function hexToRgbA(hex) {
+    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex));
+    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [128, 128, 128];
+  }
+  function rgbToHexA(rgb) {
+    return '#' + rgb.map(function (v) {
+      var s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+      return s.length < 2 ? '0' + s : s;
+    }).join('');
+  }
+  function rampColor(stops, t) {
+    t = clamp(t, 0, 1);
+    var seg = t * (stops.length - 1);
+    var i = Math.min(stops.length - 2, Math.floor(seg));
+    var f = seg - i;
+    var a = hexToRgbA(stops[i]), b = hexToRgbA(stops[i + 1]);
+    return rgbToHexA([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]);
+  }
+  function graduatedStops(st) {
+    var stops = (RAMPS[st.ramp] || RAMPS.ylorrd).slice();
+    if (st.reverse) stops.reverse();
+    return stops;
+  }
+
+  function quantileBreaks(values, nClasses) {
+    var v = values.slice().sort(function (a, b) { return a - b; });
+    var out = [];
+    for (var i = 1; i < nClasses; i++) {
+      var q = v[Math.round((i / nClasses) * (v.length - 1))];
+      out.push(q);
+    }
+    return out;
+  }
+  function equalBreaks(values, nClasses) {
+    var lo = Math.min.apply(null, values), hi = Math.max.apply(null, values);
+    if (!isFinite(lo) || !isFinite(hi) || hi <= lo) return [hi];
+    var out = [];
+    for (var i = 1; i < nClasses; i++) out.push(lo + (hi - lo) * i / nClasses);
+    return out;
+  }
+  function kmeansBreaks(values, nClasses) {
+    // 1-D k-means (Lloyd), deterministic init on quantiles — "natural breaks" lite
+    var v = values.slice().sort(function (a, b) { return a - b; });
+    if (!v.length) return [];
+    var centers = [];
+    for (var i = 1; i < nClasses; i++) centers.push(v[Math.round((i / nClasses) * (v.length - 1))]);
+    for (var iter = 0; iter < 24; iter++) {
+      var sums = centers.map(function () { return [0, 0]; });
+      for (var j = 0; j < v.length; j++) {
+        var best = 0, bd = Infinity;
+        for (var c = 0; c < centers.length; c++) {
+          var d = Math.abs(v[j] - centers[c]);
+          if (d < bd) { bd = d; best = c; }
+        }
+        sums[best][0] += v[j]; sums[best][1]++;
+      }
+      var moved = false;
+      for (var c2 = 0; c2 < centers.length; c2++) {
+        if (sums[c2][1] > 0) {
+          var nc = sums[c2][0] / sums[c2][1];
+          if (nc !== centers[c2]) { centers[c2] = nc; moved = true; }
+        }
+      }
+      if (!moved) break;
+    }
+    return centers.sort(function (a, b) { return a - b; });
+  }
+
+  function computeBreaks(values, st) {
+    var n = clamp(st.classes || 5, 2, 9);
+    if (st.method === 'equal') return equalBreaks(values, n);
+    if (st.method === 'kmeans') return kmeansBreaks(values, n);
+    return quantileBreaks(values, n);
+  }
+
+  // Build the per-layer renderer once the GeoJSON is loaded.
+  function buildRenderer(l, geojson) {
+    var st = l.cfg.style;
+    if (!st || !st.renderer || st.renderer === 'single') { l.renderer = null; return; }
+
+    var values = [];
+    (geojson.features || []).forEach(function (f) {
+      var v = f.properties ? f.properties[st.field] : undefined;
+      if (typeof v === 'number' && isFinite(v)) values.push(v);
+    });
+
+    if (st.renderer === 'graduated') {
+      var breaks = (Array.isArray(st.breaks) && st.breaks.length) ? st.breaks.slice().sort(function (a, b) { return a - b; })
+        : computeBreaks(values, st);
+      var stops = graduatedStops(st);
+      var classes = breaks.length + 1;
+      var colors = [];
+      for (var i = 0; i < classes; i++) colors.push(rampColor(stops, classes === 1 ? 0 : i / (classes - 1)));
+      // per-class overrides tuned in the admin Style Studio take precedence
+      if (st.classColors) for (var ci = 0; ci < classes; ci++) {
+        if (st.classColors[ci]) colors[ci] = st.classColors[ci];
+      }
+      l.renderer = {
+        type: 'graduated', field: st.field, breaks: breaks, colors: colors,
+        legend: colors.map(function (c, i) {
+          var lo = i === 0 ? null : breaks[i - 1];
+          var hi = i === classes - 1 ? null : breaks[i];
+          return { color: c, label: (lo === null ? '< ' : '≥ ') + (lo === null ? fmtNum(hi !== null ? hi : 0) : fmtNum(lo)) + (hi !== null ? ' – < ' + fmtNum(hi) : '+') };
+        })
+      };
+      return;
+    }
+
+    // unique values
+    var uniq = st.uniqueColors || {};
+    var counts = {};
+    (geojson.features || []).forEach(function (f) {
+      var v = f.properties ? f.properties[st.field] : undefined;
+      if (v === undefined || v === null || v === '') return;
+      var k = String(v);
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    var top = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 14);
+    top.forEach(function (k, i) {
+      if (!uniq[k]) uniq[k] = CAT_PALETTE[i % CAT_PALETTE.length];
+    });
+    l.renderer = {
+      type: 'unique', field: st.field, colors: uniq,
+      unmatchedColor: st.unmatchedColor || '#9aa7b8',
+      legend: top.slice(0, 8).map(function (k) { return { color: uniq[k], label: k }; })
+    };
+  }
+
+  function fmtNum(n) {
+    if (!isFinite(n)) return '';
+    return Math.abs(n) >= 1000 ? Number(n.toFixed(0)).toLocaleString('en-US')
+      : String(Number(n.toFixed(2)));
+  }
+
+  function featureValue(feat, field) {
+    return (feat && feat.properties) ? feat.properties[field] : undefined;
+  }
+
+  function rendererColor(l, feat) {
+    var r = l.renderer;
+    if (!r) return null;
+    var v = featureValue(feat, r.field);
+    if (r.type === 'unique') {
+      var c = r.colors[String(v)];
+      return c || r.unmatchedColor;
+    }
+    // graduated: find class index
+    var i = 0;
+    while (i < r.breaks.length && v !== undefined && typeof v === 'number' && v > r.breaks[i]) i++;
+    return r.colors[i] || r.colors[0];
   }
 
   function fetchLayer(map, group, l) {
@@ -653,13 +831,15 @@
       })
       .then(function (geojson) {
         var L = window.L;
+        buildRenderer(l, geojson);
         var layer = L.geoJSON(geojson, {
-          style: function () { return layerStyle(l); },
+          style: function (feat) { return layerStyle(l, feat); },
           pointToLayer: function (feat, latlng) {
+            var c = rendererColor(l, feat) || l.color;
             return L.circleMarker(latlng, {
               radius: (l.cfg.radius != null) ? l.cfg.radius : 6.5,
-              color: l.color, weight: 2,
-              fillColor: l.color, fillOpacity: 0.7
+              color: (l.cfg.outerColor != null) ? l.cfg.outerColor : c, weight: 2,
+              fillColor: c, fillOpacity: 0.7
             });
           },
           onEachFeature: function (feat, lyr) {
@@ -888,6 +1068,33 @@
     if (reset) {
       reset.addEventListener('click', function () { fitVisible(map); });
     }
+    wireViewToggle();
+  }
+
+  /* ---------- 2D (Leaflet) / 3D (Potree) view toggle --------------------- */
+  function wireViewToggle() {
+    var b2 = document.getElementById('imapView2d');
+    var b3 = document.getElementById('imapView3d');
+    var frame = document.querySelector('.imap-frame');
+    var iframe = document.getElementById('imapLidarFrame');
+    if (!b2 || !b3 || !frame || !iframe) return;
+
+    var lidarLoaded = false;
+    function setMode(mode3d) {
+      frame.classList.toggle('mode-3d', mode3d);
+      b2.classList.toggle('active', !mode3d);
+      b3.classList.toggle('active', mode3d);
+      b2.setAttribute('aria-selected', String(!mode3d));
+      b3.setAttribute('aria-selected', String(mode3d));
+      iframe.hidden = !mode3d;
+      // Potree + its libs load only on first use — keeps the 2D boot fast.
+      if (mode3d && !lidarLoaded) {
+        iframe.src = '/lidar/?embed=1';
+        lidarLoaded = true;
+      }
+    }
+    b2.addEventListener('click', function () { setMode(false); });
+    b3.addEventListener('click', function () { setMode(true); });
   }
 
   /* ---------- visibility engine ---------- */
@@ -1108,6 +1315,22 @@
     });
   }
 
+  function buildSymbologyLegend(l) {
+    var r = l.renderer;
+    var box = el('div', 'imap-lg-symb');
+    var title = el('div', 'imap-lg-symb-title', (r.type === 'graduated' ? (r.field + ' (classes)') : (r.field + ' (values)')));
+    box.appendChild(title);
+    r.legend.forEach(function (item) {
+      var row = el('div', 'imap-lg-symb-row');
+      var sw = el('span', 'imap-lg-symb-sw');
+      sw.style.background = item.color;
+      row.appendChild(sw);
+      row.appendChild(el('span', 'imap-lg-symb-label', item.label));
+      box.appendChild(row);
+    });
+    return box;
+  }
+
   function renderLegend() {
     var legend = document.getElementById('imapLegend');
     if (!legend) return;
@@ -1175,6 +1398,11 @@
             toggleLayer(g, l);
           });
           wrapL.appendChild(row);
+
+          // symbology legend (graduated ramp / unique values)
+          if (l.visible && !l.failed && l.renderer && l.renderer.legend && l.renderer.legend.length) {
+            wrapL.appendChild(buildSymbologyLegend(l));
+          }
         });
         box.appendChild(wrapL);
       }
