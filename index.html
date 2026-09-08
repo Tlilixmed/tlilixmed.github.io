@@ -23,6 +23,7 @@
   <script src="js/contact-form.js" defer></script>
   <script src="js/map-projects.js" defer></script>
   <script src="js/map.js" defer></script>
+  <script src="js/map-compare.js" defer></script>
 
   <meta property="og:description" content="GIS Engineer: geodatabase design, LiDAR processing, Python automation, infrastructure GIS. Open to GIS Engineer, GIS Developer, and Geospatial Data Engineer roles." />
   <meta property="og:image" content="images/preview.png" />
@@ -579,6 +580,47 @@
         <div class="imap-attr" id="imapAttr" hidden></div>
         <div class="imap-loading" id="imapLoading"><span class="imap-spinner"></span></div>
       </div>
+    </div>
+  </div>
+
+  
+  <!-- ============================================================
+       DUAL MAP — synchronized side-by-side comparison
+       Two synced panes + draggable divider + per-pane layer and
+       basemap pickers. Logic and styles: js/map-compare.js
+       ============================================================ -->
+  <div class="cmp-block" id="cmpBlock">
+    <p class="imap-intro"
+       data-en="Dual view — two synchronized maps, one screen. Drag the divider and compare layers or basemaps side by side."
+       data-fr="Double vue — deux cartes synchronisées sur un seul écran. Déplacez le séparateur et comparez couches ou fonds de plan côte à côte.">
+      Dual view — two synchronized maps, one screen.
+    </p>
+    <div class="cmp-shell">
+      <div class="cmp-toolbar">
+        <div class="cmp-side">
+          <span class="cmp-tag">A</span>
+          <select id="cmpLayerA" class="cmp-select" aria-label="Layer pane A"></select>
+          <select id="cmpBaseA" class="cmp-select cmp-base" aria-label="Basemap pane A"></select>
+        </div>
+        <div class="cmp-side">
+          <span class="cmp-tag">B</span>
+          <select id="cmpLayerB" class="cmp-select" aria-label="Layer pane B"></select>
+          <select id="cmpBaseB" class="cmp-select cmp-base" aria-label="Basemap pane B"></select>
+        </div>
+        <button id="cmpSwap" class="cmp-btn" type="button"
+                data-en="Swap panes" data-fr="Inverser les vues">Swap panes</button>
+      </div>
+      <div class="cmp-frame" id="cmpFrame">
+        <div class="cmp-pane cmp-a"><div class="cmp-map" id="cmpMapA"></div></div>
+        <div class="cmp-divider" id="cmpDivider" role="separator" aria-orientation="vertical"
+             tabindex="0" aria-label="Drag to resize the two maps"></div>
+        <div class="cmp-pane cmp-b"><div class="cmp-map" id="cmpMapB"></div></div>
+      </div>
+      <p class="imap-hint"
+         data-en="Pan or zoom either map — the other follows. Hover to mirror the cursor on both panes."
+         data-fr="Déplacez ou zoomez une carte — l’autre suit. Survolez pour refléter le curseur sur les deux vues.">
+        Pan or zoom either map — the other follows.
+      </p>
     </div>
   </div>
 

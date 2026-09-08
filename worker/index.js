@@ -6,28 +6,12 @@
 //   /api/manifest        public map manifest (published only, D1-driven)
 //   /api/layer-data/:id  derived GeoJSON streamed from R2 (`repo` bucket)
 //   /api/pointclouds     public point-cloud catalog (published only)
-//   /clouds/*            Potree octrees streamed from R2 (clouds-public bucket)
 //   /api/admin/*         admin CRUD (token-guarded until Cloudflare Access, Phase 7)
 // Everything else -> static assets (ASSETS binding).
 // ============================================================
 import { handleAdmin } from './admin.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
-
-const MIME_BY_EXT = {
-  json: 'application/json; charset=utf-8',
-  bin: 'application/octet-stream',
-  html: 'text/html; charset=utf-8',
-  js: 'text/javascript; charset=utf-8',
-  css: 'text/css; charset=utf-8',
-  png: 'image/png',
-  svg: 'image/svg+xml',
-};
-
-function extMime(key) {
-  const m = key.toLowerCase().match(/\.([a-z0-9]+)$/);
-  return (m && MIME_BY_EXT[m[1]]) || 'application/octet-stream';
-}
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
@@ -127,6 +111,77 @@ async function layerData(env, id) {
 }
 
 // ------------------------------------------------------------
+// GET /clouds/* — stream Potree octrees from R2 (`clouds-public`).
+// Same-origin (no CORS pain), works on workers.dev today and on
+// the production domain after Phase 8. `data.tliligis.me` can
+// later be attached to the bucket as a faster direct path.
+// Only prefixes of PUBLISHED point clouds are exposed.
+// ------------------------------------------------------------
+let cloudPrefixes = { at: 0, list: [] };
+
+async function allowedCloudPrefixes(env) {
+  if (Date.now() - cloudPrefixes.at > 60_000) {
+    try {
+      const { results } = await env.DB.prepare(
+        `SELECT prefix FROM pointclouds WHERE published = 1 AND prefix IS NOT NULL`
+      ).all();
+      cloudPrefixes = { at: Date.now(), list: results.map(r => r.prefix) };
+    } catch (e) { /* keep previous cache on transient D1 errors */ }
+  }
+  return cloudPrefixes.list;
+}
+
+function typeForCloudKey(key) {
+  if (key.endsWith('.json')) return 'application/json; charset=utf-8';
+  return 'application/octet-stream';
+}
+
+async function cloudAsset(env, path, request) {
+  const key = decodeURIComponent(path.replace(/^\/clouds\//, ''));
+  if (!key || key.includes('..') || key.startsWith('/')) return fail(400, 'bad object key');
+
+  const prefixes = await allowedCloudPrefixes(env);
+  if (!prefixes.some(p => key.startsWith(p))) {
+    return fail(404, 'no published point cloud matches this path');
+  }
+
+  // Octree files never change for a given conversion -> cache hard.
+  const baseHeaders = {
+    'access-control-allow-origin': '*',
+    'cache-control': 'public, max-age=31536000, immutable',
+    'accept-ranges': 'bytes',
+  };
+
+  const rangeHeader = request.headers.get('range');
+  const m = rangeHeader && rangeHeader.match(/^bytes=(\d*)-(\d*)$/);
+  if (m && (m[1] !== '' || m[2] !== '')) {
+    let range;
+    if (m[1] === '') range = { suffix: Number(m[2]) };
+    else {
+      const offset = Number(m[1]);
+      range = m[2] === '' ? { offset } : { offset, length: Number(m[2]) - offset + 1 };
+    }
+    const part = await env.R2_CLOUDS.get(key, { range });
+    if (!part) return fail(404, 'object missing in R2 (key: ' + key + ')');
+    return new Response(part.body, {
+      status: 206,
+      headers: {
+        ...baseHeaders,
+        'content-type': typeForCloudKey(key),
+        'content-length': String(part.size),
+        'content-range': `bytes ${part.range.offset}-${part.range.offset + part.size - 1}/${part.objectSize}`,
+      },
+    });
+  }
+
+  const obj = await env.R2_CLOUDS.get(key);
+  if (!obj) return fail(404, 'object missing in R2 (key: ' + key + ')');
+  const headers = { ...baseHeaders, 'content-type': typeForCloudKey(key) };
+  if (obj.size !== undefined) headers['content-length'] = String(obj.size);
+  return new Response(obj.body, { headers });
+}
+
+// ------------------------------------------------------------
 // GET /api/pointclouds — public catalog for the /lidar viewer (Phase 5)
 // ------------------------------------------------------------
 async function pointclouds(env) {
@@ -135,40 +190,6 @@ async function pointclouds(env) {
      FROM pointclouds WHERE published = 1 ORDER BY slug`
   ).all();
   return json({ pointclouds: results }, 200, { 'cache-control': 'public, max-age=60' });
-}
-
-// ------------------------------------------------------------
-// GET /clouds/<key> — stream Potree octree files from R2 (Phase 5)
-// Supports Range requests (Potree lazy-loads slices of octree.bin).
-// Same-origin => no CORS needed. data.tliligis.me can front this later.
-// ------------------------------------------------------------
-async function cloudAsset(env, request, rawKey) {
-  const key = rawKey.replace(/\/{2,}/g, '/');
-  if (!key || key.includes('..') || key.startsWith('/')) return fail(404, 'not found');
-
-  const hasRange = request.headers.has('range');
-  const opts = hasRange ? { range: request.headers } : undefined;
-  const obj = await env.R2_CLOUDS.get(key, opts);
-  if (!obj) return fail(404, 'not found in clouds-public: ' + key);
-
-  const headers = new Headers();
-  headers.set('content-type', extMime(key));
-  headers.set('accept-ranges', 'bytes');
-  headers.set('etag', obj.httpEtag);
-  // octree chunks are immutable -> cache hard; metadata.json -> short cache
-  headers.set('cache-control', key.endsWith('.bin')
-    ? 'public, max-age=31536000, immutable'
-    : 'public, max-age=300, stale-while-revalidate=86400');
-  obj.writeHttpMetadata(headers);
-
-  if (hasRange && obj.range && (obj.range.offset !== undefined || obj.range.length !== undefined)) {
-    const size = obj.size;
-    const start = obj.range.offset !== undefined ? obj.range.offset : (obj.range.length !== undefined ? size - obj.range.length : 0);
-    const len = obj.range.length !== undefined ? obj.range.length : (size - start);
-    headers.set('content-range', `bytes ${start}-${start + len - 1}/${size}`);
-    return new Response(obj.body, { status: 206, headers });
-  }
-  return new Response(obj.body, { status: 200, headers });
 }
 
 // ------------------------------------------------------------
@@ -187,12 +208,11 @@ export default {
       const m = path.match(/^\/api\/layer-data\/(\d+)$/);
       if (m) return await layerData(env, Number(m[1]));
 
-      const c = path.match(/^\/clouds\/(.+)$/);
-      if (c) return await cloudAsset(env, request, decodeURIComponent(c[1]));
-
       if (path.startsWith('/api/admin/')) return await handleAdmin(request, env, path);
 
       if (path.startsWith('/api/')) return fail(404, 'unknown API route: ' + path);
+
+      if (path.startsWith('/clouds/')) return await cloudAsset(env, path, request);
     } catch (e) {
       console.error('api error', path, e);
       return fail(500, String(e && e.message ? e.message : e));

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>GIS Admin — Tlili Mohamed</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+  :root { --bg:#0d1520; --panel:#111c2b; --panel2:#0e1826; --line:rgba(255,255,255,.10);
+          --txt:#e8eef4; --dim:#93a4b5; --accent:#4da8da; --ok:#3ecf8e; --warn:#f5a623; --err:#ff6b6b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:14px; }
+  a { color:var(--accent); text-decoration:none; }
+  code { background:rgba(255,255,255,.06); padding:1px 5px; border-radius:5px; font-size:12px; }
+
+  /* ---- top bar ---- */
+  .topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:14px;
+            padding:12px 20px; background:rgba(13,21,32,.92); backdrop-filter:blur(8px);
+            border-bottom:1px solid var(--line); }
+  .brand { font-weight:700; font-size:15px; white-space:nowrap; }
+  .brand span { color:var(--accent); }
+  .tabs { display:flex; gap:6px; }
+  .tab { padding:7px 14px; border-radius:999px; border:1px solid var(--line); cursor:pointer;
+         color:var(--dim); font-size:13px; background:transparent; font-family:inherit; }
+  .tab.active { color:var(--txt); border-color:var(--accent); background:rgba(77,168,218,.12); }
+  .health { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--dim); }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--err); }
+  .dot.ok { background:var(--ok); }
+  .logout { border:none; background:none; color:var(--dim); cursor:pointer; font-size:12px; font-family:inherit; }
+  .logout:hover { color:var(--err); }
+
+  /* ---- layout ---- */
+  main { max-width:1180px; margin:0 auto; padding:22px 20px 60px; }
+  .layout { display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start; }
+  @media (max-width:860px){ .layout{ grid-template-columns:1fr; } }
+
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .card h3 { margin:0 0 10px; font-size:14px; letter-spacing:.3px; }
+  .stack { display:flex; flex-direction:column; gap:18px; }
+
+  /* ---- list items ---- */
+  .item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+          cursor:pointer; background:var(--panel2); transition:border-color .15s; }
+  .item:hover { border-color:rgba(77,168,218,.5); }
+  .item.sel { border-color:var(--accent); background:rgba(77,168,218,.08); }
+  .item .t { font-weight:600; font-size:13.5px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .item .s { color:var(--dim); font-size:12px; margin-top:2px; }
+  .chip { font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--dim); letter-spacing:.4px; }
+  .chip.on  { color:var(--ok); border-color:rgba(62,207,142,.4); }
+  .chip.off { color:var(--err); border-color:rgba(255,107,107,.35); }
+  .chip.n { color:var(--warn); border-color:rgba(245,166,35,.4); }
+
+  /* ---- forms ---- */
+  form .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+  @media (max-width:640px){ form .grid{ grid-template-columns:1fr; } }
+  label { display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--dim); letter-spacing:.3px; }
+  label.wide { grid-column:1 / -1; }
+  input, select, textarea { background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+      color:var(--txt); padding:8px 10px; font:inherit; font-size:13px; width:100%; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
+  textarea { min-height:64px; resize:vertical; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; }
+  input[type=checkbox]{ width:auto; }
+  input[type=color]{ padding:2px; height:36px; }
+  input[type=file]{ font-size:12px; }
+  .checkline { flex-direction:row; align-items:center; gap:8px; font-size:12.5px; color:var(--txt); cursor:pointer; }
+
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; cursor:pointer;
+         font:inherit; font-size:13px; font-weight:600; border:1px solid var(--line);
+         background:var(--panel2); color:var(--txt); }
+  .btn:hover { border-color:var(--accent); }
+  .btn.primary { background:rgba(77,168,218,.15); border-color:var(--accent); color:var(--accent); }
+  .btn.danger { color:var(--err); border-color:rgba(255,107,107,.4); }
+  .btn.danger:hover { background:rgba(255,107,107,.1); }
+  .btn.small { padding:5px 10px; font-size:12px; font-weight:500; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; color:var(--dim); font-weight:600; font-size:11px; letter-spacing:.4px;
+       padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td { padding:8px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:top; }
+  td input[type=text], td input[type=number], td select { padding:5px 8px; font-size:12.5px; }
+
+  /* ---- login / toast / empty ---- */
+  .gate { max-width:420px; margin:9vh auto; text-align:center; }
+  .gate .card { padding:28px; }
+  .gate h2 { margin:0 0 6px; font-size:18px; }
+  .gate p { color:var(--dim); font-size:13px; line-height:1.6; margin:0 0 16px; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:50;
+           padding:10px 18px; border-radius:10px; font-size:13px; border:1px solid var(--line);
+           background:var(--panel); box-shadow:0 8px 24px rgba(0,0,0,.45); opacity:0;
+           transition:opacity .25s, transform .25s; pointer-events:none; max-width:90vw; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+  .toast.ok { border-color:rgba(62,207,142,.5); }
+  .toast.err { border-color:rgba(255,107,107,.5); }
+  .hint { color:var(--dim); font-size:11.5px; line-height:1.5; margin-top:8px; }
+  .spin { width:22px; height:22px; border-radius:50%; border:2px solid var(--line);
+          border-top-color:var(--accent); animation:spin 1s linear infinite; display:inline-block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Tlili <span>Mohamed</span> · GIS Admin</div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="projects">Projects &amp; layers</button>
+    <button class="tab" data-tab="clouds">Point clouds</button>
+  </nav>
+  <div class="health" title="GET /api/health"><span class="dot" id="healthDot"></span><span id="healthTxt">checking…</span>
+    <button class="logout" id="logout" type="button">sign out</button>
+  </div>
+</header>
+
+<!-- ============ token gate ============ -->
+<div class="gate" id="gate">
+  <div class="card">
+    <h2>Admin access</h2>
+    <p>Paste the <code>ADMIN_TOKEN</code> secret to unlock the dashboard.
+       It stays in this browser session only and is sent as
+       <code>X-Admin-Token</code> on every admin call.</p>
+    <form id="gateForm">
+      <label class="wide">Admin token
+        <input type="password" id="tokenInput" placeholder="ADMIN_TOKEN (openssl rand -hex 32)" autocomplete="off" required>
+      </label>
+      <div class="row" style="margin-top:14px;justify-content:center">
+        <button class="btn primary" type="submit">Unlock</button>
+      </div>
+      <p class="hint" id="gateErr" style="color:var(--err)"></p>
+      <p class="hint">Phase 7 note — Cloudflare Access will sit in front of <code>/admin</code>
+         and <code>/api/admin/*</code>; this token remains as a break-glass path.</p>
+    </form>
+  </div>
+</div>
+
+<!-- ============ app ============ -->
+<main id="app" class="hidden">
+
+  <!-- ---- projects & layers tab ---- -->
+  <section id="tab-projects">
+    <div class="layout">
+      <div class="card" id="projList"><h3>Projects</h3><div id="projItems"><span class="spin"></span></div>
+        <div class="row" style="margin-top:12px"><button class="btn small primary" id="btnAddProject" type="button">+ New project</button></div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3 id="projFormTitle">Project</h3>
+          <form id="projForm">
+            <input type="hidden" id="p_id">
+            <div class="grid">
+              <label>slug * <input name="slug" type="text" required placeholder="my-project"></label>
+              <label>category <input name="category" type="text" placeholder="Remote sensing"></label>
+              <label>title_en * <input name="title_en" type="text" required></label>
+              <label>title_fr <input name="title_fr" type="text"></label>
+              <label class="wide">desc_en <textarea name="desc_en" rows="2"></textarea></label>
+              <label class="wide">desc_fr <textarea name="desc_fr" rows="2"></textarea></label>
+              <label>year <input name="year" type="text" placeholder="2026"></label>
+              <label>color <input name="color" type="color" value="#2098d8"></label>
+              <label>sort_order <input name="sort_order" type="number" step="1" value="0"></label>
+              <label class="checkline"><input name="visible" type="checkbox" checked> visible</label>
+              <label class="checkline"><input name="collapsed" type="checkbox" checked> collapsed (group starts folded)</label>
+              <label class="checkline"><input name="published" type="checkbox"> published</label>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn primary" type="submit" id="projSave">Save project</button>
+              <button class="btn" type="button" id="projReset">New / clear</button>
+              <button class="btn danger" type="button" id="projDelete">Delete</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3 id="layersTitle">Layers</h3>
+          <div id="layersWrap"><p class="hint">Select or save a project to manage its layers.</p></div>
+          <form id="layerForm" style="margin-top:14px" class="hidden">
+            <input type="hidden" id="l_id">
+            <input type="hidden" id="l_project_id">
+            <div class="grid">
+              <label>slug * <input name="slug" type="text" required placeholder="roads"></label>
+              <label>label_en * <input name="label_en" type="text" required></label>
+              <label>label_fr <input name="label_fr" type="text"></label>
+              <label>sort_order <input name="sort_order" type="number" step="1" value="0"></label>
+              <label class="wide">style (JSON object — color, weight, dash, fillOpacity, radius) <textarea name="style" rows="2" placeholder='{"color":"#e2590b","weight":2}'></textarea></label>
+              <label class="wide">fields (JSON array of popup keys, empty = all) <textarea name="fields" rows="1" placeholder='["NAME","TYPE"]'></textarea></label>
+              <label class="checkline"><input name="visible" type="checkbox" checked> visible</label>
+              <label class="checkline"><input name="published" type="checkbox"> published</label>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn primary" type="submit">Save layer</button>
+              <button class="btn" type="button" id="layerReset">Clear</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- point clouds tab ---- -->
+  <section id="tab-clouds" class="hidden">
+    <div class="card">
+      <h3>Point clouds</h3>
+      <div id="cloudsWrap"><span class="spin"></span></div>
+      <form id="cloudForm" style="margin-top:16px">
+        <h3 style="font-size:12px;color:var(--dim)">Register new cloud</h3>
+        <div class="grid">
+          <label>slug * <input name="slug" type="text" required placeholder="las-2"></label>
+          <label>title_en * <input name="title_en" type="text" required></label>
+          <label>title_fr <input name="title_fr" type="text"></label>
+          <label>prefix <input name="prefix" type="text" placeholder="las-2/"></label>
+          <label class="wide">desc_en <textarea name="desc_en" rows="1"></textarea></label>
+          <label class="wide">desc_fr <textarea name="desc_fr" rows="1"></textarea></label>
+          <label class="checkline"><input name="published" type="checkbox"> published</label>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="btn primary" type="submit">Register</button></div>
+        <p class="hint">Workflow: register (status <code>awaiting_upload</code>) → convert with PotreeConverter →
+          upload to bucket <code>clouds-public</code> under the prefix → set status <code>ready</code> + point_count → publish.
+          The <code>/lidar</code> viewer and <code>/clouds/*</code> proxy serve published clouds only.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TOKEN = sessionStorage.getItem("gis_admin_token") || "";
+  var state = { projects: [], clouds: [], selProject: null, tab: "projects" };
+
+  // ---------- tiny helpers ----------
+  function $(id) { return document.getElementById(id); }
+  function api(method, url, body, raw) {
+    var opts = { method: method, headers: { "x-admin-token": TOKEN } };
+    if (body !== undefined && body !== null) {
+      opts.body = raw ? body : JSON.stringify(body);
+      if (!raw) opts.headers["content-type"] = "application/json";
+    }
+    return fetch(url, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error(j.error || ("HTTP " + r.status)); e.status = r.status; throw e; }
+        return j;
+      });
+    });
+  }
+  var toastT = 0;
+  function toast(msg, kind) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (kind || "");
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { el.className = "toast"; }, 3400);
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+
+  // ---------- health ----------
+  function pingHealth() {
+    fetch("/api/health").then(function (r) { return r.json(); }).then(function (h) {
+      var allOk = h.ok && h.d1 && h.r2 && h.r2["gis-private"] && h.r2["repo"] && h.r2["clouds-public"];
+      $("healthDot").className = "dot" + (allOk ? " ok" : "");
+      $("healthTxt").textContent = allOk ? "d1 + r2 ok" : "degraded";
+      $("healthDot").parentElement.title = "GET /api/health → " + JSON.stringify(h);
+    }).catch(function () {
+      $("healthDot").className = "dot";
+      $("healthTxt").textContent = "api unreachable";
+    });
+  }
+
+  // ---------- token gate ----------
+  function unlock(tok, cb) {
+    TOKEN = tok;
+    api("GET", "/api/admin/projects").then(function () {
+      sessionStorage.setItem("gis_admin_token", tok);
+      $("gate").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      refreshAll();
+      if (cb) cb();
+    }).catch(function (e) {
+      TOKEN = "";
+      $("gateErr").textContent = e.status === 401
+        ? "Token rejected (401) — check the ADMIN_TOKEN secret on the Worker."
+        : ("Could not reach the admin API: " + e.message);
+    });
+  }
+
+  $("gateForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    $("gateErr").textContent = "";
+    unlock($("tokenInput").value.trim());
+  });
+  $("logout").addEventListener("click", function () {
+    sessionStorage.removeItem("gis_admin_token");
+    location.reload();
+  });
+
+  // ---------- tabs ----------
+  $("tabs").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".tab"); if (!b) return;
+    document.querySelectorAll(".tab").forEach(function (t) { t.classList.toggle("active", t === b); });
+    state.tab = b.dataset.tab;
+    $("tab-projects").classList.toggle("hidden", state.tab !== "projects");
+    $("tab-clouds").classList.toggle("hidden", state.tab !== "clouds");
+    if (state.tab === "clouds") loadClouds();
+  });
+
+  // ---------- projects ----------
+  function refreshAll() {
+    pingHealth();
+    loadProjects();
+    loadClouds();
+  }
+
+  function loadProjects() {
+    api("GET", "/api/admin/projects").then(function (j) {
+      state.projects = j.projects || [];
+      renderProjectList();
+      renderLayers();
+    }).catch(function (e) { toast("Load projects: " + e.message, "err"); });
+  }
+
+  function renderProjectList() {
+    var wrap = $("projItems");
+    wrap.innerHTML = "";
+    if (!state.projects.length) { wrap.innerHTML = '<p class="hint">No projects yet — create the first one.</p>'; return; }
+    state.projects.forEach(function (p) {
+      var div = document.createElement("div");
+      div.className = "item" + (state.selProject === p.id ? " sel" : "");
+      div.innerHTML = '<div class="t">' + esc(p.title_en || p.slug) +
+        '<span class="chip ' + (p.published ? "on" : "off") + '">' + (p.published ? "published" : "draft") + "</span>" +
+        '<span class="chip n">' + (p.layers ? p.layers.length : 0) + " layers</span></div>" +
+        '<div class="s">' + esc(p.category || "") + (p.year ? " · " + esc(p.year) : "") + " · " + esc(p.slug) + "</div>";
+      div.addEventListener("click", function () { editProject(p); });
+      wrap.appendChild(div);
+    });
+  }
+
+  function fillForm(form, obj, map) {
+    Object.keys(map).forEach(function (k) {
+      var el = form.elements[map[k]]; if (!el) return;
+      var v = obj[k];
+      if (el.type === "checkbox") el.checked = !!Number(v);
+      else el.value = v == null ? "" : v;
+    });
+  }
+
+  function editProject(p) {
+    state.selProject = p.id;
+    $("projFormTitle").textContent = "Project #" + p.id + " — " + (p.title_en || p.slug);
+    $("p_id").value = p.id;
+    fillForm($("projForm"), p, {
+      slug: "slug", title_en: "title_en", title_fr: "title_fr", desc_en: "desc_en", desc_fr: "desc_fr",
+      category: "category", year: "year", color: "color", sort_order: "sort_order"
+    });
+    $("projForm").elements.visible.checked = !!Number(p.visible);
+    $("projForm").elements.collapsed.checked = !!Number(p.collapsed);
+    $("projForm").elements.published.checked = !!Number(p.published);
+    renderProjectList();
+    renderLayers();
+  }
+
+  function clearProjectForm() {
+    $("projForm").reset();
+    $("p_id").value = "";
+    $("projFormTitle").textContent = "Project";
+    state.selProject = null;
+    renderProjectList();
+    renderLayers();
+  }
+
+  $("projForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var f = ev.target.elements;
+    var body = {
+      slug: f.slug.value.trim(), title_en: f.title_en.value.trim(),
+      title_fr: f.title_fr.value.trim(), desc_en: f.desc_en.value, desc_fr: f.desc_fr.value,
+      category: f.category.value.trim() || "Other", year: f.year.value.trim(),
+      color: f.color.value, sort_order: num(f.sort_order.value),
+      visible: f.visible.checked ? 1 : 0, collapsed: f.collapsed.checked ? 1 : 0,
+      published: f.published.checked ? 1 : 0
+    };
+    var id = $("p_id").value;
+    var call = id
+      ? api("PUT", "/api/admin/projects/" + id, body)
+      : api("POST", "/api/admin/projects", body);
+    call.then(function () { toast(id ? "Project saved" : "Project created", "ok"); loadProjects(); })
+      .catch(function (e) { toast(e.message, "err"); });
+  });
+  $("projReset").addEventListener("click", clearProjectForm);
+  $("projDelete").addEventListener("click", function () {
+    var id = $("p_id").value;
+    if (!id) return;
+    if (!confirm("Delete this project AND all its layers? This cannot be undone.")) return;
+    api("DELETE", "/api/admin/projects/" + id)
+      .then(function () { toast("Project deleted", "ok"); clearProjectForm(); loadProjects(); })
+      .catch(function (e) { toast(e.message, "err"); });
+  });
+  $("btnAddProject").addEventListener("click", clearProjectForm);
+
+  // ---------- layers ----------
+  function renderLayers() {
+    var wrap = $("layersWrap");
+    var p = state.projects.filter(function (x) { return x.id === Number($("p_id").value); })[0];
+    if (!p) {
+      $("layersTitle").textContent = "Layers";
+      $("layerForm").classList.add("hidden");
+      wrap.innerHTML = '<p class="hint">Select or save a project to manage its layers.</p>';
+      return;
+    }
+    $("layersTitle").textContent = "Layers — " + (p.title_en || p.slug);
+    $("layerForm").classList.remove("hidden");
+    $("l_project_id").value = p.id;
+    if (!p.layers.length) { wrap.innerHTML = '<p class="hint">No layers yet — add one below, then upload its GeoJSON.</p>'; return; }
+
+    var html = '<table><thead><tr><th>slug</th><th>label</th><th>features</th><th>state</th><th style="width:230px">actions</th></tr></thead><tbody>';
+    p.layers.forEach(function (l) {
+      html += "<tr>" +
+        "<td><b>" + esc(l.slug) + "</b><br><span style='color:var(--dim)'>#" + l.id + "</span></td>" +
+        "<td>" + esc(l.label_en) + (l.label_fr ? "<br><span style='color:var(--dim)'>" + esc(l.label_fr) + "</span>" : "") + "</td>" +
+        "<td>" + (l.feature_count != null ? Number(l.feature_count).toLocaleString("en-US") : "—") + "</td>" +
+        "<td>" +
+          '<span class="chip ' + (l.published ? "on" : "off") + '">' + (l.published ? "pub" : "draft") + "</span> " +
+          '<span class="chip ' + (l.visible ? "on" : "n") + '">' + (l.visible ? "vis" : "hid") + "</span>" +
+          (l.r2_key ? "<br><span style='color:var(--dim);font-size:10.5px'>has data</span>" : "<br><span style='color:var(--warn);font-size:10.5px'>no data</span>") +
+        "</td>" +
+        "<td><div class='row'>" +
+          "<button class='btn small' data-act='edit' data-id='" + l.id + "'>edit</button>" +
+          "<button class='btn small' data-act='pub' data-id='" + l.id + "'>" + (l.published ? "unpublish" : "publish") + "</button>" +
+          "<label class='btn small' style='margin:0'>upload<input type='file' accept='.geojson,.json,application/geo+json,application/json' data-act='up' data-id='" + l.id + "' style='display:none'></label>" +
+          "<button class='btn small danger' data-act='del' data-id='" + l.id + "'>del</button>" +
+        "</div></td></tr>";
+    });
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+  }
+
+  $("layersWrap").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-act]"); if (!b) return;
+    var id = b.dataset.id;
+    var p = state.projects.filter(function (x) { return x.id === Number($("p_id").value); })[0];
+    var l = p && p.layers.filter(function (x) { return String(x.id) === String(id); })[0];
+    if (!l) return;
+    var act = b.dataset.act;
+    if (act === "edit") {
+      $("l_id").value = l.id;
+      $("layerForm").elements.slug.value = l.slug || "";
+      $("layerForm").elements.label_en.value = l.label_en || "";
+      $("layerForm").elements.label_fr.value = l.label_fr || "";
+      $("layerForm").elements.sort_order.value = l.sort_order || 0;
+      var st = {}; try { st = JSON.parse(l.style_json || "{}"); } catch (e) {}
+      $("layerForm").elements.style.value = JSON.stringify(st);
+      var fl = []; try { fl = JSON.parse(l.fields_json || "[]"); } catch (e) {}
+      $("layerForm").elements.fields.value = JSON.stringify(fl);
+      $("layerForm").elements.visible.checked = !!Number(l.visible);
+      $("layerForm").elements.published.checked = !!Number(l.published);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+    if (act === "pub") {
+      api("POST", "/api/admin/layers/" + id + "/publish", { published: !Number(l.published) })
+        .then(function () { toast(l.published ? "Layer unpublished" : "Layer published", "ok"); loadProjects(); })
+        .catch(function (e) { toast(e.message, "err"); });
+    }
+    if (act === "del") {
+      if (!confirm("Delete layer '" + (l.slug || l.id) + "' and its features?")) return;
+      api("DELETE", "/api/admin/layers/" + id)
+        .then(function () { toast("Layer deleted", "ok"); loadProjects(); })
+        .catch(function (e) { toast(e.message, "err"); });
+    }
+  });
+
+  $("layersWrap").addEventListener("change", function (ev) {
+    var input = ev.target.closest("input[data-act='up']"); if (!input || !input.files.length) return;
+    var id = input.dataset.id;
+    var file = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result);
+      try { var probe = JSON.parse(text); if (!probe || probe.type !== "FeatureCollection") throw new Error("not a FeatureCollection"); }
+      catch (e) { toast("Invalid GeoJSON: " + e.message, "err"); return; }
+      if (text.length > 4 * 1024 * 1024) {
+        toast("File is " + (text.length / 1048576).toFixed(1) + " MB — over ~4 MB use scripts/import_geojson.py instead", "err");
+        return;
+      }
+      api("POST", "/api/admin/upload/geojson?layer_id=" + id, text, true)
+        .then(function (r) { toast("Uploaded " + r.features + " features (" + (r.bytes / 1024).toFixed(0) + " KB)", "ok"); loadProjects(); })
+        .catch(function (e) { toast("Upload: " + e.message, "err"); });
+    };
+    reader.readAsText(file);
+  });
+
+  $("layerForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var f = ev.target.elements;
+    var style = {};
+    try { style = JSON.parse(f.style.value || "{}"); } catch (e) { toast("style is not valid JSON", "err"); return; }
+    var fields = [];
+    try { fields = JSON.parse(f.fields.value || "[]"); } catch (e) { toast("fields is not valid JSON", "err"); return; }
+    var body = {
+      slug: f.slug.value.trim(), label_en: f.label_en.value.trim(), label_fr: f.label_fr.value.trim(),
+      sort_order: num(f.sort_order.value), style: style, fields: fields,
+      visible: f.visible.checked ? 1 : 0, published: f.published.checked ? 1 : 0
+    };
+    var id = $("l_id").value;
+    var call = id
+      ? api("PUT", "/api/admin/layers/" + id, body)
+      : api("POST", "/api/admin/layers", Object.assign({ project_id: Number($("l_project_id").value) }, body));
+    call.then(function () { toast(id ? "Layer saved" : "Layer created", "ok"); $("l_id").value = ""; loadProjects(); })
+      .catch(function (e) { toast(e.message, "err"); });
+  });
+  $("layerReset").addEventListener("click", function () { $("layerForm").reset(); $("l_id").value = ""; });
+
+  // ---------- point clouds ----------
+  function loadClouds() {
+    api("GET", "/api/admin/pointclouds").then(function (j) {
+      state.clouds = j.pointclouds || [];
+      renderClouds();
+    }).catch(function (e) {
+      $("cloudsWrap").innerHTML = '<p class="hint">Could not load point clouds: ' + esc(e.message) + "</p>";
+    });
+  }
+
+  function renderClouds() {
+    var wrap = $("cloudsWrap");
+    if (!state.clouds.length) { wrap.innerHTML = '<p class="hint">No clouds registered yet.</p>'; return; }
+    var html = '<table><thead><tr>' +
+      "<th>slug</th><th>title_en</th><th>status</th><th>points</th><th>srs</th><th>prefix</th><th>pub</th><th></th>" +
+      "</tr></thead><tbody>";
+    state.clouds.forEach(function (c) {
+      html += "<tr data-id='" + c.id + "'>" +
+        "<td><b>" + esc(c.slug) + "</b><br><span style='color:var(--dim)'>#" + c.id + " · " + esc(c.bucket || "") + "</span></td>" +
+        "<td><input type='text' data-f='title_en' value='" + esc(c.title_en) + "'></td>" +
+        "<td><select data-f='status'>" +
+          ["awaiting_upload", "ready", "processing"].map(function (s) {
+            return "<option" + (c.status === s ? " selected" : "") + ">" + s + "</option>";
+          }).join("") + "</select></td>" +
+        "<td><input type='number' data-f='point_count' style='width:110px' value='" + (c.point_count == null ? "" : Number(c.point_count)) + "'></td>" +
+        "<td><input type='text' data-f='srs' style='width:95px' value='" + esc(c.srs || "") + "' placeholder='EPSG:2056'></td>" +
+        "<td><input type='text' data-f='prefix' value='" + esc(c.prefix || "") + "'></td>" +
+        "<td><input type='checkbox' data-f='published'" + (Number(c.published) ? " checked" : "") + "></td>" +
+        "<td><button class='btn small primary' data-act='save'>save</button></td></tr>";
+    });
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+  }
+
+  $("cloudsWrap").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-act='save']"); if (!b) return;
+    var tr = b.closest("tr");
+    var id = tr.dataset.id;
+    var get = function (f) { return tr.querySelector("[data-f='" + f + "']"); };
+    var body = {
+      title_en: get("title_en").value.trim(),
+      status: get("status").value,
+      point_count: get("point_count").value === "" ? null : num(get("point_count").value),
+      srs: get("srs").value.trim() || null,
+      prefix: get("prefix").value.trim() || null,
+      published: get("published").checked ? 1 : 0
+    };
+    api("PUT", "/api/admin/pointclouds/" + id, body)
+      .then(function () { toast("Cloud #" + id + " saved", "ok"); loadClouds(); })
+      .catch(function (e) { toast(e.message, "err"); });
+  });
+
+  $("cloudForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var f = ev.target.elements;
+    api("POST", "/api/admin/pointclouds", {
+      slug: f.slug.value.trim(), title_en: f.title_en.value.trim(), title_fr: f.title_fr.value.trim(),
+      desc_en: f.desc_en.value, desc_fr: f.desc_fr.value,
+      prefix: f.prefix.value.trim() || (f.slug.value.trim() + "/"),
+      status: "awaiting_upload", published: f.published.checked ? 1 : 0
+    }).then(function () { toast("Cloud registered", "ok"); f.slug.value = ""; f.title_en.value = ""; loadClouds(); })
+      .catch(function (e) { toast(e.message, "err"); });
+  });
+
+  // ---------- boot ----------
+  if (TOKEN) {
+    unlock(TOKEN, function () { /* restored session */ });
+  }
+})();
+</script>
+</body>
+</html>

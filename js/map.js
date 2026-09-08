@@ -326,29 +326,39 @@
 
   function loadLeaflet(done) {
     if (window.L) { done(); return; }                    // already present (defensive)
-    if (leafletRequested) return;                        // inject only once
-    leafletRequested = true;
+    // window-level handshake — other modules (js/map-compare.js) reuse the
+    // same request so exactly ONE Leaflet copy is ever injected
+    if (!window.__leafletReq) {
+      window.__leafletReq = true;
 
-    // warm up the default tile host while leaflet.min.js is downloading
-    var pre = document.createElement('link');
-    pre.rel = 'preconnect';
-    pre.href = 'https://tile.openstreetmap.org';
-    document.head.appendChild(pre);
+      // warm up the default tile host while leaflet.min.js is downloading
+      var pre = document.createElement('link');
+      pre.rel = 'preconnect';
+      pre.href = 'https://tile.openstreetmap.org';
+      document.head.appendChild(pre);
 
-    if (!document.querySelector('link[data-leaflet-css]')) {
-      var css = document.createElement('link');
-      css.rel = 'stylesheet';
-      css.href = LEAFLET_CSS;
-      css.setAttribute('data-leaflet-css', '');
-      document.head.appendChild(css);
+      if (!document.querySelector('link[data-leaflet-css]')) {
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = LEAFLET_CSS;
+        css.setAttribute('data-leaflet-css', '');
+        document.head.appendChild(css);
+      }
+
+      var js = document.createElement('script');
+      js.src = LEAFLET_JS;
+      js.async = true;
+      js.setAttribute('data-leaflet-js', '');
+      document.head.appendChild(js);
     }
 
-    var js = document.createElement('script');
-    js.src = LEAFLET_JS;
-    js.async = true;
-    js.onload = function () { done(); };
-    js.onerror = function () { done(new Error('Leaflet failed to load from CDN.')); };
-    document.head.appendChild(js);
+    // whoever injected it, wait for the global and call back
+    var tries = 0;
+    (function poll() {
+      if (window.L) return done();
+      if (++tries > 400) { done(new Error('Leaflet failed to load from CDN.')); return; }
+      setTimeout(poll, 25);
+    })();
   }
 
   /* ---------- live manifest ----------
