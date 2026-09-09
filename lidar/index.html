@@ -61,10 +61,17 @@
 
   /* ---------- info card ---------- */
   .info-card{position:fixed;right:16px;bottom:16px;z-index:40;width:min(330px,calc(100vw - 32px));
-    background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+    background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
     box-shadow:0 12px 40px rgba(0,0,0,.45)}
-  .info-card h2{font-size:14px;font-weight:600;margin-bottom:2px}
-  .info-card .cat{font-size:11.5px;color:var(--accent);margin-bottom:10px;font-weight:500}
+  .info-card.collapsed{width:auto;max-width:min(330px,calc(100vw - 32px))}
+  .info-head{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .info-card h2{font-size:14px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info-toggle{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);
+    color:var(--text);font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .info-toggle:hover{background:rgba(255,255,255,.12)}
+  .info-body{margin-top:2px}
+  .info-card.collapsed .info-body{display:none}
+  .info-card .cat{font-size:11.5px;color:var(--accent);margin:4px 0 10px;font-weight:500}
   .kv{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:4.5px 0;border-top:1px dashed rgba(255,255,255,.07)}
   .kv .k{color:var(--muted)}
   .kv .v{font-variant-numeric:tabular-nums;text-align:right}
@@ -105,7 +112,9 @@
 
   @media (max-width:900px){
     .page-title,.srs-badge{display:none}
-    .info-card{left:10px;bottom:10px;right:10px;width:auto;padding:12px 14px}
+    .info-card{left:auto;bottom:10px;right:10px;width:min(330px,calc(100vw - 20px));padding:10px 12px}
+    /* expanded card must never swallow the map: cap height, scroll inside */
+    .info-card:not(.collapsed) .info-body{max-height:38vh;overflow-y:auto}
     .kv{font-size:11px}
   }
   @media (max-width:640px){
@@ -153,16 +162,22 @@
   </div>
 </div>
 
-<aside class="info-card" id="infoCard" hidden>
-  <h2 id="iTitle">&mdash;</h2>
-  <div class="cat" id="iStatus">&mdash;</div>
-  <div class="kv"><span class="k">Points</span><span class="v" id="iPoints">&mdash;</span></div>
-  <div class="kv"><span class="k">E (min / max)</span><span class="v" id="iE">&mdash;</span></div>
-  <div class="kv"><span class="k">N (min / max)</span><span class="v" id="iN">&mdash;</span></div>
-  <div class="kv"><span class="k">Z (min / max)</span><span class="v" id="iZ">&mdash;</span></div>
-  <div class="kv"><span class="k">Center (WGS84)</span><span class="v" id="iWGS">&mdash;</span></div>
-  <div class="hint">Drag: orbit &nbsp;&middot;&nbsp; Right-drag: pan &nbsp;&middot;&nbsp; Scroll: zoom<br>Coordinates shown in CH1903+/LV95 (EPSG:2056).</div>
-  <div class="hint" id="devNote" hidden style="color:var(--accent2)">Local preview &mdash; streaming the catalog &amp; point cloud from the deployed API.</div>
+<aside class="info-card collapsed" id="infoCard" hidden>
+  <div class="info-head">
+    <h2 id="iTitle">&mdash;</h2>
+    <button class="info-toggle" id="infoToggle" type="button" aria-expanded="false"
+            title="Show / hide dataset details">&#9662;</button>
+  </div>
+  <div class="info-body">
+    <div class="cat" id="iStatus">&mdash;</div>
+    <div class="kv"><span class="k">Points</span><span class="v" id="iPoints">&mdash;</span></div>
+    <div class="kv"><span class="k">E (min / max)</span><span class="v" id="iE">&mdash;</span></div>
+    <div class="kv"><span class="k">N (min / max)</span><span class="v" id="iN">&mdash;</span></div>
+    <div class="kv"><span class="k">Z (min / max)</span><span class="v" id="iZ">&mdash;</span></div>
+    <div class="kv"><span class="k">Center (WGS84)</span><span class="v" id="iWGS">&mdash;</span></div>
+    <div class="hint">Drag: orbit &nbsp;&middot;&nbsp; Right-drag: pan &nbsp;&middot;&nbsp; Scroll: zoom<br>Coordinates shown in CH1903+/LV95 (EPSG:2056).</div>
+    <div class="hint" id="devNote" hidden style="color:var(--accent2)">Local preview &mdash; streaming the catalog &amp; point cloud from the deployed API.</div>
+  </div>
 </aside>
 
 <div class="overlay" id="overlay">
@@ -231,6 +246,25 @@
   const tabsEl = document.getElementById("cloudTabs");
   const infoCard = document.getElementById("infoCard");
   const attrSel = document.getElementById("attrSelect");
+
+  // ---- info card collapse -------------------------------------------------
+  // Collapsed by default on small screens (the card used to cover the whole
+  // map on phones); remembered per browser so the choice sticks.
+  const INFO_KEY = "lidarInfoCardOpen";
+  const infoToggleBtn = document.getElementById("infoToggle");
+  function setInfoOpen(open, persist) {
+    infoCard.classList.toggle("collapsed", !open);
+    infoToggleBtn.innerHTML = open ? "&#9662;" : "&#9656;";
+    infoToggleBtn.setAttribute("aria-expanded", String(open));
+    if (persist) { try { localStorage.setItem(INFO_KEY, open ? "1" : "0"); } catch (e) {} }
+  }
+  infoToggleBtn.addEventListener("click", function () {
+    setInfoOpen(infoCard.classList.contains("collapsed"), true);
+  });
+  let infoPref = null;
+  try { infoPref = localStorage.getItem(INFO_KEY); } catch (e) {}
+  setInfoOpen(infoPref === null ? !window.matchMedia("(max-width: 900px)").matches
+                                : infoPref === "1", false);
 
   function fmt(n, d) {
     return Number(n).toLocaleString("en-US", { maximumFractionDigits: d === undefined ? 1 : d });

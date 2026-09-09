@@ -10,3 +10,9 @@ wrangler.jsonc
 .dev.vars
 .assetsignore
 CNAME
+# --- Phase 8 perf pass: not referenced anywhere / heavy dev artifacts ---
+"images/Emprise 55.pdf"
+images/degitize1.PNG
+"images/1024 - Copie.png"
+images/Lidar_2D.PNG
+*.map
