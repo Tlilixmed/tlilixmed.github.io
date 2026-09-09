@@ -95,6 +95,14 @@
   .toast.ok { border-color:rgba(62,207,142,.5); }
   .toast.err { border-color:rgba(255,107,107,.5); }
   .hint { color:var(--dim); font-size:11.5px; line-height:1.5; margin-top:8px; }
+  /* attention flash for the project form when "+ New project" is pressed */
+  .card.flash { animation: cardFlash 1.4s ease; }
+  @keyframes cardFlash {
+    0%, 55% { box-shadow: 0 0 0 2px var(--accent), 0 0 28px rgba(77,168,218,.4); }
+    100%    { box-shadow: 0 0 0 0 rgba(77,168,218,0); }
+  }
+  #cloudProgress { color:var(--accent); font-family:ui-monospace,Menlo,Consolas,monospace;
+                   font-size:11.5px; word-break:break-all; }
   .spin { width:22px; height:22px; border-radius:50%; border:2px solid var(--line);
           border-top-color:var(--accent); animation:spin 1s linear infinite; display:inline-block; }
   /* ---- style studio ---- */
@@ -221,6 +229,12 @@
 
         <div class="card">
           <h3 id="layersTitle">Layers</h3>
+          <div class="row" style="margin:8px 0 2px">
+            <label class="btn small primary" style="margin:0" title="Create a new layer in the selected project straight from a GeoJSON file">Upload GeoJSON layer
+              <input type="file" id="quickLayerFile" accept=".geojson,.json,application/geo+json,application/json" style="display:none"></label>
+            <span class="hint" style="margin:0">creates a layer in the selected project from a .geojson file, imports the data,
+              auto-styles it — then use <b>style</b> + <b>publish</b></span>
+          </div>
           <div id="layersWrap"><p class="hint">Select or save a project to manage its layers.</p></div>
           <form id="layerForm" style="margin-top:14px" class="hidden">
             <input type="hidden" id="l_id">
@@ -262,10 +276,15 @@
           <label class="checkline"><input name="published" type="checkbox"> published</label>
         </div>
         <div class="row" style="margin-top:10px"><button class="btn primary" type="submit">Register</button></div>
-        <p class="hint">Workflow: register (status <code>awaiting_upload</code>) → convert with PotreeConverter →
-          upload to bucket <code>clouds-public</code> under the prefix → set status <code>ready</code> + point_count → publish.
+        <p class="hint">Workflow: <b>register</b> → <b>LAS</b> stores the raw scan in <code>gis-private</code>
+          (never served, ≤100 MB) → convert locally with PotreeConverter → <b>octree</b> uploads the converted folder to
+          <code>clouds-public/&lt;prefix&gt;</code> and flips status to <code>ready</code> automatically (point count is
+          read from <code>cloud.js</code>/<code>metadata.json</code>) → <b>files</b> lists what is stored → publish.
           The <code>/lidar</code> viewer and <code>/clouds/*</code> proxy serve published clouds only.</p>
       </form>
+      <input type="file" id="lasFile" accept=".las,.laz" style="display:none">
+      <input type="file" id="octreeDir" webkitdirectory directory multiple style="display:none">
+      <div id="cloudProgress" class="hint" hidden></div>
     </div>
   </section>
 
@@ -384,7 +403,7 @@
   "use strict";
 
   var TOKEN = sessionStorage.getItem("gis_admin_token") || "";
-  var state = { projects: [], clouds: [], selProject: null, tab: "projects" };
+  var state = { projects: [], clouds: [], selProject: null, tab: "projects", upCloud: null, uploading: false };
 
   // ---------- tiny helpers ----------
   function $(id) { return document.getElementById(id); }
@@ -556,7 +575,16 @@
       .then(function () { toast("Project deleted", "ok"); clearProjectForm(); loadProjects(); })
       .catch(function (e) { toast(e.message, "err"); });
   });
-  $("btnAddProject").addEventListener("click", clearProjectForm);
+  $("btnAddProject").addEventListener("click", function () {
+    clearProjectForm();
+    var card = $("projForm").closest(".card");
+    if (card) {
+      if (card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "start" });
+      card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+    }
+    toast("Describe the project, then press Save project", "ok");
+    setTimeout(function () { try { $("projForm").elements.slug.focus({ preventScroll: true }); } catch (e) {} }, 420);
+  });
 
   // ---------- layers ----------
   function renderLayers() {
@@ -674,6 +702,51 @@
   });
   $("layerReset").addEventListener("click", function () { $("layerForm").reset(); $("l_id").value = ""; });
 
+  // ---------- quick layer upload (file -> new layer -> data) ----------
+  $("quickLayerFile").addEventListener("change", function (ev) {
+    var input = ev.target;
+    if (!input.files.length) return;
+    var pid = Number($("p_id").value);
+    if (!pid) {
+      toast("Select a project first (click one in the Projects list)", "err");
+      input.value = "";
+      return;
+    }
+    var file = input.files[0];
+    var base = file.name.replace(/\.(geo)?json$/i, "").trim();
+    var slug = base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || ("layer-" + Date.now());
+    var label = base.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim() || slug;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result);
+      var data;
+      try { data = JSON.parse(text); } catch (e) { toast("Invalid JSON: " + e.message, "err"); input.value = ""; return; }
+      if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
+        toast("Expected a GeoJSON FeatureCollection", "err"); input.value = ""; return;
+      }
+      if (text.length > 4 * 1024 * 1024) {
+        toast("File is " + (text.length / 1048576).toFixed(1) + " MB — over ~4 MB use scripts/import_geojson.py instead", "err");
+        input.value = "";
+        return;
+      }
+      var f0 = data.features[0];
+      var geom = f0 && f0.geometry && f0.geometry.type ? f0.geometry.type : "";
+      var style = geom.indexOf("Point") >= 0 ? { color: "#e2590b", radius: 5, weight: 2, fillOpacity: 0.9 }
+                : geom.indexOf("Line") >= 0 ? { color: "#2098d8", weight: 2.5 }
+                : { color: "#3ecf8e", weight: 1.5, fillOpacity: 0.35 };
+      toast("Creating layer '" + slug + "'…");
+      api("POST", "/api/admin/layers", { project_id: pid, slug: slug, label_en: label, style: style, visible: 1, published: 0 })
+        .then(function (r) {
+          return api("POST", "/api/admin/upload/geojson?layer_id=" + r.id, text, true).then(function (up) {
+            toast("Layer created — " + up.features + " features (" + (up.bytes / 1024).toFixed(0) + " KB). Tune it in Style studio, then publish.", "ok");
+          });
+        })
+        .catch(function (e) { toast("Layer upload: " + e.message, "err"); })
+        .then(function () { input.value = ""; loadProjects(); });
+    };
+    reader.readAsText(file);
+  });
+
   // ---------- point clouds ----------
   function loadClouds() {
     api("GET", "/api/admin/pointclouds").then(function (j) {
@@ -695,23 +768,33 @@
         "<td><b>" + esc(c.slug) + "</b><br><span style='color:var(--dim)'>#" + c.id + " · " + esc(c.bucket || "") + "</span></td>" +
         "<td><input type='text' data-f='title_en' value='" + esc(c.title_en) + "'></td>" +
         "<td><select data-f='status'>" +
-          ["awaiting_upload", "ready", "processing"].map(function (s) {
+          ["awaiting_upload", "source_uploaded", "processing", "ready"].map(function (s) {
             return "<option" + (c.status === s ? " selected" : "") + ">" + s + "</option>";
           }).join("") + "</select></td>" +
         "<td><input type='number' data-f='point_count' style='width:110px' value='" + (c.point_count == null ? "" : Number(c.point_count)) + "'></td>" +
         "<td><input type='text' data-f='srs' style='width:95px' value='" + esc(c.srs || "") + "' placeholder='EPSG:2056'></td>" +
         "<td><input type='text' data-f='prefix' value='" + esc(c.prefix || "") + "'></td>" +
         "<td><input type='checkbox' data-f='published'" + (Number(c.published) ? " checked" : "") + "></td>" +
-        "<td><button class='btn small primary' data-act='save'>save</button></td></tr>";
+        "<td><div class='row'>" +
+          "<button class='btn small primary' data-act='save'>save</button>" +
+          "<button class='btn small' data-act='las' title='Upload the raw .las/.laz scan (stored privately)'>LAS</button>" +
+          "<button class='btn small' data-act='octree' title='Upload the converted Potree folder'>octree</button>" +
+          "<button class='btn small' data-act='files' title='List stored octree objects'>files</button>" +
+        "</div></td></tr>";
     });
     html += "</tbody></table>";
     wrap.innerHTML = html;
   }
 
   $("cloudsWrap").addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-act='save']"); if (!b) return;
+    var b = ev.target.closest("button[data-act]"); if (!b) return;
     var tr = b.closest("tr");
     var id = tr.dataset.id;
+    var act = b.dataset.act;
+    if (act === "las") { state.upCloud = Number(id); $("lasFile").click(); return; }
+    if (act === "octree") { state.upCloud = Number(id); $("octreeDir").click(); return; }
+    if (act === "files") { showCloudFiles(Number(id)); return; }
+    if (act !== "save") return;
     var get = function (f) { return tr.querySelector("[data-f='" + f + "']"); };
     var body = {
       title_en: get("title_en").value.trim(),
@@ -737,6 +820,120 @@
     }).then(function () { toast("Cloud registered", "ok"); f.slug.value = ""; f.title_en.value = ""; loadClouds(); })
       .catch(function (e) { toast(e.message, "err"); });
   });
+
+  // ---------- point-cloud uploads (LAS source + Potree octree folder) ----------
+  function cloudBusy(msg) { var el = $("cloudProgress"); el.hidden = false; el.textContent = msg; }
+  function hideCloudBusy() { $("cloudProgress").hidden = true; }
+  function uploadUrl(path, cid) { return path + "?cloud_id=" + cid; }
+  function sendFile(url, file) {
+    return fetch(url, {
+      method: "POST",
+      headers: { "x-admin-token": TOKEN, "content-type": "application/octet-stream" },
+      body: file
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error(j.error || ("HTTP " + r.status)); e.status = r.status; throw e; }
+        return j;
+      });
+    });
+  }
+
+  function relPathFor(f, cloud) {
+    var slug = cloud.slug;
+    var prefix = String(cloud.prefix || slug + "/").replace(/\/+$/, "");
+    var parts = String(f.webkitRelativePath || f.name).split("/").filter(Boolean);
+    // user selects the converted folder: drop the folder level when it matches the
+    // cloud's own slug/prefix so files land directly under the stored prefix
+    if (parts.length > 1 && (parts[0] === slug || parts[0] === prefix)) parts.shift();
+    return parts.join("/");
+  }
+
+  $("lasFile").addEventListener("change", function (ev) {
+    var input = ev.target;
+    var file = input.files.length ? input.files[0] : null; // capture BEFORE resetting
+    input.value = "";
+    var cid = state.upCloud;
+    if (!file || !cid || state.uploading) return;
+    if (file.size > 100 * 1024 * 1024) {
+      toast("File is " + (file.size / 1048576).toFixed(0) + " MB — browser upload is capped at ~100 MB. " +
+        "Convert locally with PotreeConverter and upload the octree instead.", "err");
+      return;
+    }
+    var cloud = state.clouds.filter(function (c) { return c.id === cid; })[0];
+    var fname = file.name;
+    if (cloud) fname = cloud.slug + fname.slice(fname.lastIndexOf("."));
+    state.uploading = true;
+    cloudBusy("Uploading " + file.name + " (" + (file.size / 1048576).toFixed(1) + " MB) to gis-private…");
+    sendFile(uploadUrl("/api/admin/upload/las", cid) + "&filename=" + encodeURIComponent(fname), file)
+      .then(function () {
+        toast("Source stored in gis-private — now convert it with PotreeConverter and upload the octree folder", "ok");
+        hideCloudBusy();
+        loadClouds();
+      })
+      .catch(function (e) { toast("LAS upload: " + e.message, "err"); hideCloudBusy(); })
+      .then(function () { state.uploading = false; });
+  });
+
+  $("octreeDir").addEventListener("change", function (ev) {
+    var input = ev.target;
+    var picked = Array.prototype.slice.call(input.files); // capture BEFORE resetting
+    input.value = "";
+    var cid = state.upCloud;
+    if (!picked.length || !cid || state.uploading) return;
+    var cloud = state.clouds.filter(function (c) { return c.id === cid; })[0];
+    if (!cloud) { toast("Cloud not found", "err"); return; }
+    var files = [];
+    for (var i = 0; i < picked.length; i++) {
+      var f = picked[i];
+      var rel = relPathFor(f, cloud);
+      if (!rel || f.size > 100 * 1024 * 1024) continue;
+      if (/(^|\/)(__MACOSX|\.)/.test(rel) || /(^|\/)\./.test(f.name)) continue; // junk / dotfiles
+      files.push({ f: f, rel: rel });
+    }
+    if (!files.length) { toast("No usable files in that folder", "err"); return; }
+    var totalBytes = 0;
+    files.forEach(function (x) { totalBytes += x.f.size; });
+    if (!confirm("Upload " + files.length + " files (" + (totalBytes / 1048576).toFixed(1) + " MB) to prefix '" +
+      (cloud.prefix || cloud.slug + "/") + "'?")) return;
+    state.uploading = true;
+    var done = 0, failed = [];
+    cloudBusy("Uploading octree 0/" + files.length + "…");
+    var CONC = 4, idx = 0;
+    function worker(next) {
+      if (idx >= files.length) return next();
+      var item = files[idx++];
+      var send = function () { return sendFile(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), item.f); };
+      send().catch(function () { return send(); }).catch(function (e) { failed.push(item.rel + " (" + e.message + ")"); })
+        .then(function () {
+          done++;
+          if (done % 10 === 0 || done === files.length) cloudBusy("Uploading octree " + done + "/" + files.length + "…");
+          worker(next);
+        });
+    }
+    var workers = [];
+    for (var w = 0; w < CONC; w++) workers.push(new Promise(worker));
+    Promise.all(workers).then(function () {
+      state.uploading = false;
+      hideCloudBusy();
+      if (failed.length) toast("Octree: " + (files.length - failed.length) + "/" + files.length + " uploaded — first failures: " + failed.slice(0, 2).join(" | "), "err");
+      else toast("Octree uploaded (" + files.length + " files) — status flips to ready via cloud.js/metadata.json", "ok");
+      loadClouds();
+      showCloudFiles(cid, true);
+    });
+  });
+
+  function showCloudFiles(cid, silent) {
+    api("GET", "/api/admin/pointclouds/" + cid + "/files").then(function (j) {
+      var total = 0;
+      j.objects.forEach(function (o) { total += o.size; });
+      if (silent && !j.objects.length && !j.truncated) return;
+      var names = j.objects.slice(0, 6).map(function (o) { return o.key + " (" + (o.size / 1024).toFixed(0) + " KB)"; });
+      cloudBusy((j.prefix || "") + " → " + j.objects.length + "+ objects · " + (total / 1048576).toFixed(1) + " MB" +
+        (j.truncated ? " (first page — more below)" : "") + (names.length ? " — e.g. " + names.join(", ") : ""));
+      clearTimeout(showCloudFiles._t);
+      showCloudFiles._t = setTimeout(hideCloudBusy, 9000);
+    }).catch(function (e) { if (!silent) toast("List files: " + e.message, "err"); });
+  }
 
   // ---------- boot ----------
   if (TOKEN) {

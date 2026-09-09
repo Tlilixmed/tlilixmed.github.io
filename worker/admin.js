@@ -15,6 +15,15 @@
 //   DELETE /api/admin/layers/:id                  delete layer (+ features)
 //   POST   /api/admin/layers/:id/publish          set published 0|1
 //   POST   /api/admin/upload/geojson?layer_id=N   replace a layer's data (see size note in docs)
+//   POST   /api/admin/upload/las?cloud_id=N&filename=scan.las
+//                                                 store the raw source scan in gis-private
+//                                                 (never served publicly; <=100 MB)
+//   POST   /api/admin/upload/octree?cloud_id=N&path=cloud.js
+//                                                 store one Potree octree file under the
+//                                                 cloud's prefix in clouds-public. Uploading
+//                                                 cloud.js / metadata.json flips status to
+//                                                 'ready' and records point_count.
+//   GET    /api/admin/pointclouds/:id/files       list objects stored under the prefix
 //   GET    /api/admin/pointclouds                 all point clouds
 //   POST   /api/admin/pointclouds                 register one (e.g. "LAS 1")
 //   PUT    /api/admin/pointclouds/:id             update (rename, publish, set prefix/status)
@@ -70,6 +79,97 @@ function buildUpdate(table, body) {
 
 async function readBody(request) {
   try { return await request.json(); } catch { return {}; }
+}
+
+// ------------------------------------------------------------
+// Point-cloud uploads (browser -> R2, streamed, no buffering).
+// The browser sends the raw File as the request body; Workers gives us a
+// fixed-length stream whenever content-length is present, which R2 accepts
+// directly — so multi-MB octree files pass through without ever being
+// buffered in the isolate.
+// ------------------------------------------------------------
+
+// "a/b/../../etc" style traversal is rejected; empty segments dropped.
+function sanitizeRel(p) {
+  const parts = String(p || '').replace(/\\/g, '/').split('/').filter(Boolean);
+  if (!parts.length || parts.some((s) => s === '.' || s === '..')) return null;
+  return parts.join('/');
+}
+
+function requiredLength(request) {
+  const cl = Number(request.headers.get('content-length') || 0);
+  if (!cl) return null;
+  return cl;
+}
+
+async function uploadCloudSource(request, env, cloudId, filename) {
+  const c = await env.DB.prepare(`SELECT id, slug, status FROM pointclouds WHERE id = ?`).bind(cloudId).first();
+  if (!c) return fail(404, 'point cloud not found');
+  const ext = String(filename || '').toLowerCase().match(/\.la[sz]$/);
+  if (!ext) return fail(400, 'expected a .las or .laz file (pass &filename=scan.las)');
+  const cl = requiredLength(request);
+  if (!cl) return fail(411, 'content-length required');
+  if (cl > 100 * 1024 * 1024) {
+    return fail(413, 'source is ' + Math.round(cl / 1048576) + ' MB — browser upload is capped at 100 MB. ' +
+      'Convert locally with PotreeConverter and upload the octree folder instead (the viewer streams the octree, not the raw scan).');
+  }
+  const key = `originals/${c.slug}/source${ext[0]}`;
+  await env.R2_PRIVATE.put(key, request.body, {
+    httpMetadata: { contentType: 'application/octet-stream' },
+  });
+  if (c.status === 'awaiting_upload') {
+    await env.DB.prepare(`UPDATE pointclouds SET status = 'source_uploaded', updated_at = datetime('now') WHERE id = ?`).bind(cloudId).run();
+  }
+  return json({ ok: true, key, bytes: cl, note: 'stored in gis-private (never served publicly)' });
+}
+
+async function uploadOctreeFile(request, env, cloudId, rel) {
+  const c = await env.DB.prepare(`SELECT id, slug, prefix, status FROM pointclouds WHERE id = ?`).bind(cloudId).first();
+  if (!c) return fail(404, 'point cloud not found');
+  const prefix = String(c.prefix || (c.slug + '/'));
+  const key = prefix + rel;
+  const cl = requiredLength(request);
+  if (!cl) return fail(411, 'content-length required');
+
+  // cloud.js (Potree 1.x) / metadata.json (Potree 2.x) carry the point count:
+  // parse them and flip the cloud to ready automatically.
+  const isMeta = /(^|\/)(cloud\.js|metadata\.json)$/.test(rel);
+  let body = request.body;
+  let meta = null;
+  if (isMeta && cl <= 8 * 1024 * 1024) {
+    const text = await request.text();
+    body = text;
+    try { meta = JSON.parse(text); } catch { meta = null; }
+  }
+
+  await env.R2_CLOUDS.put(key, body, {
+    httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
+  });
+
+  if (meta) {
+    const points = Number(meta.points || meta.pointCount || 0) || null;
+    await env.DB.prepare(
+      `UPDATE pointclouds SET point_count = COALESCE(?, point_count), status = 'ready', updated_at = datetime('now') WHERE id = ?`
+    ).bind(points, cloudId).run();
+  } else if (c.status === 'awaiting_upload') {
+    await env.DB.prepare(`UPDATE pointclouds SET status = 'processing', updated_at = datetime('now') WHERE id = ?`).bind(cloudId).run();
+  }
+  return json({ ok: true, key, bytes: cl, parsed_meta: !!meta });
+}
+
+async function listCloudFiles(request, env, cloudId) {
+  const c = await env.DB.prepare(`SELECT id, slug, prefix FROM pointclouds WHERE id = ?`).bind(cloudId).first();
+  if (!c) return fail(404, 'point cloud not found');
+  const prefix = String(c.prefix || (c.slug + '/'));
+  const cursor = new URL(request.url).searchParams.get('cursor') || undefined;
+  const page = await env.R2_CLOUDS.list({ prefix, cursor, limit: 400 });
+  const objects = (page.objects || []).map((o) => ({ key: o.key.slice(prefix.length), size: o.size }));
+  return json({
+    prefix,
+    objects,
+    truncated: !!page.truncated,
+    cursor: page.truncated ? page.cursor : null,
+  });
 }
 
 // ------------------------------------------------------------
@@ -232,12 +332,29 @@ export async function handleAdmin(request, env, path) {
     if (!layerId) return fail(400, 'query param layer_id is required');
     return uploadGeojson(request, env, layerId);
   }
+  if (what === 'upload' && seg[3] === 'las' && method === 'POST') {
+    const url = new URL(request.url);
+    const cloudId = Number(url.searchParams.get('cloud_id') || 0);
+    if (!cloudId) return fail(400, 'query param cloud_id is required');
+    return uploadCloudSource(request, env, cloudId, url.searchParams.get('filename') || '');
+  }
+  if (what === 'upload' && seg[3] === 'octree' && method === 'POST') {
+    const url = new URL(request.url);
+    const cloudId = Number(url.searchParams.get('cloud_id') || 0);
+    const rel = sanitizeRel(url.searchParams.get('path') || '');
+    if (!cloudId) return fail(400, 'query param cloud_id is required');
+    if (!rel) return fail(400, 'query param path is required (relative path, no ..)');
+    return uploadOctreeFile(request, env, cloudId, rel);
+  }
 
   // ---- pointclouds ----
   if (what === 'pointclouds') {
     if (method === 'GET' && !id) {
       const r = await env.DB.prepare(`SELECT * FROM pointclouds ORDER BY slug`).all();
       return json({ pointclouds: r.results || [] });
+    }
+    if (method === 'GET' && id && action === 'files') {
+      return listCloudFiles(request, env, id);
     }
     if (method === 'POST' && !id) {
       const b = await readBody(request);
