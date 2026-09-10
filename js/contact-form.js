@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var type = (data.get('type') || 'GIS services').toString();
     var message = (data.get('message') || '').toString().trim();
 
-    var subject = encodeURIComponent('Quote request — ' + type + ' (' + name + ')');
+    var subject = encodeURIComponent('Inquiry — ' + type + ' (' + name + ')');
     var body = encodeURIComponent(
       'Name: ' + name + '\n' +
       'Email: ' + email + '\n' +

@@ -16,3 +16,26 @@ images/degitize1.PNG
 "images/1024 - Copie.png"
 images/Lidar_2D.PNG
 *.map
+# --- Redesign pass: superseded originals & dead media (kept in git, not deployed).
+#     The redesigned page references only the .webp derivatives / small PNGs below. ---
+"images/Presentation.png"
+"images/Database 2.PNG"
+"images/Round Top Scale 1_50000.jpg"
+"images/Large Scale DGT.png"
+"images/Open Ground 2.jpg"
+"images/Lidar_ortho.PNG"
+"images/Lidar_ortho2.PNG"
+"images/Lidar_split.PNG"
+"images/Domain_Import_img.PNG"
+"images/degitize2.PNG"
+"images/degitize23.jpeg"
+"images/1024.png"
+"images/DB1.jpeg"
+"images/DB2.jpeg"
+"images/Fiber1.jpeg"
+"images/pdf.png"
+"images/timeline1.jpg"
+"images/timeline2.gif"
+"images/timeline3.webp"
+"images/timeline4.webp"
+"videos/Domaine_import_video.mp4"

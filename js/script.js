@@ -1,308 +1,202 @@
-/* ===========================
-   SECTION-SCOPED GALLERY MODAL
-   =========================== */
-class SectionGallery {
-  constructor() {
-    this.modal = document.getElementById('galleryModal');
-    this.modalImage = document.getElementById('galleryModalImage');
-    this.modalVideo = document.getElementById('galleryModalVideo');
-    this.modalTitle = document.getElementById('galleryModalTitle');
-    this.closeBtn = this.modal.querySelector('.gallery-modal-close');
-    this.prevBtn = document.getElementById('galleryPrev');
-    this.nextBtn = document.getElementById('galleryNext');
+/* ============================================================
+   GIS PORTFOLIO — editorial redesign (js/script.js)
+   Behaviors:
+   - language toggle (data-en/data-fr) + CV link language sync
+   - mobile navigation
+   - sticky header shadow
+   - scroll reveal (with no-JS / failsafe guarantees)
+   - case-study panels (cards + experience links + hash deep links)
+   - shared lightbox (map gallery + case-study evidence)
+   Contracts kept for other scripts:
+   - #langToggle .lang-text / .lang-flag   (map.js, contact-form.js)
+   - #quoteForm data-en-placeholder        (contact-form.js)
+   - window.openMapModal / closeMapModal   (inline onclick in HTML)
+   ============================================================ */
 
-    this.currentSectionItems = [];
-    this.currentIndex = 0;
+/* ---------- language toggle ---------- */
+let currentLanguage = 'en';
 
-    this.init();
-  }
-
-  init() {
-    // Attach click for each gallery item
-    document.querySelectorAll('.result-gallery .gallery-item').forEach(item => {
-      item.style.cursor = 'pointer';
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        const section = item.closest('.result-category');
-        if (!section) return;
-
-        this.currentSectionItems = Array.from(section.querySelectorAll('.gallery-item'));
-        this.currentIndex = this.currentSectionItems.indexOf(item);
-
-        this.openModal();
-      });
-    });
-
-    if (this.closeBtn) this.closeBtn.addEventListener('click', () => this.closeModal());
-    if (this.prevBtn) this.prevBtn.addEventListener('click', () => this.prev());
-    if (this.nextBtn) this.nextBtn.addEventListener('click', () => this.next());
-    if (this.modal) this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (!this.modal.classList.contains('show')) return;
-      if (e.key === 'Escape') this.closeModal();
-      if (e.key === 'ArrowLeft') this.prev();
-      if (e.key === 'ArrowRight') this.next();
-    });
-  }
-
-  openModal() {
-    const item = this.currentSectionItems[this.currentIndex];
-    const img = item.querySelector('img');
-    const video = item.querySelector('video');
-
-    this.modalImage.style.display = 'none';
-    this.modalVideo.style.display = 'none';
-
-    if (video) {
-      this.modalVideo.innerHTML = '';
-      const source = document.createElement('source');
-      source.src = video.querySelector('source')?.src || video.src;
-      source.type = 'video/mp4';
-      this.modalVideo.appendChild(source);
-      this.modalVideo.style.display = 'block';
-      this.modalVideo.load();
-      this.modalVideo.play().catch(() => {});
-      this.modalTitle.textContent = video.getAttribute('alt') || 'Video';
-    } else if (img) {
-      this.modalImage.src = img.src;
-      this.modalImage.alt = img.alt;
-      this.modalImage.style.display = 'block';
-      this.modalTitle.textContent = img.getAttribute('alt') || '';
-    }
-
-    this.modal.style.display = 'flex';
-    setTimeout(() => this.modal.classList.add('show'), 10);
-
-    this.updateNav();
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeModal() {
-    this.modal.classList.remove('show');
-    document.body.style.overflow = 'auto';
-
-    if (this.modalVideo.style.display === 'block') {
-      this.modalVideo.pause();
-      this.modalVideo.currentTime = 0;
-      this.modalVideo.innerHTML = '';
-    }
-
-    setTimeout(() => {
-      this.modal.style.display = 'none';
-    }, 300);
-  }
-
-  prev() {
-    if (this.currentIndex <= 0) return;
-    this.currentIndex--;
-    this.openModal();
-  }
-
-  next() {
-    if (this.currentIndex >= this.currentSectionItems.length - 1) return;
-    this.currentIndex++;
-    this.openModal();
-  }
-
-  updateNav() {
-    this.prevBtn.style.display = this.currentIndex <= 0 ? 'none' : 'block';
-    this.nextBtn.style.display = this.currentIndex >= this.currentSectionItems.length - 1 ? 'none' : 'block';
-  }
+function syncCVLinks() {
+  var href = currentLanguage === 'fr'
+    ? 'assets/Tlili_Mohamed_CV_Fr.pdf'
+    : 'assets/Tlili_Mohamed_CV_En.pdf';
+  document.querySelectorAll('.cv-link').forEach(function (a) { a.setAttribute('href', href); });
 }
 
-/* ===========================
-   SMOOTH SCROLL & NAVBAR
-   =========================== */
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function(e) {
+function toggleLanguage() {
+  currentLanguage = currentLanguage === 'en' ? 'fr' : 'en';
+  document.querySelectorAll('[data-en][data-fr]').forEach(function (el) {
+    var text = el.getAttribute('data-' + currentLanguage);
+    if (text) el.textContent = text;
+  });
+  // title attributes (map reset button)
+  document.querySelectorAll('[data-en-title][data-fr-title]').forEach(function (el) {
+    var t = el.getAttribute('data-' + currentLanguage + '-title');
+    if (t) el.setAttribute('title', t);
+  });
+  document.documentElement.setAttribute('lang', currentLanguage);
+  syncCVLinks();
+
+  var langToggle = document.getElementById('langToggle');
+  if (!langToggle) return;
+  var langFlag = langToggle.querySelector('.lang-flag');
+  var langText = langToggle.querySelector('.lang-text');
+  if (currentLanguage === 'fr') { langFlag.textContent = '🇺🇸'; langText.textContent = 'EN'; }
+  else { langFlag.textContent = '🇫🇷'; langText.textContent = 'FR'; }
+}
+
+/* ---------- smooth scroll (anchor links) ---------- */
+document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+  anchor.addEventListener('click', function (e) {
+    var id = this.getAttribute('href');
+    if (id === '#') return;
+    var target = document.querySelector(id);
+    if (!target) return;
     e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.replaceState(null, '', id);
   });
 });
 
-/* PERF: rAF-throttled passive scroll handler with a cached nav element.
-   Identical visual behaviour, without re-querying the DOM on every scroll tick. */
-let navEl = null;
-let navTicking = false;
-window.addEventListener('scroll', () => {
-  if (navTicking) return;
-  navTicking = true;
-  requestAnimationFrame(() => {
-    navTicking = false;
-    if (!navEl) navEl = document.querySelector('.nav');
-    if (!navEl) return;
-    if (window.scrollY > 100) navEl.classList.add('scrolled');
-    else navEl.classList.remove('scrolled');
+/* ---------- sticky header shadow ---------- */
+var headerEl = null, headerTicking = false;
+window.addEventListener('scroll', function () {
+  if (headerTicking) return;
+  headerTicking = true;
+  requestAnimationFrame(function () {
+    headerTicking = false;
+    if (!headerEl) headerEl = document.querySelector('.site-header');
+    if (!headerEl) return;
+    if (window.scrollY > 8) headerEl.classList.add('scrolled');
+    else headerEl.classList.remove('scrolled');
   });
 }, { passive: true });
 
-/* ===========================
-   INTERSECTION OBSERVER
-   =========================== */
-const observerOptions = { threshold: 0.05, rootMargin: '0px 0px -30px 0px' };
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
+/* ---------- mobile navigation ---------- */
+document.addEventListener('DOMContentLoaded', function () {
+  var navToggle = document.getElementById('navToggle');
+  var navLinks = document.querySelector('.nav-links');
+  var navOverlay = document.getElementById('navOverlay');
+  if (navToggle && navLinks && navOverlay) {
+    function toggleMenu() {
+      var open = navLinks.classList.toggle('active');
+      navToggle.classList.toggle('active', open);
+      navOverlay.classList.toggle('active', open);
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('menu-open', open);
+    }
+    function closeMenu() {
+      navLinks.classList.remove('active');
+      navToggle.classList.remove('active');
+      navOverlay.classList.remove('active');
+      navToggle.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('menu-open');
+    }
+    navToggle.addEventListener('click', toggleMenu);
+    navOverlay.addEventListener('click', closeMenu);
+    navLinks.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', closeMenu);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && navLinks.classList.contains('active')) closeMenu();
+    });
+  }
+});
+
+/* ---------- scroll reveal (failsafe: content must NEVER stay hidden) ---------- */
+var observerOptions = { threshold: 0.05, rootMargin: '0px 0px -30px 0px' };
+var observer = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
     if (entry.isIntersecting) entry.target.classList.add('animate-in');
   });
 }, observerOptions);
 
-/* Reliability failsafe - content must NEVER stay invisible.
-   The scroll-reveal initial state only exists under html.js (see <head>),
-   and if anything still blocks the observer (an extension, battery saver,
-   a restored scroll position, ...) this force-reveals everything shortly
-   after load. Worst case: no scroll animation, page fully visible. */
 function forceRevealAll() {
   document.querySelectorAll(
-    'section, .section-title, .result-category, .skill-item, .project-card, ' +
-    '.freelance-section, .map-gallery-section, .service-card, .map-item'
+    'section, .section-head, .work-card, .cap-card, .xp-item, .map-item, .metric'
   ).forEach(function (el) { el.classList.add('animate-in'); });
 }
 window.addEventListener('load', function () { setTimeout(forceRevealAll, 2500); });
 setTimeout(forceRevealAll, 4000); // in case the window 'load' event stalls
 
-/* ===========================
-   MOBILE NAVIGATION
-   =========================== */
-document.addEventListener('DOMContentLoaded', function() {
-  const navToggle = document.getElementById('navToggle');
-  const navLinks = document.querySelector('.nav-links');
-  const navOverlay = document.getElementById('navOverlay');
-  const body = document.body;
-  
-  // Toggle mobile menu
-  function toggleMenu() {
-    navToggle.classList.toggle('active');
-    navLinks.classList.toggle('active');
-    navOverlay.classList.toggle('active');
-    body.classList.toggle('menu-open');
-  }
-  
-  // Close mobile menu
-  function closeMenu() {
-    navToggle.classList.remove('active');
-    navLinks.classList.remove('active');
-    navOverlay.classList.remove('active');
-    body.classList.remove('menu-open');
-  }
-  
-  // Event listeners
-  navToggle.addEventListener('click', toggleMenu);
-  navOverlay.addEventListener('click', closeMenu);
-  
-  // Close menu when clicking on a link
-  document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', closeMenu);
-  });
-  
-  // Close menu with Escape key
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && navLinks.classList.contains('active')) {
-      closeMenu();
-    }
-  });
-
-  // Initialize everything when DOM is loaded
-  // Observe all elements that need animation
-  const elementsToAnimate = document.querySelectorAll('section, .section-title, .result-category, .skill-item, .project-card');
-  elementsToAnimate.forEach(el => observer.observe(el));
-
-  // Initialize gallery
-  new SectionGallery();
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll(
+    'section, .section-head, .work-card, .cap-card, .xp-item, .map-item, .metric'
+  ).forEach(function (el) { observer.observe(el); });
 });
 
-/* ===========================
-   PROJECT TOGGLE
-   =========================== */
-function toggleProject(button) {
-  const content = button.previousElementSibling;
-  content.classList.toggle('expanded');
-  button.textContent = content.classList.contains('expanded')
-    ? (button.dataset.en === "View Details ↓" ? "Hide Details ↑" : "Masquer ↑")
-    : (button.dataset.en === "View Details ↓" ? "View Details ↓" : "Voir Détails ↓");
+/* ---------- case-study panels ---------- */
+function openCase(id, scroll) {
+  var panel = document.getElementById(id);
+  if (!panel) return;
+  if (panel.tagName !== 'DETAILS') return;
+  panel.open = true;
+  if (scroll !== false) {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
-/* ===========================
-   LANGUAGE TOGGLE
-   =========================== */
-let currentLanguage = 'en';
-function toggleLanguage() {
-  currentLanguage = currentLanguage === 'en' ? 'fr' : 'en';
-  const elements = document.querySelectorAll('[data-en][data-fr]');
-  elements.forEach(el => {
-    const text = el.getAttribute(`data-${currentLanguage}`);
-    if (text) el.textContent = text;
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.case-open').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openCase(btn.getAttribute('data-target'), true);
+    });
   });
+  // deep links: /#case-lidar opens + scrolls to the panel
+  function openFromHash() {
+    var hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      var el = document.getElementById(hash.slice(1));
+      if (el && el.classList.contains('case')) openCase(el.id, true);
+    }
+  }
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
+});
 
-  const langToggle = document.getElementById('langToggle');
-  if (!langToggle) return;
-  const langFlag = langToggle.querySelector('.lang-flag');
-  const langText = langToggle.querySelector('.lang-text');
-  if (currentLanguage === 'fr') { langFlag.textContent = '🇺🇸'; langText.textContent = 'EN'; }
-  else { langFlag.textContent = '🇫🇷'; langText.textContent = 'FR'; }
-}
-
-/* ===========================
-   MAP GALLERY MODAL
-   =========================== */
+/* ---------- lightbox (map gallery + case evidence) ---------- */
 function openMapModal(imgSrc, title, desc) {
-  const modal = document.getElementById('mapModal');
-  const modalImg = document.getElementById('modalMapImg');
-  const modalTitle = document.getElementById('modalMapTitle');
-  const modalDesc = document.getElementById('modalMapDesc');
-
+  var modal = document.getElementById('mapModal');
+  var modalImg = document.getElementById('modalMapImg');
+  var modalTitle = document.getElementById('modalMapTitle');
+  var modalDesc = document.getElementById('modalMapDesc');
+  if (!modal) return;
   modalImg.src = imgSrc;
-  modalTitle.textContent = title;
-  modalDesc.textContent = desc;
-
+  modalImg.alt = title || 'Full-size view';
+  modalTitle.textContent = title || '';
+  modalDesc.textContent = desc || '';
   modal.style.display = 'flex';
-  setTimeout(() => modal.classList.add('show'), 10);
+  setTimeout(function () { modal.classList.add('show'); }, 10);
   document.body.style.overflow = 'hidden';
+  var closeBtn = modal.querySelector('.gallery-modal-close');
+  if (closeBtn) closeBtn.focus();
 }
 
 function closeMapModal() {
-  const modal = document.getElementById('mapModal');
+  var modal = document.getElementById('mapModal');
+  if (!modal) return;
   modal.classList.remove('show');
-  setTimeout(() => {
-    modal.style.display = 'none';
-  }, 300);
+  setTimeout(function () { modal.style.display = 'none'; }, 200);
   document.body.style.overflow = 'auto';
 }
 
-// Add the new sections to the animation observer
-document.addEventListener('DOMContentLoaded', () => {
-  const newSections = document.querySelectorAll('.freelance-section, .map-gallery-section, .service-card, .map-item');
-  newSections.forEach(el => observer.observe(el));
+document.addEventListener('keydown', function (e) {
+  var modal = document.getElementById('mapModal');
+  if (modal && e.key === 'Escape' && modal.classList.contains('show')) closeMapModal();
 });
 
-/* ===========================
-   CV LANGUAGE SWITCHER
-   =========================== */
-let currentCVLang = 'en';
-
-function toggleCVLanguage() {
-  currentCVLang = currentCVLang === 'en' ? 'fr' : 'en';
-  
-  const downloadBtn = document.getElementById('cvDownloadBtn');
-  const langLabel = document.getElementById('cvLangLabel');
-  
-  if (currentCVLang === 'fr') {
-    downloadBtn.href = 'assets/Tlili_Mohamed_CV_Fr.pdf'; // Path to French CV
-    downloadBtn.textContent = 'Télécharger';
-    langLabel.textContent = 'PDF • FR';
-  } else {
-    downloadBtn.href = 'assets/Tlili_Mohamed_CV_En.pdf'; // Path to English CV
-    downloadBtn.textContent = 'Download';
-    langLabel.textContent = 'PDF • EN';
-  }
-  
-  // Optional: Add a small animation to the button
-  const switchBtn = document.querySelector('.cv-lang-switch svg');
-  switchBtn.style.transform = 'scale(1.2)';
-  setTimeout(() => {
-    switchBtn.style.transform = 'scale(1)';
-  }, 200);
-}
+/* ---------- keyboard access for clickable figures / map cards ----------
+   The inline onclick handles the mouse; here we make the same targets
+   focusable and operable with Enter / Space, and expose a spoken label. */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.case-media figure[onclick], .map-item[onclick]').forEach(function (el) {
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    var img = el.querySelector('img');
+    var label = (img && img.alt) || (el.textContent || '').trim().slice(0, 120);
+    if (label && !el.getAttribute('aria-label')) el.setAttribute('aria-label', label);
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+    });
+  });
+});
