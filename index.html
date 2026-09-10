@@ -59,13 +59,14 @@
         <li><a href="#experience" data-en="Experience" data-fr="Expérience">Experience</a></li>
         <li><a href="#capabilities" data-en="Capabilities" data-fr="Compétences">Capabilities</a></li>
         <li><a href="#about" data-en="About" data-fr="À propos">About</a></li>
-        <li><a href="#contact" data-en="Contact" data-fr="Contact">Contact</a></li>
+        <li class="contact-li"><a href="#contact" data-en="Contact" data-fr="Contact">Contact</a></li>
       </ul>
       <div class="header-actions">
         <button class="lang-toggle" id="langToggle" onclick="toggleLanguage()" aria-label="Switch language">
           <span class="lang-flag" aria-hidden="true">🇫🇷</span>
           <span class="lang-text">FR</span>
         </button>
+        <a class="btn btn-ghost btn-sm header-contact" href="#contact" data-en="Contact" data-fr="Contact">Contact</a>
         <a class="btn btn-primary btn-sm header-cta cv-link" href="assets/Tlili_Mohamed_CV_En.pdf" download
            data-en="Download CV" data-fr="Télécharger le CV">Download CV</a>
       </div>
@@ -96,10 +97,6 @@
       <div class="hero-visual">
         <figure class="hero-portrait">
           <img src="images/1024.webp" alt="Portrait of Tlili Mohamed, GIS Engineer" loading="eager" fetchpriority="high" decoding="async" width="585" height="834">
-        </figure>
-        <figure class="hero-map-chip">
-          <img src="images/Round Top Scale 1_50000.webp" alt="Topographic map produced at 1:50,000 scale" loading="lazy" decoding="async" width="1400" height="1811">
-          <figcaption data-en="Topographic mapping · 1:50,000" data-fr="Cartographie topographique · 1:50 000">Topographic mapping · 1:50,000</figcaption>
         </figure>
       </div>
     </div>
@@ -135,7 +132,7 @@
       <div class="section-head">
         <span class="kicker" data-en="Selected work" data-fr="Travail sélectionné">Selected work</span>
         <h2 class="section-title" data-en="Selected projects" data-fr="Projets sélectionnés">Selected projects</h2>
-        <p class="section-lead" data-en="Four production projects — geodatabase design, LiDAR classification, large-scale digitization, and fiber network data. Each card opens a full case study below." data-fr="Quatre projets en production — conception de géodatabase, classification LiDAR, numérisation à grande échelle et données de réseau fibre. Chaque carte ouvre une étude de cas complète ci-dessous.">Four production projects — geodatabase design, LiDAR classification, large-scale digitization, and fiber network data. Each card opens a full case study below.</p>
+        <p class="section-lead" data-en="Selected production work across geodatabases, LiDAR, GIS automation, and infrastructure networks." data-fr="Travail de production sélectionné — géodatabases, LiDAR, automatisation SIG et réseaux d'infrastructure.">Selected production work across geodatabases, LiDAR, GIS automation, and infrastructure networks.</p>
       </div>
 
       <div class="work-grid">
@@ -190,8 +187,8 @@
           </div>
         </article>
 
-        <!-- Project 4 : Fiber Optic (wide card) -->
-        <article class="work-card work-card-wide">
+        <!-- Project 4 : Fiber Optic -->
+        <article class="work-card">
           <div class="work-thumb"><img src="images/Fiber1.webp" alt="Fiber-optic network route data compared with the AutoCAD engineering plan" loading="lazy" decoding="async" width="1600" height="486"></div>
           <div class="work-body">
             <span class="work-cat" data-en="Fiber Optic Networks" data-fr="Réseaux Fibre Optique">Fiber Optic Networks</span>
@@ -570,8 +567,8 @@
         </div>
 
         <!-- Map 2 -->
-        <div class="map-item" onclick="openMapModal('images/Round Top Scale 1_50000.webp', 'Round Top Map', 'Topographic map at 1:50,000 scale — Round Top Minerals.')">
-          <img src="images/Round Top Scale 1_50000.webp" alt="Topographic map at 1:50,000 scale of the Round Top area" loading="lazy" decoding="async" width="1400" height="1811">
+        <div class="map-item" onclick="openMapModal('images/Round Top Scale 1_50000.webp', 'Round Top Map', 'Mineral claims and occurrences map of the Round Top mine area — Texas GLO and USGS data.')">
+          <img src="images/Round Top Scale 1_50000.webp" alt="Mineral claims and occurrences map of the Round Top mine area" loading="lazy" decoding="async" width="1400" height="1811">
           <div class="map-info">
             <h3 data-en="Round Top Map" data-fr="Carte de Round Top">Round Top Map</h3>
           </div>
@@ -658,6 +655,7 @@
         <div class="form-field">
           <label for="qfType" data-en="Reason (optional)" data-fr="Motif (optionnel)">Reason (optional)</label>
           <select id="qfType" name="type">
+            <option value="" data-en="Select a reason (optional)" data-fr="Choisir un motif (optionnel)">Select a reason (optional)</option>
             <option value="Full-time GIS role" data-en="Full-time GIS role" data-fr="Poste SIG à temps plein">Full-time GIS role</option>
             <option value="Freelance / contract project" data-en="Freelance / contract project" data-fr="Mission freelance / contrat">Freelance / contract project</option>
             <option value="GIS services" data-en="Spatial analysis, cartography or automation" data-fr="Analyse spatiale, cartographie ou automatisation">Spatial analysis, cartography or automation</option>
