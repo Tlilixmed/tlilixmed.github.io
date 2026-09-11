@@ -390,6 +390,14 @@
     }
   }
 
+  // srs from the catalog may be null / "null" (stale string) — normalize so
+  // the info line never prints "source CRS: null".
+  function entrySrs(entry) {
+    var s = entry && entry.srs ? String(entry.srs).trim() : "";
+    if (!s || /^null$/i.test(s) || /^n\/a$/i.test(s)) return "";
+    return s;
+  }
+
   function probeMissing(base) {
     // HEAD-like 1-byte range probes so a precise message can name the missing file.
     var names = ["metadata.json", "hierarchy.bin", "octree.bin"];
@@ -403,8 +411,42 @@
     }, Promise.resolve(null));
   }
 
+  // ---- swap clouds WITHOUT the nonexistent scene.removePointCloud ----------
+  // Potree 1.8 has no Scene.removePointCloud() (this used to throw
+  // "viewer.scene.removePointCloud is not a function" AFTER the new cloud had
+  // fully downloaded — so the new cloud was never shown and the old one looked
+  // dead too). Removal is done manually: splice the scene array + remove the
+  // Object3D from scenePointCloud. Every step is guarded so a failure here can
+  // never prevent the new cloud from being displayed.
+  function removeCloudsFromScene() {
+    viewer.scene.pointclouds.slice().forEach(function (old) {
+      try {
+        var i = viewer.scene.pointclouds.indexOf(old);
+        if (i !== -1) viewer.scene.pointclouds.splice(i, 1);
+        viewer.scene.scenePointCloud.remove(old);
+        if (typeof old.dispose === "function") { try { old.dispose(); } catch (e2) {} }
+      } catch (e3) { /* keep going — the new cloud matters more */ }
+    });
+  }
+
   async function loadCloud(entry) {
-    if (entry.slug === loadedSlug) return; // already on screen — retry after a failure is still allowed
+    if (entry.slug === loadedSlug) {
+      // The requested cloud is already on screen — but an error overlay from a
+      // FAILED switch (e.g. the other cloud is broken) may still be covering
+      // it. Clicking this tab must bring the working cloud back: hide the
+      // overlay and restore the info card instead of returning silently.
+      tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
+        b.classList.toggle("active", b.dataset.slug === entry.slug));
+      if (activePC && activeMeta) {
+        hideOverlay();
+        describe(activeMeta);
+        document.getElementById("iStatus").textContent =
+          (entry.status || "ready") + " \u00B7 source CRS: " +
+          (activeMeta.projection || entrySrs(entry) || "EPSG:2056 (assumed)");
+        document.getElementById("iTitle").textContent = entry.title_en || entry.slug;
+      }
+      return;
+    }
     activeSlug = entry.slug;
     tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
       b.classList.toggle("active", b.dataset.slug === entry.slug));
@@ -426,7 +468,9 @@
       const e = await Potree.loadPointCloud(base + "metadata.json", entry.slug);
       const pc = e.pointcloud;
 
-      viewer.scene.pointclouds.slice().forEach(old => viewer.scene.removePointCloud(old.name));
+      // New cloud is fully loaded -> only NOW drop the old one (manual removal,
+      // see removeCloudsFromScene above — Potree 1.8 lacks removePointCloud).
+      removeCloudsFromScene();
       activeMeta = meta;
       activePC = pc;
       loadedSlug = entry.slug;
@@ -447,7 +491,7 @@
       describe(activeMeta);
       document.getElementById("iStatus").textContent =
         (entry.status || "ready") + " \u00B7 source CRS: " +
-        (activeMeta.projection || entry.srs || "EPSG:2056 (assumed)");
+        (activeMeta.projection || entrySrs(entry) || "EPSG:2056 (assumed)");
       hideOverlay();
     } catch (err) {
       // Restore tab state so the failed cloud can be retried and the previous

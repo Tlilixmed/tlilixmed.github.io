@@ -46,6 +46,14 @@
 //   GET    /api/admin/pointclouds                 all point clouds
 //   POST   /api/admin/pointclouds                 register one (e.g. "LAS 1")
 //   PUT    /api/admin/pointclouds/:id             update (rename, publish, set prefix/status)
+//   DELETE /api/admin/pointclouds/:id             unregister the cloud. Add ?purge=1 to ALSO
+//                                                 delete every R2 object under its prefix
+//                                                 (the stored octree files). las-1 and las-2 are
+//                                                 fully independent: touching one never touches
+//                                                 the other.
+//   GET    /api/admin/pointclouds/:id/rescan      re-read <prefix>metadata.json / cloud.js from R2
+//                                                 and self-heal point_count + status (fixes stale
+//                                                 catalog numbers without re-uploading anything).
 // ============================================================
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
@@ -191,13 +199,38 @@ async function uploadOctreeFile(request, env, cloudId, rel) {
 }
 
 // ------------------------------------------------------------
-// Upload tracking (upload_log). Best-effort: if migration 002 has not
-// been applied yet the endpoints must keep working, so every log write
-// is swallowed. Run:  npx wrangler d1 execute gis-db --remote \
-//   --file derived/migrations/002-upload-log.sql
+// Upload tracking (upload_log). The table is created AUTOMATICALLY on first
+// use (idempotent CREATE TABLE IF NOT EXISTS, cached after success) so upload
+// tracking works out of the box — running migration 002 manually is no longer
+// required (it is kept for reference / explicit provisioning).
+// Every log write stays best-effort: logging must never block an upload.
 // ------------------------------------------------------------
 
+let uploadLogReady = false;
+
+async function ensureUploadLog(env) {
+  if (uploadLogReady) return;
+  try {
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS upload_log (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         cloud_id INTEGER NOT NULL,
+         filename TEXT NOT NULL,
+         size_bytes INTEGER,
+         parts INTEGER,
+         status TEXT NOT NULL DEFAULT 'uploading',
+         error TEXT,
+         started_at TEXT DEFAULT (datetime('now')),
+         finished_at TEXT
+       )`
+    ).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_upload_log_cloud ON upload_log(cloud_id, id DESC)`).run();
+    uploadLogReady = true;
+  } catch { /* degraded mode — endpoints keep working without the log */ }
+}
+
 async function logUpload(env, cloudId, filename, sizeBytes, parts, status, error) {
+  await ensureUploadLog(env);
   try {
     if (status === 'uploading') {
       await env.DB.prepare(
@@ -213,6 +246,7 @@ async function logUpload(env, cloudId, filename, sizeBytes, parts, status, error
 }
 
 async function listUploads(request, env, cloudId) {
+  await ensureUploadLog(env);
   try {
     const { results } = await env.DB.prepare(
       `SELECT id, filename, size_bytes, parts, status, error, started_at, finished_at
@@ -220,7 +254,7 @@ async function listUploads(request, env, cloudId) {
     ).bind(cloudId).all();
     return json({ uploads: results || [] });
   } catch {
-    return json({ uploads: [], note: 'upload_log table missing — run derived/migrations/002-upload-log.sql' });
+    return json({ uploads: [] });
   }
 }
 
@@ -339,6 +373,57 @@ async function listCloudFiles(request, env, cloudId) {
     truncated: !!page.truncated,
     cursor: page.truncated ? page.cursor : null,
   });
+}
+
+// Per-cloud self-service: re-read the stored conversion metadata and heal the
+// catalog row (point_count / status). Useful when the numbers went stale (or
+// were copied from another cloud) — no re-upload needed.
+async function rescanCloud(request, env, cloudId) {
+  const c = await cloudById(env, cloudId);
+  if (!c) return fail(404, 'point cloud not found');
+  const prefix = String(c.prefix || (c.slug + '/'));
+  let points = null;
+  let source = null;
+  for (const name of ['metadata.json', 'cloud.js']) {
+    try {
+      const obj = await env.R2_CLOUDS.get(prefix + name);
+      if (!obj) continue;
+      const text = await new Response(obj.body).text();
+      const meta = JSON.parse(text);
+      points = Number(meta.points || meta.pointCount || 0) || null;
+      source = name;
+      break;
+    } catch { /* try the next candidate */ }
+  }
+  if (!source) return fail(404, 'no metadata.json / cloud.js under prefix "' + prefix + '" — upload the octree first');
+  const status = points ? 'ready' : c.status;
+  await env.DB.prepare(
+    `UPDATE pointclouds SET point_count = ?, status = ?, updated_at = datetime('now') WHERE id = ?`
+  ).bind(points, status, cloudId).run();
+  return json({ ok: true, point_count: points, status, source });
+}
+
+// Delete ONE cloud independently of all others. With ?purge=1 every R2 object
+// under the cloud prefix is removed too (paged list + delete). D1 row goes
+// either way.
+async function deleteCloud(request, env, cloudId) {
+  const c = await cloudById(env, cloudId);
+  if (!c) return fail(404, 'point cloud not found');
+  const purge = new URL(request.url).searchParams.get('purge') === '1';
+  let deleted = 0;
+  if (purge) {
+    const prefix = String(c.prefix || (c.slug + '/'));
+    let cursor;
+    do {
+      const page = await env.R2_CLOUDS.list({ prefix, cursor, limit: 400 });
+      const keys = (page.objects || []).map((o) => o.key);
+      for (const k of keys) { try { await env.R2_CLOUDS.delete(k); deleted++; } catch { /* keep purging */ } }
+      cursor = page.truncated ? page.cursor : undefined;
+    } while (cursor);
+  }
+  await env.DB.prepare(`DELETE FROM upload_log WHERE cloud_id = ?`).bind(cloudId).run();
+  await env.DB.prepare(`DELETE FROM pointclouds WHERE id = ?`).bind(cloudId).run();
+  return json({ ok: true, deleted_r2_objects: purge ? deleted : 0, purged: purge });
 }
 
 // ------------------------------------------------------------
@@ -528,8 +613,14 @@ export async function handleAdmin(request, env, path) {
     if (method === 'GET' && id && action === 'uploads') {
       return listUploads(request, env, id);
     }
+    if (method === 'GET' && id && action === 'rescan') {
+      return rescanCloud(request, env, id);
+    }
     if (method === 'DELETE' && id && action === 'file') {
       return deleteCloudFile(request, env, id);
+    }
+    if (method === 'DELETE' && id) {
+      return deleteCloud(request, env, id);
     }
     if (method === 'POST' && id && action === 'multipart' && seg[5] === undefined) {
       return startMultipart(request, env, id);

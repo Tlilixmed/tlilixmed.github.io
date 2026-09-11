@@ -168,6 +168,18 @@
   .fm-row .fm-size { color:var(--dim); font-size:11.5px; flex:0 0 auto; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .hidden { display:none !important; }
+
+  /* ---- per-cloud cards (Point clouds tab) ---- */
+  .cloud-card .c-meta { display:flex; gap:14px; flex-wrap:wrap; color:var(--dim); font-size:12px;
+                        margin-top:6px; font-variant-numeric:tabular-nums; }
+  .cloud-card .c-meta b { color:var(--txt); font-weight:600; }
+  .cloud-card .c-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .cloud-card .c-edit { border-top:1px dashed var(--line); margin-top:12px; padding-top:12px; }
+  .cloud-card .c-progress { margin-top:12px; }
+  .cloud-card .c-uplog { border-top:1px dashed var(--line); margin-top:12px; padding-top:10px; }
+  .cloud-card .c-uplog h4 { margin:0 0 6px; font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--dim); }
+  .cloud-card .c-uplog table { font-size:11.5px; }
+  .cloud-card .c-uplog td, .cloud-card .c-uplog th { padding:4px 8px; }
 </style>
 </head>
 <body>
@@ -273,36 +285,39 @@
     </div>
   </section>
 
-  <!-- ---- point clouds tab ---- -->
+  <!-- ---- point clouds tab — one independent card per cloud ---- -->
   <section id="tab-clouds" class="hidden">
-    <div class="card">
-      <h3>Point clouds</h3>
-      <div id="cloudsWrap"><span class="spin"></span></div>
-      <form id="cloudForm" style="margin-top:16px">
-        <h3 style="font-size:12px;color:var(--dim)">Register new cloud</h3>
-        <div class="grid">
-          <label>slug * <input name="slug" type="text" required placeholder="las-2"></label>
-          <label>title_en * <input name="title_en" type="text" required></label>
-          <label>title_fr <input name="title_fr" type="text"></label>
-          <label>prefix <input name="prefix" type="text" placeholder="las-2/"></label>
-          <label class="wide">desc_en <textarea name="desc_en" rows="1"></textarea></label>
-          <label class="wide">desc_fr <textarea name="desc_fr" rows="1"></textarea></label>
-          <label class="checkline"><input name="published" type="checkbox"> published</label>
-        </div>
-        <div class="row" style="margin-top:10px"><button class="btn primary" type="submit">Register</button></div>
-        <p class="hint">Workflow: <b>register</b> → <b>LAS</b> stores the raw scan in <code>gis-private</code>
-          (never served, ≤100 MB) → convert locally with PotreeConverter → <b>octree</b> uploads the converted folder to
-          <code>clouds-public/&lt;prefix&gt;</code> (files over 90&nbsp;MB are chunked automatically) and flips status to
-          <code>ready</code> (point count read from <code>cloud.js</code>/<code>metadata.json</code>) →
-          <b>files</b> opens the per-cloud file manager (upload / replace / delete single files + upload tracking) → publish.
-          The <code>/lidar</code> viewer and <code>/clouds/*</code> proxy serve published clouds only.</p>
-      </form>
-      <input type="file" id="lasFile" accept=".las,.laz" style="display:none">
-      <input type="file" id="octreeDir" webkitdirectory directory multiple style="display:none">
-      <input type="file" id="fmFile" multiple style="display:none">
-      <input type="file" id="fmReplaceFile" style="display:none">
-      <div id="cloudProgress" class="hint" hidden></div>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn small primary" id="btnAddCloud" type="button">+ Register new cloud</button>
+      <span class="hint" style="margin:0">Every cloud below is managed <b>independently</b> — edit, upload,
+        publish or delete one without ever touching the others.</span>
     </div>
+
+    <form id="cloudForm" class="card hidden" style="margin-bottom:18px">
+      <h3>Register new cloud</h3>
+      <div class="grid">
+        <label>slug * <input name="slug" type="text" required placeholder="las-2"></label>
+        <label>title_en * <input name="title_en" type="text" required></label>
+        <label>title_fr <input name="title_fr" type="text"></label>
+        <label>prefix <input name="prefix" type="text" placeholder="las-2/"></label>
+        <label class="wide">desc_en <textarea name="desc_en" rows="1"></textarea></label>
+        <label class="wide">desc_fr <textarea name="desc_fr" rows="1"></textarea></label>
+        <label class="checkline"><input name="published" type="checkbox"> published</label>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" type="submit">Register</button></div>
+      <p class="hint">Workflow: <b>register</b> → <b>Upload LAS</b> stores the raw scan in <code>gis-private</code>
+        (never served, ≤100 MB) → convert locally with PotreeConverter → <b>octree</b> uploads the converted folder to
+        <code>clouds-public/&lt;prefix&gt;</code> (files over 90&nbsp;MB are chunked automatically) and flips status to
+        <code>ready</code> (point count read from <code>metadata.json</code>/<code>cloud.js</code>) →
+        <b>publish</b> → open <code>/lidar</code>. Upload tracking is recorded per cloud automatically.</p>
+    </form>
+
+    <div id="cloudsWrap" class="stack"><span class="spin"></span></div>
+
+    <input type="file" id="lasFile" accept=".las,.laz" style="display:none">
+    <input type="file" id="octreeDir" webkitdirectory directory multiple style="display:none">
+    <input type="file" id="fmFile" multiple style="display:none">
+    <input type="file" id="fmReplaceFile" style="display:none">
 
     <!-- per-cloud file manager: upload / replace / delete individual octree files -->
     <div class="card" id="fmCard" style="margin-top:18px" hidden>
@@ -789,7 +804,7 @@
     reader.readAsText(file);
   });
 
-  // ---------- point clouds ----------
+  // ---------- point clouds — one independent card per cloud ----------
   function loadClouds() {
     api("GET", "/api/admin/pointclouds").then(function (j) {
       state.clouds = j.pointclouds || [];
@@ -799,56 +814,191 @@
     });
   }
 
+  var STATUS_LIST = ["awaiting_upload", "source_uploaded", "processing", "ready"];
+
+  function cloudCardHTML(c) {
+    var pub = Number(c.published);
+    var title = esc(c.title_en || c.slug);
+    var points = c.point_count == null ? "—" : Number(c.point_count).toLocaleString("en-US");
+    var prefix = esc(c.prefix || (c.slug + "/"));
+    var srs = c.srs ? esc(c.srs) : "—";
+    var edit = '<div class="c-edit hidden" data-role="editform">' +
+      '<div class="grid">' +
+        '<label>title_en <input data-f="title_en" type="text" value="' + esc(c.title_en) + '"></label>' +
+        '<label>title_fr <input data-f="title_fr" type="text" value="' + esc(c.title_fr || "") + '"></label>' +
+        '<label>prefix <input data-f="prefix" type="text" value="' + prefix + '"></label>' +
+        '<label>srs <input data-f="srs" type="text" value="' + esc(c.srs || "") + '" placeholder="EPSG:2056"></label>' +
+        '<label class="wide">desc_en <textarea data-f="desc_en" rows="1">' + esc(c.desc_en || "") + '</textarea></label>' +
+        '<label class="wide">desc_fr <textarea data-f="desc_fr" rows="1">' + esc(c.desc_fr || "") + '</textarea></label>' +
+        '<label>point_count <input data-f="point_count" type="number" value="' + (c.point_count == null ? "" : Number(c.point_count)) + '"></label>' +
+        '<label>status <select data-f="status">' +
+          STATUS_LIST.map(function (s) { return "<option" + (c.status === s ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+        '</select></label>' +
+        '<label class="checkline"><input data-f="published" type="checkbox"' + (pub ? " checked" : "") + '> published</label>' +
+      '</div>' +
+      '<div class="row" style="margin-top:10px">' +
+        '<button class="btn small primary" data-act="save">Save changes</button>' +
+        '<button class="btn small" data-act="canceledit">Cancel</button>' +
+      '</div></div>';
+    return '<div class="card cloud-card" data-id="' + c.id + '">' +
+      '<div class="sym-head">' +
+        '<h3 style="margin:0">' + title + ' <span class="chip">' + esc(c.slug) + '</span></h3>' +
+        '<span class="chip ' + (c.status === "ready" ? "on" : "n") + '">' + esc(c.status || "awaiting_upload") + '</span>' +
+        '<span class="chip ' + (pub ? "on" : "off") + '">' + (pub ? "published" : "draft") + '</span>' +
+        '<span class="row" style="margin-left:auto">' +
+          '<button class="btn small" data-act="publish">' + (pub ? "Unpublish" : "Publish") + '</button>' +
+          '<button class="btn small" data-act="edit">Edit</button>' +
+          '<button class="btn small danger" data-act="delete">Delete</button>' +
+        '</span>' +
+      '</div>' +
+      '<div class="c-meta">' +
+        '<span>points <b>' + points + '</b></span>' +
+        '<span>prefix <b>' + prefix + '</b></span>' +
+        '<span>srs <b>' + srs + '</b></span>' +
+        '<span>bucket <b>' + esc(c.bucket || "clouds-public") + '</b></span>' +
+      '</div>' +
+      '<div class="c-actions">' +
+        '<button class="btn small" data-act="las" title="Upload the raw .las/.laz scan (stored privately, never served)">Upload LAS</button>' +
+        '<button class="btn small" data-act="octree" title="Upload the converted Potree octree folder">Upload octree folder</button>' +
+        '<button class="btn small" data-act="files" title="Per-file manager: upload / replace / delete single files">Files</button>' +
+        '<button class="btn small" data-act="rescan" title="Re-read metadata.json from storage and fix points/status">Rescan</button>' +
+      '</div>' +
+      edit +
+      '<div class="c-progress" data-role="progress" hidden>' +
+        '<div class="fm-bar"><div data-role="bar"></div></div>' +
+        '<div class="hint" data-role="text" style="margin-top:4px"></div>' +
+      '</div>' +
+      '<div class="c-uplog" data-role="uploads"><h4>Upload tracking</h4><div data-role="log"><p class="hint" style="margin:0">—</p></div></div>' +
+    '</div>';
+  }
+
   function renderClouds() {
     var wrap = $("cloudsWrap");
-    if (!state.clouds.length) { wrap.innerHTML = '<p class="hint">No clouds registered yet.</p>'; return; }
-    var html = '<table><thead><tr>' +
-      "<th>slug</th><th>title_en</th><th>status</th><th>points</th><th>srs</th><th>prefix</th><th>pub</th><th></th>" +
-      "</tr></thead><tbody>";
-    state.clouds.forEach(function (c) {
-      html += "<tr data-id='" + c.id + "'>" +
-        "<td><b>" + esc(c.slug) + "</b><br><span style='color:var(--dim)'>#" + c.id + " · " + esc(c.bucket || "") + "</span></td>" +
-        "<td><input type='text' data-f='title_en' value='" + esc(c.title_en) + "'></td>" +
-        "<td><select data-f='status'>" +
-          ["awaiting_upload", "source_uploaded", "processing", "ready"].map(function (s) {
-            return "<option" + (c.status === s ? " selected" : "") + ">" + s + "</option>";
-          }).join("") + "</select></td>" +
-        "<td><input type='number' data-f='point_count' style='width:110px' value='" + (c.point_count == null ? "" : Number(c.point_count)) + "'></td>" +
-        "<td><input type='text' data-f='srs' style='width:95px' value='" + esc(c.srs || "") + "' placeholder='EPSG:2056'></td>" +
-        "<td><input type='text' data-f='prefix' value='" + esc(c.prefix || "") + "'></td>" +
-        "<td><input type='checkbox' data-f='published'" + (Number(c.published) ? " checked" : "") + "></td>" +
-        "<td><div class='row'>" +
-          "<button class='btn small primary' data-act='save'>save</button>" +
-          "<button class='btn small' data-act='las' title='Upload the raw .las/.laz scan (stored privately)'>LAS</button>" +
-          "<button class='btn small' data-act='octree' title='Upload the converted Potree folder'>octree</button>" +
-          "<button class='btn small' data-act='files' title='List stored octree objects'>files</button>" +
-        "</div></td></tr>";
-    });
-    html += "</tbody></table>";
-    wrap.innerHTML = html;
+    if (!state.clouds.length) { wrap.innerHTML = '<p class="hint">No clouds registered yet — press <b>+ Register new cloud</b>.</p>'; return; }
+    wrap.innerHTML = state.clouds.map(cloudCardHTML).join("");
+    state.clouds.forEach(function (c) { refreshCardUploads(c.id, true); });
   }
+
+  // ---- per-card upload tracking (upload_log; table auto-created server-side) ----
+  function renderUploadLog(el, rows) {
+    if (!rows.length) { el.innerHTML = '<p class="hint" style="margin:0">No uploads recorded yet.</p>'; return; }
+    var h = '<table><thead><tr><th>file</th><th>size</th><th>parts</th><th>status</th><th>started</th><th>finished</th></tr></thead><tbody>';
+    rows.forEach(function (u) {
+      h += "<tr><td style='max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + esc(u.filename) + "</td>" +
+        "<td>" + (u.size_bytes == null ? "—" : fmtSize(u.size_bytes)) + "</td>" +
+        "<td>" + (u.parts == null ? "—" : u.parts) + "</td>" +
+        "<td>" + (u.status === "complete" ? "<span class='chip on'>complete</span>"
+                   : u.status === "failed" ? "<span class='chip off'>failed</span>"
+                   : "<span class='chip n'>uploading</span>") +
+        (u.error ? "<br><span style='color:var(--err);font-size:10.5px'>" + esc(u.error) + "</span>" : "") + "</td>" +
+        "<td>" + esc(u.started_at || "") + "</td><td>" + esc(u.finished_at || "") + "</td></tr>";
+    });
+    el.innerHTML = h + "</tbody></table>";
+  }
+
+  function refreshCardUploads(cid, silent) {
+    var card = document.querySelector('.cloud-card[data-id="' + cid + '"]');
+    if (!card) return;
+    var el = card.querySelector("[data-role='log']");
+    api("GET", "/api/admin/pointclouds/" + cid + "/uploads").then(function (j) {
+      if (el) renderUploadLog(el, j.uploads || []);
+      if (fmCloud && fmCloud.id === cid) loadUploadLog(); // keep the file-manager copy in sync
+    }).catch(function (e) {
+      if (!silent && el) el.innerHTML = '<p class="hint" style="margin:0">Upload log unavailable: ' + esc(e.message) + "</p>";
+    });
+  }
+
+  function cardProgress(cid, pct, text) {
+    var card = document.querySelector('.cloud-card[data-id="' + cid + '"]');
+    if (!card) return;
+    var wrap = card.querySelector("[data-role='progress']");
+    if (!wrap) return;
+    if (pct == null) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    card.querySelector("[data-role='bar']").style.width = Math.max(0, Math.min(100, pct)) + "%";
+    card.querySelector("[data-role='text']").textContent = text || "";
+  }
+
+  $("btnAddCloud").addEventListener("click", function () {
+    var f = $("cloudForm");
+    f.classList.remove("hidden");
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+    try { f.elements.slug.focus({ preventScroll: true }); } catch (e) {}
+  });
 
   $("cloudsWrap").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-act]"); if (!b) return;
-    var tr = b.closest("tr");
-    var id = tr.dataset.id;
+    var card = b.closest(".cloud-card");
+    var id = Number(card.dataset.id);
+    var c = state.clouds.filter(function (x) { return x.id === id; })[0];
+    if (!c) return;
     var act = b.dataset.act;
-    if (act === "las") { state.upCloud = Number(id); $("lasFile").click(); return; }
-    if (act === "octree") { state.upCloud = Number(id); $("octreeDir").click(); return; }
-    if (act === "files") { openFileManager(Number(id)); return; }
-    if (act !== "save") return;
-    var get = function (f) { return tr.querySelector("[data-f='" + f + "']"); };
-    var body = {
-      title_en: get("title_en").value.trim(),
-      status: get("status").value,
-      point_count: get("point_count").value === "" ? null : num(get("point_count").value),
-      srs: (function (v) { v = v.trim(); return (!v || /^null$/i.test(v) || /^n\/a$/i.test(v)) ? null : v; })(get("srs").value),
-      prefix: get("prefix").value.trim() || null,
-      published: get("published").checked ? 1 : 0
-    };
-    api("PUT", "/api/admin/pointclouds/" + id, body)
-      .then(function () { toast("Cloud #" + id + " saved", "ok"); loadClouds(); })
-      .catch(function (e) { toast(e.message, "err"); });
+    var get = function (f) { return card.querySelector("[data-f='" + f + "']"); };
+
+    if (act === "edit") { card.querySelector("[data-role='editform']").classList.remove("hidden"); return; }
+    if (act === "canceledit") { card.querySelector("[data-role='editform']").classList.add("hidden"); return; }
+    if (act === "save") {
+      var vpc = get("point_count").value;
+      var body = {
+        title_en: get("title_en").value.trim(), title_fr: get("title_fr").value.trim(),
+        desc_en: get("desc_en").value, desc_fr: get("desc_fr").value,
+        prefix: get("prefix").value.trim() || null,
+        srs: (function (v) { v = v.trim(); return (!v || /^null$/i.test(v) || /^n\/a$/i.test(v)) ? null : v; })(get("srs").value),
+        point_count: vpc === "" ? null : num(vpc),
+        status: get("status").value,
+        published: get("published").checked ? 1 : 0
+      };
+      api("PUT", "/api/admin/pointclouds/" + id, body)
+        .then(function () { toast("Cloud saved", "ok"); loadClouds(); })
+        .catch(function (e) { toast(e.message, "err"); });
+      return;
+    }
+    if (act === "publish") {
+      api("PUT", "/api/admin/pointclouds/" + id, { published: Number(c.published) ? 0 : 1 })
+        .then(function () {
+          toast(Number(c.published) ? "Cloud unpublished — hidden from /lidar" : "Cloud published — live on /lidar", "ok");
+          loadClouds();
+        })
+        .catch(function (e) { toast(e.message, "err"); });
+      return;
+    }
+    if (act === "las") { state.upCloud = id; $("lasFile").click(); return; }
+    if (act === "octree") { state.upCloud = id; $("octreeDir").click(); return; }
+    if (act === "files") { openFileManager(id); return; }
+    if (act === "rescan") {
+      api("GET", "/api/admin/pointclouds/" + id + "/rescan")
+        .then(function (r) { toast("Rescan: " + (r.point_count == null ? "?" : Number(r.point_count).toLocaleString("en-US")) + " points from " + r.source, "ok"); loadClouds(); })
+        .catch(function (e) { toast("Rescan: " + e.message, "err"); });
+      return;
+    }
+    if (act === "delete") {
+      // Show what will be removed: ask storage first, then confirm in two steps.
+      var listUrl = "/api/admin/pointclouds/" + id + "/files";
+      api("GET", listUrl).then(function (j) {
+        var objs = j.objects || [];
+        var bytes = 0; objs.forEach(function (o) { bytes += o.size; });
+        var what = "'" + (c.title_en || c.slug) + "' (prefix " + (c.prefix || c.slug + "/") + ")";
+        if (objs.length && confirm("Delete " + what + " AND permanently remove its " + objs.length +
+            " stored file(s) (" + fmtSize(bytes) + ") from R2?")) {
+          return api("DELETE", "/api/admin/pointclouds/" + id + "?purge=1");
+        }
+        if (!objs.length && confirm("Delete " + what + "? (no stored files found)")) {
+          return api("DELETE", "/api/admin/pointclouds/" + id);
+        }
+        if (objs.length && confirm("Keep the stored files and only remove the catalog entry?")) {
+          return api("DELETE", "/api/admin/pointclouds/" + id);
+        }
+        return null;
+      }).then(function (r) {
+        if (!r) return;
+        toast("Cloud deleted (" + (r.deleted_r2_objects || 0) + " file(s) removed from storage)", "ok");
+        if (fmCloud && fmCloud.id === id) { $("fmCard").hidden = true; fmCloud = null; }
+        loadClouds();
+      }).catch(function (e) {
+        if (e && e.message) toast("Delete: " + e.message, "err");
+      });
+      return;
+    }
   });
 
   $("cloudForm").addEventListener("submit", function (ev) {
@@ -859,27 +1009,18 @@
       desc_en: f.desc_en.value, desc_fr: f.desc_fr.value,
       prefix: f.prefix.value.trim() || (f.slug.value.trim() + "/"),
       status: "awaiting_upload", published: f.published.checked ? 1 : 0
-    }).then(function () { toast("Cloud registered", "ok"); f.slug.value = ""; f.title_en.value = ""; loadClouds(); })
-      .catch(function (e) { toast(e.message, "err"); });
+    }).then(function () {
+      toast("Cloud registered — now upload its LAS / octree", "ok");
+      $("cloudForm").reset();
+      $("cloudForm").classList.add("hidden");
+      loadClouds();
+    }).catch(function (e) { toast(e.message, "err"); });
   });
 
   // ---------- point-cloud uploads (LAS source + Potree octree folder) ----------
-  function cloudBusy(msg) { var el = $("cloudProgress"); el.hidden = false; el.textContent = msg; }
-  function hideCloudBusy() { $("cloudProgress").hidden = true; }
+  // Progress shows on the card of the cloud being uploaded; every finished
+  // upload refreshes that card's tracking log (upload_log) automatically.
   function uploadUrl(path, cid) { return path + "?cloud_id=" + cid; }
-  function sendFile(url, file) {
-    return fetch(url, {
-      method: "POST",
-      headers: { "x-admin-token": TOKEN, "content-type": "application/octet-stream" },
-      body: file
-    }).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (j) {
-        if (!r.ok) { var e = new Error(j.error || ("HTTP " + r.status)); e.status = r.status; throw e; }
-        return j;
-      });
-    });
-  }
-
   function relPathFor(f, cloud) {
     var slug = cloud.slug;
     var prefix = String(cloud.prefix || slug + "/").replace(/\/+$/, "");
@@ -905,15 +1046,17 @@
     var fname = file.name;
     if (cloud) fname = cloud.slug + fname.slice(fname.lastIndexOf("."));
     state.uploading = true;
-    cloudBusy("Uploading " + file.name + " (" + (file.size / 1048576).toFixed(1) + " MB) to gis-private…");
-    sendFile(uploadUrl("/api/admin/upload/las", cid) + "&filename=" + encodeURIComponent(fname), file)
+    cardProgress(cid, 0, "Uploading " + file.name + " (" + (file.size / 1048576).toFixed(1) + " MB) to gis-private…");
+    xhrSend(uploadUrl("/api/admin/upload/las", cid) + "&filename=" + encodeURIComponent(fname), "POST", file,
+      function (l, t) { cardProgress(cid, (l / t) * 100, "LAS " + fname + " — " + fmtSize(l) + " / " + fmtSize(t) + " (" + Math.round((l / t) * 100) + "%)"); })
       .then(function () {
+        cardProgress(cid, 100, "Done — " + fname + " stored in gis-private (never served publicly).");
         toast("Source stored in gis-private — now convert it with PotreeConverter and upload the octree folder", "ok");
-        hideCloudBusy();
+        setTimeout(function () { cardProgress(cid, null); }, 4000);
         loadClouds();
       })
-      .catch(function (e) { toast("LAS upload: " + e.message, "err"); hideCloudBusy(); })
-      .then(function () { state.uploading = false; });
+      .catch(function (e) { cardProgress(cid, null); toast("LAS upload: " + e.message, "err"); })
+      .then(function () { state.uploading = false; refreshCardUploads(cid); });
   });
 
   $("octreeDir").addEventListener("change", function (ev) {
@@ -939,22 +1082,33 @@
       (cloud.prefix || cloud.slug + "/") + "'?")) return;
     state.uploading = true;
     var done = 0, failed = [];
-    cloudBusy("Uploading octree 0/" + files.length + "…");
     var CONC = 4, idx = 0, bytesDone = 0;
+    var tick = function () {
+      cardProgress(cid, (bytesDone / totalBytes) * 100,
+        "Octree " + done + "/" + files.length + " — " + (bytesDone / 1048576).toFixed(1) + " / " +
+        (totalBytes / 1048576).toFixed(1) + " MB");
+    };
+    tick();
     function worker(next) {
       if (idx >= files.length) return next();
       var item = files[idx++];
       var isBig = item.f.size > 90 * 1024 * 1024; // chunked multipart — one request cannot carry >100 MB
       var send = function () {
         return isBig
-          ? uploadChunked(cid, item.f, item.rel, function () {})
-          : sendFile(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), item.f);
+          ? uploadChunked(cid, item.f, item.rel, function (l) {
+              cardProgress(cid, Math.min(100, ((bytesDone + l) / totalBytes) * 100),
+                "Octree " + item.rel + " (chunked) — " + fmtSize(bytesDone + l) + " / " + fmtSize(totalBytes) + " total");
+            })
+          : xhrSend(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), "POST", item.f,
+              function (l) {
+                cardProgress(cid, Math.min(100, ((bytesDone + l) / totalBytes) * 100),
+                  "Octree " + item.rel + " — " + fmtSize(bytesDone + l) + " / " + fmtSize(totalBytes) + " total");
+              });
       };
       send().catch(function () { return send(); }).catch(function (e) { failed.push(item.rel + " (" + e.message + ")"); })
         .then(function () {
           done++; bytesDone += item.f.size;
-          cloudBusy("Uploading octree " + done + "/" + files.length + " — " + (bytesDone / 1048576).toFixed(1) +
-            " / " + (totalBytes / 1048576).toFixed(1) + " MB");
+          tick();
           worker(next);
         });
     }
@@ -962,10 +1116,16 @@
     for (var w = 0; w < CONC; w++) workers.push(new Promise(worker));
     Promise.all(workers).then(function () {
       state.uploading = false;
-      hideCloudBusy();
-      if (failed.length) toast("Octree: " + (files.length - failed.length) + "/" + files.length + " uploaded — first failures: " + failed.slice(0, 2).join(" | "), "err");
-      else toast("Octree uploaded (" + files.length + " files, big files chunked) — status flips to ready via cloud.js/metadata.json", "ok");
+      if (failed.length) {
+        cardProgress(cid, null);
+        toast("Octree: " + (files.length - failed.length) + "/" + files.length + " uploaded — first failures: " + failed.slice(0, 2).join(" | "), "err");
+      } else {
+        cardProgress(cid, 100, "Done — " + files.length + " files stored under " + (cloud.prefix || cloud.slug + "/"));
+        setTimeout(function () { cardProgress(cid, null); }, 4000);
+        toast("Octree uploaded (" + files.length + " files, big files chunked) — status flips to ready via metadata.json/cloud.js", "ok");
+      }
       loadClouds();
+      refreshCardUploads(cid);
       showCloudFiles(cid, true);
     });
   });
@@ -1134,7 +1294,7 @@
       : xhrSend(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(rel), "POST", file, onp);
     up.then(function () { fmProgressDone("Done: " + rel); toast("Uploaded " + rel, "ok"); })
       .catch(function (e) { $("fmProgressWrap").hidden = true; toast("Upload failed: " + e.message, "err"); })
-      .then(function () { refreshFileManager(); loadClouds(); if (doneCb) doneCb(); });
+      .then(function () { refreshFileManager(); loadClouds(); refreshCardUploads(cid); if (doneCb) doneCb(); });
   }
 
   function uploadQueue(cid, files) {
