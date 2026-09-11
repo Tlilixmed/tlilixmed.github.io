@@ -82,3 +82,56 @@ After the fix, re-check with:
 curl -sI https://tliligis.me/            → 200 (public), NOT 302 to cloudflareaccess.com
 curl -s  https://tliligis.me/api/admin/projects  → Access login page / 401, never data
 ```
+
+---
+
+## 9. Chunked uploads, per-file management, upload tracking (2026-09)
+
+### Why
+The Las 2 incident: `las-2/metadata.json` + `las-2/hierarchy.bin` were in R2 but
+`las-2/octree.bin` was missing — the octree folder uploader **silently skipped every
+file over 100 MB** (a single Worker request cannot carry that much body). The viewer
+then removed the currently displayed cloud before validating the new one, so a broken
+Las 2 also took down Las 1 until a page reload.
+
+### What changed
+- **No more 100 MB ceiling.** Files > 90 MB are sliced into 32 MB parts in the browser;
+  each part is its own Worker request (R2 multipart upload API). A ~300 MB `octree.bin`
+  now uploads fine from the dashboard.
+- **Per-cloud file manager** (Point clouds tab → `files`): full object listing with a
+  core-file checklist (`metadata.json` / `hierarchy.bin` / `octree.bin`, or `cloud.js`
+  for Potree 1.x) that flags anything **MISSING**, plus per-file `replace` and `delete`
+  buttons and a multi-file upload button with a real progress bar.
+- **Upload tracking**: every upload (single-shot or chunked) is recorded in the new
+  `upload_log` D1 table and shown under "Recent uploads" in the file manager.
+- **Viewer resilience** (`/lidar`): the new cloud is loaded and validated *before* the
+  old one is removed; a failed switch keeps the current cloud on screen and the failed
+  tab becomes clickable again. Error messages now name the exact missing file.
+- Admin dashboard restyled with the portfolio's light editorial theme (Poppins,
+  `#F7F8FA` background, navy text, `#1769D1` accents).
+
+### New admin API endpoints
+| Method & path | Purpose |
+|---|---|
+| `POST   /api/admin/pointclouds/:id/multipart?path=<rel>` | start chunked upload → `{uploadId}` |
+| `PUT    /api/admin/pointclouds/:id/multipart/<uploadId>?part=N&path=<rel>` | upload one part (≤ 64 MB) → `{partNumber, etag}` |
+| `POST   /api/admin/pointclouds/:id/multipart/<uploadId>/complete?path=<rel>` | body `{parts:[{partNumber,etag}]}` → finalize (metadata.json still flips status/point_count) |
+| `POST   /api/admin/pointclouds/:id/multipart/<uploadId>/abort?path=<rel>` | cancel |
+| `DELETE /api/admin/pointclouds/:id/file?path=<rel>` | delete ONE stored object |
+| `GET    /api/admin/pointclouds/:id/uploads` | recent upload history |
+
+### One-time migration (required for the tracking log only)
+The dashboard works without it; the log endpoints degrade gracefully until this runs:
+
+```
+npx wrangler d1 execute gis-db --remote --file derived/migrations/002-upload-log.sql
+```
+
+### Repairing Las 2 with the new tools
+1. Deploy this commit (push `cloudflare`).
+2. Run the migration above (optional, for the log).
+3. Admin → Point clouds → `files` on **las-2** → the checklist will show
+   `octree.bin — MISSING`.
+4. `Upload file(s)` → pick your local converted `octree.bin` (~300 MB) → watch the
+   progress bar; chunks are reassembled in R2 automatically. Status stays `ready`.
+5. Reload `/lidar` → Las 2 loads; a failed load no longer breaks Las 1.

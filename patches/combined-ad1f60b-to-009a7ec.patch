@@ -1,0 +1,917 @@
+diff --git a/admin/index.html b/admin/index.html
+index 4455d45..293873a 100644
+--- a/admin/index.html
++++ b/admin/index.html
+@@ -6,25 +6,29 @@
+ <meta name="robots" content="noindex, nofollow">
+ <title>GIS Admin — Tlili Mohamed</title>
+ <link rel="icon" href="/favicon.ico">
++<link rel="preconnect" href="https://fonts.googleapis.com">
++<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
++<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+ <style>
+-  :root { --bg:#0d1520; --panel:#111c2b; --panel2:#0e1826; --line:rgba(255,255,255,.10);
+-          --txt:#e8eef4; --dim:#93a4b5; --accent:#4da8da; --ok:#3ecf8e; --warn:#f5a623; --err:#ff6b6b; }
++  /* Editorial light theme — mirrors the portfolio main site */
++  :root { --bg:#F7F8FA; --panel:#FFFFFF; --panel2:#F7F8FA; --line:#DCE2EA;
++          --txt:#142033; --dim:#5A6B80; --accent:#1769D1; --ok:#1F8A5A; --warn:#B97A0C; --err:#C23B3B; }
+   * { box-sizing:border-box; }
+   body { margin:0; background:var(--bg); color:var(--txt);
+-         font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:14px; }
++         font-family:'Poppins','Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:14px; }
+   a { color:var(--accent); text-decoration:none; }
+-  code { background:rgba(255,255,255,.06); padding:1px 5px; border-radius:5px; font-size:12px; }
++  code { background:rgba(20,32,51,.06); padding:1px 5px; border-radius:5px; font-size:12px; }
+ 
+   /* ---- top bar ---- */
+   .topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:14px;
+-            padding:12px 20px; background:rgba(13,21,32,.92); backdrop-filter:blur(8px);
++            padding:12px 20px; background:rgba(247,248,250,.92); backdrop-filter:blur(8px);
+             border-bottom:1px solid var(--line); }
+   .brand { font-weight:700; font-size:15px; white-space:nowrap; }
+   .brand span { color:var(--accent); }
+   .tabs { display:flex; gap:6px; }
+   .tab { padding:7px 14px; border-radius:999px; border:1px solid var(--line); cursor:pointer;
+          color:var(--dim); font-size:13px; background:transparent; font-family:inherit; }
+-  .tab.active { color:var(--txt); border-color:var(--accent); background:rgba(77,168,218,.12); }
++  .tab.active { color:var(--txt); border-color:var(--accent); background:rgba(23,105,209,.10); }
+   .health { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--dim); }
+   .dot { width:9px; height:9px; border-radius:50%; background:var(--err); }
+   .dot.ok { background:var(--ok); }
+@@ -36,21 +40,22 @@
+   .layout { display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start; }
+   @media (max-width:860px){ .layout{ grid-template-columns:1fr; } }
+ 
+-  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
++  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px;
++          box-shadow:0 1px 2px rgba(20,32,51,.04); }
+   .card h3 { margin:0 0 10px; font-size:14px; letter-spacing:.3px; }
+   .stack { display:flex; flex-direction:column; gap:18px; }
+ 
+   /* ---- list items ---- */
+   .item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+           cursor:pointer; background:var(--panel2); transition:border-color .15s; }
+-  .item:hover { border-color:rgba(77,168,218,.5); }
+-  .item.sel { border-color:var(--accent); background:rgba(77,168,218,.08); }
++  .item:hover { border-color:rgba(23,105,209,.45); }
++  .item.sel { border-color:var(--accent); background:rgba(23,105,209,.06); }
+   .item .t { font-weight:600; font-size:13.5px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+   .item .s { color:var(--dim); font-size:12px; margin-top:2px; }
+   .chip { font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--dim); letter-spacing:.4px; }
+-  .chip.on  { color:var(--ok); border-color:rgba(62,207,142,.4); }
+-  .chip.off { color:var(--err); border-color:rgba(255,107,107,.35); }
+-  .chip.n { color:var(--warn); border-color:rgba(245,166,35,.4); }
++  .chip.on  { color:var(--ok); border-color:rgba(31,138,90,.4); }
++  .chip.off { color:var(--err); border-color:rgba(194,59,59,.35); }
++  .chip.n { color:var(--warn); border-color:rgba(185,122,12,.4); }
+ 
+   /* ---- forms ---- */
+   form .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+@@ -70,16 +75,16 @@
+          font:inherit; font-size:13px; font-weight:600; border:1px solid var(--line);
+          background:var(--panel2); color:var(--txt); }
+   .btn:hover { border-color:var(--accent); }
+-  .btn.primary { background:rgba(77,168,218,.15); border-color:var(--accent); color:var(--accent); }
+-  .btn.danger { color:var(--err); border-color:rgba(255,107,107,.4); }
+-  .btn.danger:hover { background:rgba(255,107,107,.1); }
++  .btn.primary { background:rgba(23,105,209,.10); border-color:var(--accent); color:var(--accent); }
++  .btn.danger { color:var(--err); border-color:rgba(194,59,59,.4); }
++  .btn.danger:hover { background:rgba(194,59,59,.08); }
+   .btn.small { padding:5px 10px; font-size:12px; font-weight:500; }
+   .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+ 
+   table { width:100%; border-collapse:collapse; font-size:12.5px; }
+   th { text-align:left; color:var(--dim); font-weight:600; font-size:11px; letter-spacing:.4px;
+        padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+-  td { padding:8px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:top; }
++  td { padding:8px; border-bottom:1px solid rgba(20,32,51,.06); vertical-align:top; }
+   td input[type=text], td input[type=number], td select { padding:5px 8px; font-size:12.5px; }
+ 
+   /* ---- login / toast / empty ---- */
+@@ -89,17 +94,17 @@
+   .gate p { color:var(--dim); font-size:13px; line-height:1.6; margin:0 0 16px; }
+   .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:50;
+            padding:10px 18px; border-radius:10px; font-size:13px; border:1px solid var(--line);
+-           background:var(--panel); box-shadow:0 8px 24px rgba(0,0,0,.45); opacity:0;
++           background:var(--panel); box-shadow:0 8px 24px rgba(20,32,51,.14); opacity:0;
+            transition:opacity .25s, transform .25s; pointer-events:none; max-width:90vw; }
+   .toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+-  .toast.ok { border-color:rgba(62,207,142,.5); }
+-  .toast.err { border-color:rgba(255,107,107,.5); }
++  .toast.ok { border-color:rgba(31,138,90,.5); }
++  .toast.err { border-color:rgba(194,59,59,.5); }
+   .hint { color:var(--dim); font-size:11.5px; line-height:1.5; margin-top:8px; }
+   /* attention flash for the project form when "+ New project" is pressed */
+   .card.flash { animation: cardFlash 1.4s ease; }
+   @keyframes cardFlash {
+-    0%, 55% { box-shadow: 0 0 0 2px var(--accent), 0 0 28px rgba(77,168,218,.4); }
+-    100%    { box-shadow: 0 0 0 0 rgba(77,168,218,0); }
++    0%, 55% { box-shadow: 0 0 0 2px var(--accent), 0 0 28px rgba(23,105,209,.35); }
++    100%    { box-shadow: 0 0 0 0 rgba(23,105,209,0); }
+   }
+   #cloudProgress { color:var(--accent); font-family:ui-monospace,Menlo,Consolas,monospace;
+                    font-size:11.5px; word-break:break-all; }
+@@ -114,12 +119,12 @@
+   .preview-note { color:var(--dim); font-size:11.5px; margin-top:8px; display:flex; gap:10px; flex-wrap:wrap; }
+   .geo-badge { font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--accent); letter-spacing:.4px; }
+   .preview-legend { position:absolute; left:10px; bottom:10px; z-index:800; max-width:240px; max-height:46%;
+-    overflow:auto; background:rgba(13,21,32,.92); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
++    overflow:auto; background:rgba(255,255,255,.95); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+     font-size:11.5px; color:var(--txt); }
+   .preview-legend:empty { display:none; }
+   .preview-legend .lg-title { color:var(--dim); font-size:10px; letter-spacing:.4px; margin-bottom:4px; text-transform:uppercase; }
+   .preview-legend .lg-row { display:flex; align-items:center; gap:7px; padding:1.5px 0; }
+-  .preview-legend .lg-sw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 0 1px rgba(255,255,255,.25); }
++  .preview-legend .lg-sw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 0 1px rgba(20,32,51,.25); }
+   .preview-legend .lg-lbl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+ 
+   .sym-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+@@ -130,7 +135,7 @@
+   .swatch { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line);
+     border-radius:10px; background:var(--panel2); }
+   .swatch .sw { width:38px; height:26px; border-radius:6px; flex:0 0 auto;
+-    box-shadow:0 0 0 1px rgba(255,255,255,.2); }
++    box-shadow:0 0 0 1px rgba(20,32,51,.2); }
+   .swatch small { color:var(--dim); display:block; }
+   .valrow { display:flex; align-items:center; gap:8px; padding:5px 6px; border:1px solid var(--line);
+     border-radius:9px; margin-bottom:6px; background:var(--panel2); }
+@@ -148,10 +153,19 @@
+   .stepper .steptxt { min-width:34px; text-align:center; font-size:13px; padding:0 4px; }
+   .range-label { color:var(--dim); font-size:11px; }
+   input[type=range] { padding:0; height:26px; accent-color:var(--accent); }
+-  .studio-actions { position:sticky; bottom:0; background:rgba(13,21,32,.94); backdrop-filter:blur(6px);
++  .studio-actions { position:sticky; bottom:0; background:rgba(247,248,250,.94); backdrop-filter:blur(6px);
+     border-top:1px solid var(--line); margin:14px -16px -16px; padding:12px 16px; border-radius:0 0 14px 14px; }
+   .sym-empty { color:var(--dim); font-size:13px; line-height:1.6; padding:30px 10px; text-align:center; }
+ 
++  /* ---- per-cloud file manager ---- */
++  .fm-bar { height:8px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; }
++  .fm-bar > div { height:100%; width:0%; background:var(--accent); transition:width .2s; }
++  .fm-row { display:flex; align-items:center; gap:10px; padding:7px 10px; border:1px solid var(--line);
++            border-radius:9px; margin-bottom:6px; background:var(--panel2); font-size:12.5px; }
++  .fm-row.missing { border-color:rgba(194,59,59,.45); }
++  .fm-row .fm-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
++                     font-family:ui-monospace,Menlo,Consolas,monospace; }
++  .fm-row .fm-size { color:var(--dim); font-size:11.5px; flex:0 0 auto; }
+   @keyframes spin { to { transform:rotate(360deg); } }
+   .hidden { display:none !important; }
+ </style>
+@@ -278,14 +292,42 @@
+         <div class="row" style="margin-top:10px"><button class="btn primary" type="submit">Register</button></div>
+         <p class="hint">Workflow: <b>register</b> → <b>LAS</b> stores the raw scan in <code>gis-private</code>
+           (never served, ≤100 MB) → convert locally with PotreeConverter → <b>octree</b> uploads the converted folder to
+-          <code>clouds-public/&lt;prefix&gt;</code> and flips status to <code>ready</code> automatically (point count is
+-          read from <code>cloud.js</code>/<code>metadata.json</code>) → <b>files</b> lists what is stored → publish.
++          <code>clouds-public/&lt;prefix&gt;</code> (files over 90&nbsp;MB are chunked automatically) and flips status to
++          <code>ready</code> (point count read from <code>cloud.js</code>/<code>metadata.json</code>) →
++          <b>files</b> opens the per-cloud file manager (upload / replace / delete single files + upload tracking) → publish.
+           The <code>/lidar</code> viewer and <code>/clouds/*</code> proxy serve published clouds only.</p>
+       </form>
+       <input type="file" id="lasFile" accept=".las,.laz" style="display:none">
+       <input type="file" id="octreeDir" webkitdirectory directory multiple style="display:none">
++      <input type="file" id="fmFile" multiple style="display:none">
++      <input type="file" id="fmReplaceFile" style="display:none">
+       <div id="cloudProgress" class="hint" hidden></div>
+     </div>
++
++    <!-- per-cloud file manager: upload / replace / delete individual octree files -->
++    <div class="card" id="fmCard" style="margin-top:18px" hidden>
++      <div class="sym-head">
++        <h3 style="margin:0">Files — <span id="fmTitle">—</span></h3>
++        <span class="chip" id="fmPrefix">—</span>
++        <span class="row" style="margin-left:auto">
++          <button class="btn small" id="fmRefresh" type="button">refresh</button>
++          <button class="btn small" id="fmClose" type="button">close</button>
++        </span>
++      </div>
++      <div class="row" style="margin:8px 0 12px">
++        <button class="btn small primary" id="fmUploadBtn" type="button">Upload file(s)</button>
++        <span class="hint" style="margin:0">Files are stored under the cloud prefix using their names. Big files
++          (&gt;90&nbsp;MB, e.g. <code>octree.bin</code>) are sliced into 32&nbsp;MB chunks automatically — the old
++          100&nbsp;MB single-request limit no longer applies.</span>
++      </div>
++      <div id="fmProgressWrap" hidden style="margin:0 0 12px">
++        <div class="fm-bar"><div id="fmBar"></div></div>
++        <div id="fmProgressText" class="hint" style="margin-top:4px"></div>
++      </div>
++      <div id="fmList"><p class="hint" style="margin:0">Loading…</p></div>
++      <h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)">Recent uploads (tracking log)</h4>
++      <div id="fmLog"><p class="hint" style="margin:0">—</p></div>
++    </div>
+   </section>
+ 
+   <!-- ---- style studio tab ---- -->
+@@ -793,14 +835,14 @@
+     var act = b.dataset.act;
+     if (act === "las") { state.upCloud = Number(id); $("lasFile").click(); return; }
+     if (act === "octree") { state.upCloud = Number(id); $("octreeDir").click(); return; }
+-    if (act === "files") { showCloudFiles(Number(id)); return; }
++    if (act === "files") { openFileManager(Number(id)); return; }
+     if (act !== "save") return;
+     var get = function (f) { return tr.querySelector("[data-f='" + f + "']"); };
+     var body = {
+       title_en: get("title_en").value.trim(),
+       status: get("status").value,
+       point_count: get("point_count").value === "" ? null : num(get("point_count").value),
+-      srs: get("srs").value.trim() || null,
++      srs: (function (v) { v = v.trim(); return (!v || /^null$/i.test(v) || /^n\/a$/i.test(v)) ? null : v; })(get("srs").value),
+       prefix: get("prefix").value.trim() || null,
+       published: get("published").checked ? 1 : 0
+     };
+@@ -886,7 +928,7 @@
+     for (var i = 0; i < picked.length; i++) {
+       var f = picked[i];
+       var rel = relPathFor(f, cloud);
+-      if (!rel || f.size > 100 * 1024 * 1024) continue;
++      if (!rel) continue;
+       if (/(^|\/)(__MACOSX|\.)/.test(rel) || /(^|\/)\./.test(f.name)) continue; // junk / dotfiles
+       files.push({ f: f, rel: rel });
+     }
+@@ -898,15 +940,21 @@
+     state.uploading = true;
+     var done = 0, failed = [];
+     cloudBusy("Uploading octree 0/" + files.length + "…");
+-    var CONC = 4, idx = 0;
++    var CONC = 4, idx = 0, bytesDone = 0;
+     function worker(next) {
+       if (idx >= files.length) return next();
+       var item = files[idx++];
+-      var send = function () { return sendFile(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), item.f); };
++      var isBig = item.f.size > 90 * 1024 * 1024; // chunked multipart — one request cannot carry >100 MB
++      var send = function () {
++        return isBig
++          ? uploadChunked(cid, item.f, item.rel, function () {})
++          : sendFile(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), item.f);
++      };
+       send().catch(function () { return send(); }).catch(function (e) { failed.push(item.rel + " (" + e.message + ")"); })
+         .then(function () {
+-          done++;
+-          if (done % 10 === 0 || done === files.length) cloudBusy("Uploading octree " + done + "/" + files.length + "…");
++          done++; bytesDone += item.f.size;
++          cloudBusy("Uploading octree " + done + "/" + files.length + " — " + (bytesDone / 1048576).toFixed(1) +
++            " / " + (totalBytes / 1048576).toFixed(1) + " MB");
+           worker(next);
+         });
+     }
+@@ -916,25 +964,224 @@
+       state.uploading = false;
+       hideCloudBusy();
+       if (failed.length) toast("Octree: " + (files.length - failed.length) + "/" + files.length + " uploaded — first failures: " + failed.slice(0, 2).join(" | "), "err");
+-      else toast("Octree uploaded (" + files.length + " files) — status flips to ready via cloud.js/metadata.json", "ok");
++      else toast("Octree uploaded (" + files.length + " files, big files chunked) — status flips to ready via cloud.js/metadata.json", "ok");
+       loadClouds();
+       showCloudFiles(cid, true);
+     });
+   });
+ 
++  function fmtSize(n) {
++    return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? (n / 1024).toFixed(0) + " KB" : n + " B";
++  }
++
+   function showCloudFiles(cid, silent) {
+-    api("GET", "/api/admin/pointclouds/" + cid + "/files").then(function (j) {
+-      var total = 0;
+-      j.objects.forEach(function (o) { total += o.size; });
+-      if (silent && !j.objects.length && !j.truncated) return;
+-      var names = j.objects.slice(0, 6).map(function (o) { return o.key + " (" + (o.size / 1024).toFixed(0) + " KB)"; });
+-      cloudBusy((j.prefix || "") + " → " + j.objects.length + "+ objects · " + (total / 1048576).toFixed(1) + " MB" +
+-        (j.truncated ? " (first page — more below)" : "") + (names.length ? " — e.g. " + names.join(", ") : ""));
+-      clearTimeout(showCloudFiles._t);
+-      showCloudFiles._t = setTimeout(hideCloudBusy, 9000);
++    var objects = [], cursor = null, guard = 0;
++    function page() {
++      var url = "/api/admin/pointclouds/" + cid + "/files" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : "");
++      return api("GET", url).then(function (j2) {
++        objects = objects.concat(j2.objects || []);
++        cursor = j2.truncated ? j2.cursor : null;
++        if (cursor && ++guard < 15) return page();
++      });
++    }
++    return page().then(function () {
++      if (cid !== (fmCloud && fmCloud.id)) return; // manager closed or switched meanwhile
++      var total = 0; objects.forEach(function (o) { total += o.size; });
++      var have = {}; objects.forEach(function (o) { have[o.key] = true; });
++      var need = have["cloud.js"] ? ["cloud.js"] : ["metadata.json", "hierarchy.bin", "octree.bin"];
++      var coreRows = need.map(function (n) {
++        var present = !!have[n];
++        var sizeTxt = present ? fmtSize(objects.filter(function (o) { return o.key === n; })[0].size) : "viewer will fail without it";
++        return "<div class='fm-row" + (present ? "" : " missing") + "'>" +
++          (present ? "<span class='chip on'>present</span>" : "<span class='chip off'>MISSING</span>") +
++          "<span class='fm-name'>" + esc(n) + "</span>" +
++          "<span class='fm-size'>" + sizeTxt + "</span></div>";
++      }).join("");
++      var rows = objects.map(function (o) {
++        return "<div class='fm-row'>" +
++          "<span class='fm-name'>" + esc(o.key) + "</span>" +
++          "<span class='fm-size'>" + fmtSize(o.size) + "</span>" +
++          "<button class='btn small' data-fm='replace' data-path='" + esc(o.key) + "'>replace</button>" +
++          "<button class='btn small danger' data-fm='delete' data-path='" + esc(o.key) + "'>delete</button>" +
++          "</div>";
++      }).join("");
++      $("fmList").innerHTML =
++        "<p class='hint' style='margin:0 0 8px'>" + objects.length + " objects · " + (total / 1048576).toFixed(1) + " MB total" +
++        (guard >= 15 ? " (list truncated)" : "") + "</p>" +
++        "<h4 style='margin:0 0 6px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)'>Core files</h4>" +
++        coreRows +
++        "<h4 style='margin:12px 0 6px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)'>All files</h4>" +
++        (rows || "<p class='hint' style='margin:4px 0'>Nothing stored yet.</p>");
+     }).catch(function (e) { if (!silent) toast("List files: " + e.message, "err"); });
+   }
+ 
++  // ---------- per-cloud file manager (single-file upload / replace / delete + tracking) ----------
++  var fmCloud = null, fmReplacePath = null;
++  var PART_MAX = 32 * 1024 * 1024; // client slice size; server accepts up to 64 MB parts
++
++  function openFileManager(cid) {
++    fmCloud = state.clouds.filter(function (c) { return c.id === cid; })[0] || null;
++    if (!fmCloud) { toast("Cloud not found", "err"); return; }
++    $("fmCard").hidden = false;
++    $("fmTitle").textContent = fmCloud.title_en || fmCloud.slug;
++    $("fmPrefix").textContent = fmCloud.prefix || (fmCloud.slug + "/");
++    $("fmCard").scrollIntoView({ behavior: "smooth", block: "start" });
++    refreshFileManager();
++  }
++  function refreshFileManager() {
++    if (!fmCloud) return;
++    showCloudFiles(fmCloud.id, true);
++    loadUploadLog();
++  }
++  function loadUploadLog() {
++    api("GET", "/api/admin/pointclouds/" + fmCloud.id + "/uploads").then(function (j2) {
++      var rows = j2.uploads || [];
++      if (!rows.length) { $("fmLog").innerHTML = '<p class="hint" style="margin:0">No uploads recorded yet.</p>'; return; }
++      var h = '<table><thead><tr><th>file</th><th>size</th><th>parts</th><th>status</th><th>started</th><th>finished</th></tr></thead><tbody>';
++      rows.forEach(function (u) {
++        h += "<tr><td style='max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + esc(u.filename) + "</td>" +
++          "<td>" + (u.size_bytes == null ? "—" : fmtSize(u.size_bytes)) + "</td>" +
++          "<td>" + (u.parts == null ? "—" : u.parts) + "</td>" +
++          "<td>" + (u.status === "complete" ? "<span class='chip on'>complete</span>"
++                     : u.status === "failed" ? "<span class='chip off'>failed</span>"
++                     : "<span class='chip n'>uploading</span>") +
++          (u.error ? "<br><span style='color:var(--err);font-size:10.5px'>" + esc(u.error) + "</span>" : "") + "</td>" +
++          "<td>" + esc(u.started_at || "") + "</td><td>" + esc(u.finished_at || "") + "</td></tr>";
++      });
++      $("fmLog").innerHTML = h + "</tbody></table>";
++    }).catch(function () {
++      $("fmLog").innerHTML = '<p class="hint" style="margin:0">Upload log unavailable — run ' +
++        '<code>npx wrangler d1 execute gis-db --remote --file derived/migrations/002-upload-log.sql</code></p>';
++    });
++  }
++
++  function xhrSend(url, method, blob, onprogress) {
++    return new Promise(function (resolve, reject) {
++      var x = new XMLHttpRequest();
++      x.open(method, url, true);
++      x.setRequestHeader("x-admin-token", TOKEN);
++      x.setRequestHeader("content-type", "application/octet-stream");
++      x.upload.onprogress = function (ev) { if (onprogress) onprogress(ev.loaded, ev.total); };
++      x.onload = function () {
++        var jj = {}; try { jj = JSON.parse(x.responseText || "{}"); } catch (e) {}
++        if (x.status >= 200 && x.status < 300) resolve(jj);
++        else { var err = new Error(jj.error || ("HTTP " + x.status)); err.status = x.status; reject(err); }
++      };
++      x.onerror = function () { reject(new Error("network error")); };
++      x.send(blob);
++    });
++  }
++
++  function fmProgress(pct, text) {
++    $("fmProgressWrap").hidden = false;
++    $("fmBar").style.width = Math.max(0, Math.min(100, pct)) + "%";
++    $("fmProgressText").textContent = text;
++  }
++  function fmProgressDone(text) {
++    fmProgress(100, text);
++    setTimeout(function () { $("fmProgressWrap").hidden = true; }, 2500);
++  }
++
++  function uploadChunked(cid, file, rel, onprogress) {
++    var startUrl = "/api/admin/pointclouds/" + cid + "/multipart?path=" + encodeURIComponent(rel);
++    var partUrl = function (uploadId, p) {
++      return "/api/admin/pointclouds/" + cid + "/multipart/" + encodeURIComponent(uploadId) +
++        "?part=" + p + "&path=" + encodeURIComponent(rel);
++    };
++    var finUrl = function (uploadId, action) {
++      return "/api/admin/pointclouds/" + cid + "/multipart/" + encodeURIComponent(uploadId) + "/" + action +
++        "?path=" + encodeURIComponent(rel);
++    };
++    return api("POST", startUrl).then(function (start) {
++      var uploadId = start.uploadId;
++      var parts = [];
++      var totalParts = Math.ceil(file.size / PART_MAX);
++      var chain = Promise.resolve();
++      for (var p = 1; p <= totalParts; p++) {
++        (function (p) {
++          chain = chain.then(function () {
++            var baseOff = (p - 1) * PART_MAX;
++            var blob = file.slice(baseOff, Math.min(p * PART_MAX, file.size));
++            return xhrSend(partUrl(uploadId, p), "PUT", blob, function (loaded) {
++              onprogress(Math.min(baseOff + loaded, file.size), file.size);
++            }).then(function (res) { parts.push({ partNumber: res.partNumber, etag: res.etag }); });
++          });
++        })(p);
++      }
++      return chain
++        .then(function () { return api("POST", finUrl(uploadId, "complete"), { parts: parts }); })
++        .then(function (done) { onprogress(file.size, file.size); return done; })
++        .catch(function (e) {
++          api("POST", finUrl(uploadId, "abort")).catch(function () {});
++          throw e;
++        });
++    });
++  }
++
++  function uploadOne(cid, file, relOverride, doneCb) {
++    var cloud = state.clouds.filter(function (c) { return c.id === cid; })[0];
++    if (!cloud) { toast("Cloud not found", "err"); return; }
++    var rel = relOverride || file.name;
++    if (!rel || rel.charAt(0) === "/" || rel.indexOf("..") !== -1) { toast("Bad target path", "err"); return; }
++    var chunked = file.size > 90 * 1024 * 1024;
++    var label = rel + " (" + fmtSize(file.size) + ")" + (chunked ? " — chunked" : "");
++    fmProgress(0, "Uploading " + label + "…");
++    var onp = function (l, t) {
++      fmProgress((l / t) * 100, "Uploading " + rel + " — " + fmtSize(l) + " / " + fmtSize(t) + " (" + Math.round((l / t) * 100) + "%)");
++    };
++    var up = chunked
++      ? uploadChunked(cid, file, rel, onp)
++      : xhrSend(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(rel), "POST", file, onp);
++    up.then(function () { fmProgressDone("Done: " + rel); toast("Uploaded " + rel, "ok"); })
++      .catch(function (e) { $("fmProgressWrap").hidden = true; toast("Upload failed: " + e.message, "err"); })
++      .then(function () { refreshFileManager(); loadClouds(); if (doneCb) doneCb(); });
++  }
++
++  function uploadQueue(cid, files) {
++    state.uploading = true;
++    var i = 0;
++    function next() {
++      if (i >= files.length) { state.uploading = false; refreshFileManager(); loadClouds(); return; }
++      var f = files[i++];
++      uploadOne(cid, f, f.name, next);
++    }
++    next();
++  }
++
++  $("fmUploadBtn").addEventListener("click", function () { $("fmFile").click(); });
++  $("fmFile").addEventListener("change", function (ev) {
++    var input = ev.target;
++    var picked = Array.prototype.slice.call(input.files);
++    input.value = "";
++    if (!picked.length || !fmCloud || state.uploading) return;
++    uploadQueue(fmCloud.id, picked);
++  });
++  $("fmReplaceFile").addEventListener("change", function (ev) {
++    var input = ev.target;
++    var file = input.files.length ? input.files[0] : null;
++    input.value = "";
++    if (!file || !fmCloud || !fmReplacePath || state.uploading) return;
++    var path = fmReplacePath;
++    fmReplacePath = null;
++    uploadOne(fmCloud.id, file, path);
++  });
++  $("fmList").addEventListener("click", function (ev) {
++    var b = ev.target.closest("button[data-fm]");
++    if (!b || !fmCloud) return;
++    var path = b.dataset.path;
++    if (b.dataset.fm === "delete") {
++      if (!confirm("Delete " + path + " from storage? The viewer will fail on it until it is re-uploaded.")) return;
++      api("DELETE", "/api/admin/pointclouds/" + fmCloud.id + "/file?path=" + encodeURIComponent(path))
++        .then(function () { toast("Deleted " + path, "ok"); refreshFileManager(); })
++        .catch(function (e) { toast("Delete: " + e.message, "err"); });
++      return;
++    }
++    fmReplacePath = path;
++    $("fmReplaceFile").click();
++  });
++  $("fmRefresh").addEventListener("click", refreshFileManager);
++  $("fmClose").addEventListener("click", function () { $("fmCard").hidden = true; fmCloud = null; });
++
+   // ---------- boot ----------
+   if (TOKEN) {
+     unlock(TOKEN, function () { /* restored session */ });
+diff --git a/derived/migrations/002-upload-log.sql b/derived/migrations/002-upload-log.sql
+new file mode 100644
+index 0000000..f8104cb
+--- /dev/null
++++ b/derived/migrations/002-upload-log.sql
+@@ -0,0 +1,15 @@
++-- Migration 002 — upload tracking log for the admin dashboard.
++-- Apply:  npx wrangler d1 execute gis-db --remote --file derived/migrations/002-upload-log.sql
++-- (idempotent; also appended to schema.sql)
++CREATE TABLE IF NOT EXISTS upload_log (
++  id INTEGER PRIMARY KEY AUTOINCREMENT,
++  cloud_id INTEGER NOT NULL,
++  filename TEXT NOT NULL,
++  size_bytes INTEGER,
++  parts INTEGER,
++  status TEXT NOT NULL DEFAULT 'uploading',   -- uploading | complete | failed
++  error TEXT,
++  started_at TEXT DEFAULT (datetime('now')),
++  finished_at TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_upload_log_cloud ON upload_log(cloud_id, id DESC);
+diff --git a/docs/ADMIN-UPLOADS.md b/docs/ADMIN-UPLOADS.md
+index 949721c..466c098 100644
+--- a/docs/ADMIN-UPLOADS.md
++++ b/docs/ADMIN-UPLOADS.md
+@@ -82,3 +82,56 @@ After the fix, re-check with:
+ curl -sI https://tliligis.me/            → 200 (public), NOT 302 to cloudflareaccess.com
+ curl -s  https://tliligis.me/api/admin/projects  → Access login page / 401, never data
+ ```
++
++---
++
++## 9. Chunked uploads, per-file management, upload tracking (2026-09)
++
++### Why
++The Las 2 incident: `las-2/metadata.json` + `las-2/hierarchy.bin` were in R2 but
++`las-2/octree.bin` was missing — the octree folder uploader **silently skipped every
++file over 100 MB** (a single Worker request cannot carry that much body). The viewer
++then removed the currently displayed cloud before validating the new one, so a broken
++Las 2 also took down Las 1 until a page reload.
++
++### What changed
++- **No more 100 MB ceiling.** Files > 90 MB are sliced into 32 MB parts in the browser;
++  each part is its own Worker request (R2 multipart upload API). A ~300 MB `octree.bin`
++  now uploads fine from the dashboard.
++- **Per-cloud file manager** (Point clouds tab → `files`): full object listing with a
++  core-file checklist (`metadata.json` / `hierarchy.bin` / `octree.bin`, or `cloud.js`
++  for Potree 1.x) that flags anything **MISSING**, plus per-file `replace` and `delete`
++  buttons and a multi-file upload button with a real progress bar.
++- **Upload tracking**: every upload (single-shot or chunked) is recorded in the new
++  `upload_log` D1 table and shown under "Recent uploads" in the file manager.
++- **Viewer resilience** (`/lidar`): the new cloud is loaded and validated *before* the
++  old one is removed; a failed switch keeps the current cloud on screen and the failed
++  tab becomes clickable again. Error messages now name the exact missing file.
++- Admin dashboard restyled with the portfolio's light editorial theme (Poppins,
++  `#F7F8FA` background, navy text, `#1769D1` accents).
++
++### New admin API endpoints
++| Method & path | Purpose |
++|---|---|
++| `POST   /api/admin/pointclouds/:id/multipart?path=<rel>` | start chunked upload → `{uploadId}` |
++| `PUT    /api/admin/pointclouds/:id/multipart/<uploadId>?part=N&path=<rel>` | upload one part (≤ 64 MB) → `{partNumber, etag}` |
++| `POST   /api/admin/pointclouds/:id/multipart/<uploadId>/complete?path=<rel>` | body `{parts:[{partNumber,etag}]}` → finalize (metadata.json still flips status/point_count) |
++| `POST   /api/admin/pointclouds/:id/multipart/<uploadId>/abort?path=<rel>` | cancel |
++| `DELETE /api/admin/pointclouds/:id/file?path=<rel>` | delete ONE stored object |
++| `GET    /api/admin/pointclouds/:id/uploads` | recent upload history |
++
++### One-time migration (required for the tracking log only)
++The dashboard works without it; the log endpoints degrade gracefully until this runs:
++
++```
++npx wrangler d1 execute gis-db --remote --file derived/migrations/002-upload-log.sql
++```
++
++### Repairing Las 2 with the new tools
++1. Deploy this commit (push `cloudflare`).
++2. Run the migration above (optional, for the log).
++3. Admin → Point clouds → `files` on **las-2** → the checklist will show
++   `octree.bin — MISSING`.
++4. `Upload file(s)` → pick your local converted `octree.bin` (~300 MB) → watch the
++   progress bar; chunks are reassembled in R2 automatically. Status stays `ready`.
++5. Reload `/lidar` → Las 2 loads; a failed load no longer breaks Las 1.
+diff --git a/lidar/index.html b/lidar/index.html
+index 4dd3c51..3d07062 100644
+--- a/lidar/index.html
++++ b/lidar/index.html
+@@ -306,6 +306,7 @@
+   }
+ 
+   let activeSlug = null;
++  let loadedSlug = null; // last cloud that loaded successfully (failure falls back to it)
+   let activeMeta = null;
+   let activePC = null;
+   let activeMode = "intensity";
+@@ -389,8 +390,21 @@
+     }
+   }
+ 
++  function probeMissing(base) {
++    // HEAD-like 1-byte range probes so a precise message can name the missing file.
++    var names = ["metadata.json", "hierarchy.bin", "octree.bin"];
++    return names.reduce(function (prom, name) {
++      return prom.then(function (missing) {
++        if (missing) return missing;
++        return fetch(base + name, { headers: { range: "bytes=0-0" } })
++          .then(function (r) { return (r.status === 200 || r.status === 206) ? null : name; })
++          .catch(function () { return name; });
++      });
++    }, Promise.resolve(null));
++  }
++
+   async function loadCloud(entry) {
+-    if (entry.slug === activeSlug) return;
++    if (entry.slug === loadedSlug) return; // already on screen — retry after a failure is still allowed
+     activeSlug = entry.slug;
+     tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
+       b.classList.toggle("active", b.dataset.slug === entry.slug));
+@@ -402,16 +416,20 @@
+     showOverlay(true, "Streaming <b>" + (entry.title_en || entry.slug) + "</b> point cloud&hellip;<br>" +
+       "<span style='font-size:12px'>First load downloads the full octree once &mdash; then it is cached.</span>");
+ 
++    const base = (remoteMode ? REMOTE_ORIGIN : "") + "/clouds/" + entry.prefix;  // e.g. /clouds/las-1/
+     try {
+-      const base = (remoteMode ? REMOTE_ORIGIN : "") + "/clouds/" + entry.prefix;  // e.g. /clouds/las-1/
+-      activeMeta = await fetchJSON(base + "metadata.json");
+-
+-      // remove previous clouds (single-page multi-cloud switch)
+-      viewer.scene.pointclouds.slice().forEach(pc => viewer.scene.removePointCloud(pc.name));
++      const meta = await fetchJSON(base + "metadata.json");
+ 
++      // Load the new cloud BEFORE touching the scene: if this cloud is broken
++      // (e.g. octree.bin missing from storage), the currently displayed cloud
++      // stays alive instead of being wiped by a failed switch.
+       const e = await Potree.loadPointCloud(base + "metadata.json", entry.slug);
+       const pc = e.pointcloud;
++
++      viewer.scene.pointclouds.slice().forEach(old => viewer.scene.removePointCloud(old.name));
++      activeMeta = meta;
+       activePC = pc;
++      loadedSlug = entry.slug;
+       pc.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+       pc.material.size = 0.7;
+       pc.material.minSize = 1.5;
+@@ -432,8 +450,24 @@
+         (activeMeta.projection || entry.srs || "EPSG:2056 (assumed)");
+       hideOverlay();
+     } catch (err) {
++      // Restore tab state so the failed cloud can be retried and the previous
++      // cloud (still on screen) can be re-selected.
++      activeSlug = loadedSlug;
++      tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
++        b.classList.toggle("active", b.dataset.slug === loadedSlug));
+       const s = err && err.status;
+-      if (s === 404) {
++      let missing = null;
++      try { missing = await probeMissing(base); } catch (e2) { /* probe is advisory only */ }
++      if (missing) {
++        showOverlay(false,
++          "<div class='err-icon'>&#9723;</div><b>Octree file missing: <code>" + missing + "</code></b><br>" +
++          (missing === "metadata.json"
++            ? "The catalog entry exists, but the converted point cloud files are not in storage.<br>"
++            : "The conversion is incomplete \u2014 this file is part of the Potree octree and must be (re-)uploaded.<br>") +
++          "<span style='font-size:12px'>Open the admin dashboard \u2192 <b>Point clouds</b> \u2192 <b>files</b> for " +
++          "<code>" + String(entry.slug).replace(/[&<>"]/g, "") + "</code> and upload it (large files are uploaded in 32\u00A0MB chunks automatically).</span>" +
++          BACK_BTN);
++      } else if (s === 404) {
+         showOverlay(false,
+           "<div class='err-icon'>&#9723;</div><b>Octree not uploaded yet</b><br>" +
+           "The catalog entry exists, but the converted point cloud files are not in storage.<br>" +
+diff --git a/schema.sql b/schema.sql
+index ec17a71..2d2994a 100644
+--- a/schema.sql
++++ b/schema.sql
+@@ -72,3 +72,18 @@ CREATE TABLE IF NOT EXISTS features (
+ CREATE INDEX IF NOT EXISTS idx_layers_project  ON layers(project_id);
+ CREATE INDEX IF NOT EXISTS idx_features_layer  ON features(layer_id);
+ CREATE INDEX IF NOT EXISTS idx_projects_pub    ON projects(published, sort_order);
++
++-- Upload tracking log (migration 002). Best-effort: the admin upload
++-- endpoints keep working even if this table is absent.
++CREATE TABLE IF NOT EXISTS upload_log (
++  id INTEGER PRIMARY KEY AUTOINCREMENT,
++  cloud_id INTEGER NOT NULL,
++  filename TEXT NOT NULL,
++  size_bytes INTEGER,
++  parts INTEGER,
++  status TEXT NOT NULL DEFAULT 'uploading',   -- uploading | complete | failed
++  error TEXT,
++  started_at TEXT DEFAULT (datetime('now')),
++  finished_at TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_upload_log_cloud ON upload_log(cloud_id, id DESC);
+diff --git a/worker/admin.js b/worker/admin.js
+index 87c52bf..cb72a8e 100644
+--- a/worker/admin.js
++++ b/worker/admin.js
+@@ -24,6 +24,25 @@
+ //                                                 cloud.js / metadata.json flips status to
+ //                                                 'ready' and records point_count.
+ //   GET    /api/admin/pointclouds/:id/files       list objects stored under the prefix
++//   DELETE /api/admin/pointclouds/:id/file?path=<rel>
++//                                                 delete ONE stored object under the prefix
++//   POST   /api/admin/pointclouds/:id/multipart?path=<rel>
++//                                                 start a chunked multipart upload for large
++//                                                 files (octree.bin is typically 100-400 MB and
++//                                                 exceeds the Workers request-body limit when
++//                                                 sent as one request). Returns {uploadId}.
++//   PUT    /api/admin/pointclouds/:id/multipart/<uploadId>?part=N&path=<rel>
++//                                                 upload one part (<= 64 MB body). Returns
++//                                                 {partNumber, etag}.
++//   POST   /api/admin/pointclouds/:id/multipart/<uploadId>/complete?path=<rel>
++//                                                 body {parts:[{partNumber, etag}...]} —
++//                                                 finalize; metadata.json/cloud.js still flips
++//                                                 status to 'ready' + records point_count.
++//   POST   /api/admin/pointclouds/:id/multipart/<uploadId>/abort?path=<rel>
++//                                                 cancel a chunked upload.
++//   GET    /api/admin/pointclouds/:id/uploads      recent upload history (upload_log table,
++//                                                 migration 002 — endpoints degrade gracefully
++//                                                 if the table does not exist yet).
+ //   GET    /api/admin/pointclouds                 all point clouds
+ //   POST   /api/admin/pointclouds                 register one (e.g. "LAS 1")
+ //   PUT    /api/admin/pointclouds/:id             update (rename, publish, set prefix/status)
+@@ -114,9 +133,16 @@ async function uploadCloudSource(request, env, cloudId, filename) {
+       'Convert locally with PotreeConverter and upload the octree folder instead (the viewer streams the octree, not the raw scan).');
+   }
+   const key = `originals/${c.slug}/source${ext[0]}`;
+-  await env.R2_PRIVATE.put(key, request.body, {
+-    httpMetadata: { contentType: 'application/octet-stream' },
+-  });
++  await logUpload(env, cloudId, filename, cl, null, 'uploading');
++  try {
++    await env.R2_PRIVATE.put(key, request.body, {
++      httpMetadata: { contentType: 'application/octet-stream' },
++    });
++  } catch (e) {
++    await logUpload(env, cloudId, filename, cl, null, 'failed', String((e && e.message) || e));
++    throw e;
++  }
++  await logUpload(env, cloudId, filename, cl, null, 'complete');
+   if (c.status === 'awaiting_upload') {
+     await env.DB.prepare(`UPDATE pointclouds SET status = 'source_uploaded', updated_at = datetime('now') WHERE id = ?`).bind(cloudId).run();
+   }
+@@ -142,9 +168,16 @@ async function uploadOctreeFile(request, env, cloudId, rel) {
+     try { meta = JSON.parse(text); } catch { meta = null; }
+   }
+ 
+-  await env.R2_CLOUDS.put(key, body, {
+-    httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
+-  });
++  await logUpload(env, cloudId, rel, cl, null, 'uploading');
++  try {
++    await env.R2_CLOUDS.put(key, body, {
++      httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
++    });
++  } catch (e) {
++    await logUpload(env, cloudId, rel, cl, null, 'failed', String((e && e.message) || e));
++    throw e;
++  }
++  await logUpload(env, cloudId, rel, cl, null, 'complete');
+ 
+   if (meta) {
+     const points = Number(meta.points || meta.pointCount || 0) || null;
+@@ -157,6 +190,142 @@ async function uploadOctreeFile(request, env, cloudId, rel) {
+   return json({ ok: true, key, bytes: cl, parsed_meta: !!meta });
+ }
+ 
++// ------------------------------------------------------------
++// Upload tracking (upload_log). Best-effort: if migration 002 has not
++// been applied yet the endpoints must keep working, so every log write
++// is swallowed. Run:  npx wrangler d1 execute gis-db --remote \
++//   --file derived/migrations/002-upload-log.sql
++// ------------------------------------------------------------
++
++async function logUpload(env, cloudId, filename, sizeBytes, parts, status, error) {
++  try {
++    if (status === 'uploading') {
++      await env.DB.prepare(
++        `INSERT INTO upload_log (cloud_id, filename, size_bytes, parts, status) VALUES (?, ?, ?, ?, ?)`
++      ).bind(cloudId, filename, sizeBytes == null ? null : Math.round(sizeBytes), parts == null ? null : parts, 'uploading').run();
++    } else {
++      await env.DB.prepare(
++        `UPDATE upload_log SET status = ?, error = ?, size_bytes = COALESCE(?, size_bytes), finished_at = datetime('now')
++         WHERE id = (SELECT id FROM upload_log WHERE cloud_id = ? AND filename = ? ORDER BY id DESC LIMIT 1)`
++      ).bind(status, error || null, sizeBytes == null ? null : Math.round(sizeBytes), cloudId, filename).run();
++    }
++  } catch { /* log only — never block an upload */ }
++}
++
++async function listUploads(request, env, cloudId) {
++  try {
++    const { results } = await env.DB.prepare(
++      `SELECT id, filename, size_bytes, parts, status, error, started_at, finished_at
++       FROM upload_log WHERE cloud_id = ? ORDER BY id DESC LIMIT 20`
++    ).bind(cloudId).all();
++    return json({ uploads: results || [] });
++  } catch {
++    return json({ uploads: [], note: 'upload_log table missing — run derived/migrations/002-upload-log.sql' });
++  }
++}
++
++// ------------------------------------------------------------
++// Chunked multipart uploads (R2 binding multipart API).
++// A single Worker request cannot carry a ~300 MB octree.bin (platform
++// request-body limit), so the browser slices the file into <= 32 MB
++// parts and each part is its own request: start -> PUT parts ->
++// complete. Parts are buffered (bounded by the 64 MB guard) and handed
++// to R2 via resumeMultipartUpload().uploadPart().
++// ------------------------------------------------------------
++
++const PART_MAX = 64 * 1024 * 1024; // hard server-side guard; client slices at 32 MB
++
++function cloudKeyFor(c, rel) {
++  return String(c.prefix || (c.slug + '/')) + rel;
++}
++
++async function cloudById(env, cloudId) {
++  return env.DB.prepare(`SELECT id, slug, prefix, status FROM pointclouds WHERE id = ?`).bind(cloudId).first();
++}
++
++async function startMultipart(request, env, cloudId) {
++  const c = await cloudById(env, cloudId);
++  if (!c) return fail(404, 'point cloud not found');
++  const rel = sanitizeRel(new URL(request.url).searchParams.get('path') || '');
++  if (!rel) return fail(400, 'query param path is required (relative path, no ..)');
++  const key = cloudKeyFor(c, rel);
++  const isMeta = /(^|\/)(cloud\.js|metadata\.json)$/.test(rel);
++  const mpu = await env.R2_CLOUDS.createMultipartUpload(key, {
++    httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
++  });
++  await logUpload(env, cloudId, rel, null, null, 'uploading');
++  return json({ ok: true, uploadId: mpu.uploadId, key, partMax: PART_MAX });
++}
++
++async function uploadMultipartPart(request, env, cloudId, uploadId) {
++  const c = await cloudById(env, cloudId);
++  if (!c) return fail(404, 'point cloud not found');
++  const url = new URL(request.url);
++  const rel = sanitizeRel(url.searchParams.get('path') || '');
++  const part = Number(url.searchParams.get('part') || 0);
++  if (!rel) return fail(400, 'query param path is required');
++  if (!Number.isInteger(part) || part < 1 || part > 10000) return fail(400, 'query param part must be an integer 1..10000');
++  const cl = Number(request.headers.get('content-length') || 0);
++  if (!cl) return fail(411, 'content-length required');
++  if (cl > PART_MAX) {
++    return fail(413, 'part is ' + Math.round(cl / 1048576) + ' MB — slice files into parts of 32 MB or less');
++  }
++  const key = cloudKeyFor(c, rel);
++  const buf = await request.arrayBuffer(); // bounded: guarded to <= 64 MB above
++  const mpu = env.R2_CLOUDS.resumeMultipartUpload(key, String(uploadId));
++  const uploaded = await mpu.uploadPart(part, buf);
++  return json({ ok: true, partNumber: uploaded.partNumber, etag: uploaded.etag, bytes: buf.byteLength });
++}
++
++async function finishMultipart(request, env, cloudId, uploadId, action) {
++  const c = await cloudById(env, cloudId);
++  if (!c) return fail(404, 'point cloud not found');
++  const rel = sanitizeRel(new URL(request.url).searchParams.get('path') || '');
++  if (!rel) return fail(400, 'query param path is required');
++  const key = cloudKeyFor(c, rel);
++  if (action === 'abort') {
++    try { await env.R2_CLOUDS.resumeMultipartUpload(key, String(uploadId)).abort(); } catch { /* already gone */ }
++    await logUpload(env, cloudId, rel, null, null, 'failed', 'aborted by user');
++    return json({ ok: true, aborted: true });
++  }
++  const b = await readBody(request);
++  const parts = Array.isArray(b.parts) && b.parts.length
++    ? b.parts.map((p) => ({ partNumber: Number(p.partNumber), etag: String(p.etag) })).sort((x, y) => x.partNumber - y.partNumber)
++    : null;
++  if (!parts) return fail(400, 'body.parts must be a non-empty array of {partNumber, etag}');
++  const isMeta = /(^|\/)(cloud\.js|metadata\.json)$/.test(rel);
++  try {
++    const mpu = env.R2_CLOUDS.resumeMultipartUpload(key, String(uploadId));
++    const done = await mpu.complete(parts);
++    let points = null;
++    if (isMeta) {
++      try {
++        const obj = await env.R2_CLOUDS.get(key);
++        const meta = JSON.parse(await new Response(obj.body).text());
++        points = Number(meta.points || meta.pointCount || 0) || null;
++      } catch { points = null; }
++    }
++    await env.DB.prepare(
++      `UPDATE pointclouds SET point_count = COALESCE(?, point_count), status = 'ready', updated_at = datetime('now') WHERE id = ?`
++    ).bind(points, cloudId).run();
++    await logUpload(env, cloudId, rel, done.size, parts.length, 'complete');
++    return json({ ok: true, key, size: done.size, point_count: points });
++  } catch (e) {
++    await logUpload(env, cloudId, rel, null, parts.length, 'failed', String((e && e.message) || e));
++    return fail(500, 'multipart complete failed: ' + String((e && e.message) || e));
++  }
++}
++
++async function deleteCloudFile(request, env, cloudId) {
++  const c = await cloudById(env, cloudId);
++  if (!c) return fail(404, 'point cloud not found');
++  const rel = sanitizeRel(new URL(request.url).searchParams.get('path') || '');
++  if (!rel) return fail(400, 'query param path is required (relative path, no ..)');
++  const key = cloudKeyFor(c, rel);
++  await env.R2_CLOUDS.delete(key);
++  return json({ ok: true, deleted: key });
++}
++
+ async function listCloudFiles(request, env, cloudId) {
+   const c = await env.DB.prepare(`SELECT id, slug, prefix FROM pointclouds WHERE id = ?`).bind(cloudId).first();
+   if (!c) return fail(404, 'point cloud not found');
+@@ -356,6 +525,21 @@ export async function handleAdmin(request, env, path) {
+     if (method === 'GET' && id && action === 'files') {
+       return listCloudFiles(request, env, id);
+     }
++    if (method === 'GET' && id && action === 'uploads') {
++      return listUploads(request, env, id);
++    }
++    if (method === 'DELETE' && id && action === 'file') {
++      return deleteCloudFile(request, env, id);
++    }
++    if (method === 'POST' && id && action === 'multipart' && seg[5] === undefined) {
++      return startMultipart(request, env, id);
++    }
++    if (method === 'PUT' && id && action === 'multipart' && seg[5] !== undefined && seg[6] === undefined) {
++      return uploadMultipartPart(request, env, id, seg[5]);
++    }
++    if (method === 'POST' && id && action === 'multipart' && (seg[6] === 'complete' || seg[6] === 'abort')) {
++      return finishMultipart(request, env, id, seg[5], seg[6]);
++    }
+     if (method === 'POST' && !id) {
+       const b = await readBody(request);
+       if (!b.slug || !b.title_en) return fail(400, 'slug and title_en are required');

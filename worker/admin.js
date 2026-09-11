@@ -24,6 +24,25 @@
 //                                                 cloud.js / metadata.json flips status to
 //                                                 'ready' and records point_count.
 //   GET    /api/admin/pointclouds/:id/files       list objects stored under the prefix
+//   DELETE /api/admin/pointclouds/:id/file?path=<rel>
+//                                                 delete ONE stored object under the prefix
+//   POST   /api/admin/pointclouds/:id/multipart?path=<rel>
+//                                                 start a chunked multipart upload for large
+//                                                 files (octree.bin is typically 100-400 MB and
+//                                                 exceeds the Workers request-body limit when
+//                                                 sent as one request). Returns {uploadId}.
+//   PUT    /api/admin/pointclouds/:id/multipart/<uploadId>?part=N&path=<rel>
+//                                                 upload one part (<= 64 MB body). Returns
+//                                                 {partNumber, etag}.
+//   POST   /api/admin/pointclouds/:id/multipart/<uploadId>/complete?path=<rel>
+//                                                 body {parts:[{partNumber, etag}...]} —
+//                                                 finalize; metadata.json/cloud.js still flips
+//                                                 status to 'ready' + records point_count.
+//   POST   /api/admin/pointclouds/:id/multipart/<uploadId>/abort?path=<rel>
+//                                                 cancel a chunked upload.
+//   GET    /api/admin/pointclouds/:id/uploads      recent upload history (upload_log table,
+//                                                 migration 002 — endpoints degrade gracefully
+//                                                 if the table does not exist yet).
 //   GET    /api/admin/pointclouds                 all point clouds
 //   POST   /api/admin/pointclouds                 register one (e.g. "LAS 1")
 //   PUT    /api/admin/pointclouds/:id             update (rename, publish, set prefix/status)
@@ -114,9 +133,16 @@ async function uploadCloudSource(request, env, cloudId, filename) {
       'Convert locally with PotreeConverter and upload the octree folder instead (the viewer streams the octree, not the raw scan).');
   }
   const key = `originals/${c.slug}/source${ext[0]}`;
-  await env.R2_PRIVATE.put(key, request.body, {
-    httpMetadata: { contentType: 'application/octet-stream' },
-  });
+  await logUpload(env, cloudId, filename, cl, null, 'uploading');
+  try {
+    await env.R2_PRIVATE.put(key, request.body, {
+      httpMetadata: { contentType: 'application/octet-stream' },
+    });
+  } catch (e) {
+    await logUpload(env, cloudId, filename, cl, null, 'failed', String((e && e.message) || e));
+    throw e;
+  }
+  await logUpload(env, cloudId, filename, cl, null, 'complete');
   if (c.status === 'awaiting_upload') {
     await env.DB.prepare(`UPDATE pointclouds SET status = 'source_uploaded', updated_at = datetime('now') WHERE id = ?`).bind(cloudId).run();
   }
@@ -142,9 +168,16 @@ async function uploadOctreeFile(request, env, cloudId, rel) {
     try { meta = JSON.parse(text); } catch { meta = null; }
   }
 
-  await env.R2_CLOUDS.put(key, body, {
-    httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
-  });
+  await logUpload(env, cloudId, rel, cl, null, 'uploading');
+  try {
+    await env.R2_CLOUDS.put(key, body, {
+      httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
+    });
+  } catch (e) {
+    await logUpload(env, cloudId, rel, cl, null, 'failed', String((e && e.message) || e));
+    throw e;
+  }
+  await logUpload(env, cloudId, rel, cl, null, 'complete');
 
   if (meta) {
     const points = Number(meta.points || meta.pointCount || 0) || null;
@@ -155,6 +188,142 @@ async function uploadOctreeFile(request, env, cloudId, rel) {
     await env.DB.prepare(`UPDATE pointclouds SET status = 'processing', updated_at = datetime('now') WHERE id = ?`).bind(cloudId).run();
   }
   return json({ ok: true, key, bytes: cl, parsed_meta: !!meta });
+}
+
+// ------------------------------------------------------------
+// Upload tracking (upload_log). Best-effort: if migration 002 has not
+// been applied yet the endpoints must keep working, so every log write
+// is swallowed. Run:  npx wrangler d1 execute gis-db --remote \
+//   --file derived/migrations/002-upload-log.sql
+// ------------------------------------------------------------
+
+async function logUpload(env, cloudId, filename, sizeBytes, parts, status, error) {
+  try {
+    if (status === 'uploading') {
+      await env.DB.prepare(
+        `INSERT INTO upload_log (cloud_id, filename, size_bytes, parts, status) VALUES (?, ?, ?, ?, ?)`
+      ).bind(cloudId, filename, sizeBytes == null ? null : Math.round(sizeBytes), parts == null ? null : parts, 'uploading').run();
+    } else {
+      await env.DB.prepare(
+        `UPDATE upload_log SET status = ?, error = ?, size_bytes = COALESCE(?, size_bytes), finished_at = datetime('now')
+         WHERE id = (SELECT id FROM upload_log WHERE cloud_id = ? AND filename = ? ORDER BY id DESC LIMIT 1)`
+      ).bind(status, error || null, sizeBytes == null ? null : Math.round(sizeBytes), cloudId, filename).run();
+    }
+  } catch { /* log only — never block an upload */ }
+}
+
+async function listUploads(request, env, cloudId) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, filename, size_bytes, parts, status, error, started_at, finished_at
+       FROM upload_log WHERE cloud_id = ? ORDER BY id DESC LIMIT 20`
+    ).bind(cloudId).all();
+    return json({ uploads: results || [] });
+  } catch {
+    return json({ uploads: [], note: 'upload_log table missing — run derived/migrations/002-upload-log.sql' });
+  }
+}
+
+// ------------------------------------------------------------
+// Chunked multipart uploads (R2 binding multipart API).
+// A single Worker request cannot carry a ~300 MB octree.bin (platform
+// request-body limit), so the browser slices the file into <= 32 MB
+// parts and each part is its own request: start -> PUT parts ->
+// complete. Parts are buffered (bounded by the 64 MB guard) and handed
+// to R2 via resumeMultipartUpload().uploadPart().
+// ------------------------------------------------------------
+
+const PART_MAX = 64 * 1024 * 1024; // hard server-side guard; client slices at 32 MB
+
+function cloudKeyFor(c, rel) {
+  return String(c.prefix || (c.slug + '/')) + rel;
+}
+
+async function cloudById(env, cloudId) {
+  return env.DB.prepare(`SELECT id, slug, prefix, status FROM pointclouds WHERE id = ?`).bind(cloudId).first();
+}
+
+async function startMultipart(request, env, cloudId) {
+  const c = await cloudById(env, cloudId);
+  if (!c) return fail(404, 'point cloud not found');
+  const rel = sanitizeRel(new URL(request.url).searchParams.get('path') || '');
+  if (!rel) return fail(400, 'query param path is required (relative path, no ..)');
+  const key = cloudKeyFor(c, rel);
+  const isMeta = /(^|\/)(cloud\.js|metadata\.json)$/.test(rel);
+  const mpu = await env.R2_CLOUDS.createMultipartUpload(key, {
+    httpMetadata: { contentType: isMeta ? 'application/json; charset=utf-8' : 'application/octet-stream' },
+  });
+  await logUpload(env, cloudId, rel, null, null, 'uploading');
+  return json({ ok: true, uploadId: mpu.uploadId, key, partMax: PART_MAX });
+}
+
+async function uploadMultipartPart(request, env, cloudId, uploadId) {
+  const c = await cloudById(env, cloudId);
+  if (!c) return fail(404, 'point cloud not found');
+  const url = new URL(request.url);
+  const rel = sanitizeRel(url.searchParams.get('path') || '');
+  const part = Number(url.searchParams.get('part') || 0);
+  if (!rel) return fail(400, 'query param path is required');
+  if (!Number.isInteger(part) || part < 1 || part > 10000) return fail(400, 'query param part must be an integer 1..10000');
+  const cl = Number(request.headers.get('content-length') || 0);
+  if (!cl) return fail(411, 'content-length required');
+  if (cl > PART_MAX) {
+    return fail(413, 'part is ' + Math.round(cl / 1048576) + ' MB — slice files into parts of 32 MB or less');
+  }
+  const key = cloudKeyFor(c, rel);
+  const buf = await request.arrayBuffer(); // bounded: guarded to <= 64 MB above
+  const mpu = env.R2_CLOUDS.resumeMultipartUpload(key, String(uploadId));
+  const uploaded = await mpu.uploadPart(part, buf);
+  return json({ ok: true, partNumber: uploaded.partNumber, etag: uploaded.etag, bytes: buf.byteLength });
+}
+
+async function finishMultipart(request, env, cloudId, uploadId, action) {
+  const c = await cloudById(env, cloudId);
+  if (!c) return fail(404, 'point cloud not found');
+  const rel = sanitizeRel(new URL(request.url).searchParams.get('path') || '');
+  if (!rel) return fail(400, 'query param path is required');
+  const key = cloudKeyFor(c, rel);
+  if (action === 'abort') {
+    try { await env.R2_CLOUDS.resumeMultipartUpload(key, String(uploadId)).abort(); } catch { /* already gone */ }
+    await logUpload(env, cloudId, rel, null, null, 'failed', 'aborted by user');
+    return json({ ok: true, aborted: true });
+  }
+  const b = await readBody(request);
+  const parts = Array.isArray(b.parts) && b.parts.length
+    ? b.parts.map((p) => ({ partNumber: Number(p.partNumber), etag: String(p.etag) })).sort((x, y) => x.partNumber - y.partNumber)
+    : null;
+  if (!parts) return fail(400, 'body.parts must be a non-empty array of {partNumber, etag}');
+  const isMeta = /(^|\/)(cloud\.js|metadata\.json)$/.test(rel);
+  try {
+    const mpu = env.R2_CLOUDS.resumeMultipartUpload(key, String(uploadId));
+    const done = await mpu.complete(parts);
+    let points = null;
+    if (isMeta) {
+      try {
+        const obj = await env.R2_CLOUDS.get(key);
+        const meta = JSON.parse(await new Response(obj.body).text());
+        points = Number(meta.points || meta.pointCount || 0) || null;
+      } catch { points = null; }
+    }
+    await env.DB.prepare(
+      `UPDATE pointclouds SET point_count = COALESCE(?, point_count), status = 'ready', updated_at = datetime('now') WHERE id = ?`
+    ).bind(points, cloudId).run();
+    await logUpload(env, cloudId, rel, done.size, parts.length, 'complete');
+    return json({ ok: true, key, size: done.size, point_count: points });
+  } catch (e) {
+    await logUpload(env, cloudId, rel, null, parts.length, 'failed', String((e && e.message) || e));
+    return fail(500, 'multipart complete failed: ' + String((e && e.message) || e));
+  }
+}
+
+async function deleteCloudFile(request, env, cloudId) {
+  const c = await cloudById(env, cloudId);
+  if (!c) return fail(404, 'point cloud not found');
+  const rel = sanitizeRel(new URL(request.url).searchParams.get('path') || '');
+  if (!rel) return fail(400, 'query param path is required (relative path, no ..)');
+  const key = cloudKeyFor(c, rel);
+  await env.R2_CLOUDS.delete(key);
+  return json({ ok: true, deleted: key });
 }
 
 async function listCloudFiles(request, env, cloudId) {
@@ -355,6 +524,21 @@ export async function handleAdmin(request, env, path) {
     }
     if (method === 'GET' && id && action === 'files') {
       return listCloudFiles(request, env, id);
+    }
+    if (method === 'GET' && id && action === 'uploads') {
+      return listUploads(request, env, id);
+    }
+    if (method === 'DELETE' && id && action === 'file') {
+      return deleteCloudFile(request, env, id);
+    }
+    if (method === 'POST' && id && action === 'multipart' && seg[5] === undefined) {
+      return startMultipart(request, env, id);
+    }
+    if (method === 'PUT' && id && action === 'multipart' && seg[5] !== undefined && seg[6] === undefined) {
+      return uploadMultipartPart(request, env, id, seg[5]);
+    }
+    if (method === 'POST' && id && action === 'multipart' && (seg[6] === 'complete' || seg[6] === 'abort')) {
+      return finishMultipart(request, env, id, seg[5], seg[6]);
     }
     if (method === 'POST' && !id) {
       const b = await readBody(request);

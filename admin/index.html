@@ -6,25 +6,29 @@
 <meta name="robots" content="noindex, nofollow">
 <title>GIS Admin — Tlili Mohamed</title>
 <link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0d1520; --panel:#111c2b; --panel2:#0e1826; --line:rgba(255,255,255,.10);
-          --txt:#e8eef4; --dim:#93a4b5; --accent:#4da8da; --ok:#3ecf8e; --warn:#f5a623; --err:#ff6b6b; }
+  /* Editorial light theme — mirrors the portfolio main site */
+  :root { --bg:#F7F8FA; --panel:#FFFFFF; --panel2:#F7F8FA; --line:#DCE2EA;
+          --txt:#142033; --dim:#5A6B80; --accent:#1769D1; --ok:#1F8A5A; --warn:#B97A0C; --err:#C23B3B; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--txt);
-         font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:14px; }
+         font-family:'Poppins','Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:14px; }
   a { color:var(--accent); text-decoration:none; }
-  code { background:rgba(255,255,255,.06); padding:1px 5px; border-radius:5px; font-size:12px; }
+  code { background:rgba(20,32,51,.06); padding:1px 5px; border-radius:5px; font-size:12px; }
 
   /* ---- top bar ---- */
   .topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:14px;
-            padding:12px 20px; background:rgba(13,21,32,.92); backdrop-filter:blur(8px);
+            padding:12px 20px; background:rgba(247,248,250,.92); backdrop-filter:blur(8px);
             border-bottom:1px solid var(--line); }
   .brand { font-weight:700; font-size:15px; white-space:nowrap; }
   .brand span { color:var(--accent); }
   .tabs { display:flex; gap:6px; }
   .tab { padding:7px 14px; border-radius:999px; border:1px solid var(--line); cursor:pointer;
          color:var(--dim); font-size:13px; background:transparent; font-family:inherit; }
-  .tab.active { color:var(--txt); border-color:var(--accent); background:rgba(77,168,218,.12); }
+  .tab.active { color:var(--txt); border-color:var(--accent); background:rgba(23,105,209,.10); }
   .health { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--dim); }
   .dot { width:9px; height:9px; border-radius:50%; background:var(--err); }
   .dot.ok { background:var(--ok); }
@@ -36,21 +40,22 @@
   .layout { display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start; }
   @media (max-width:860px){ .layout{ grid-template-columns:1fr; } }
 
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px;
+          box-shadow:0 1px 2px rgba(20,32,51,.04); }
   .card h3 { margin:0 0 10px; font-size:14px; letter-spacing:.3px; }
   .stack { display:flex; flex-direction:column; gap:18px; }
 
   /* ---- list items ---- */
   .item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
           cursor:pointer; background:var(--panel2); transition:border-color .15s; }
-  .item:hover { border-color:rgba(77,168,218,.5); }
-  .item.sel { border-color:var(--accent); background:rgba(77,168,218,.08); }
+  .item:hover { border-color:rgba(23,105,209,.45); }
+  .item.sel { border-color:var(--accent); background:rgba(23,105,209,.06); }
   .item .t { font-weight:600; font-size:13.5px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .item .s { color:var(--dim); font-size:12px; margin-top:2px; }
   .chip { font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--dim); letter-spacing:.4px; }
-  .chip.on  { color:var(--ok); border-color:rgba(62,207,142,.4); }
-  .chip.off { color:var(--err); border-color:rgba(255,107,107,.35); }
-  .chip.n { color:var(--warn); border-color:rgba(245,166,35,.4); }
+  .chip.on  { color:var(--ok); border-color:rgba(31,138,90,.4); }
+  .chip.off { color:var(--err); border-color:rgba(194,59,59,.35); }
+  .chip.n { color:var(--warn); border-color:rgba(185,122,12,.4); }
 
   /* ---- forms ---- */
   form .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
@@ -70,16 +75,16 @@
          font:inherit; font-size:13px; font-weight:600; border:1px solid var(--line);
          background:var(--panel2); color:var(--txt); }
   .btn:hover { border-color:var(--accent); }
-  .btn.primary { background:rgba(77,168,218,.15); border-color:var(--accent); color:var(--accent); }
-  .btn.danger { color:var(--err); border-color:rgba(255,107,107,.4); }
-  .btn.danger:hover { background:rgba(255,107,107,.1); }
+  .btn.primary { background:rgba(23,105,209,.10); border-color:var(--accent); color:var(--accent); }
+  .btn.danger { color:var(--err); border-color:rgba(194,59,59,.4); }
+  .btn.danger:hover { background:rgba(194,59,59,.08); }
   .btn.small { padding:5px 10px; font-size:12px; font-weight:500; }
   .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
   table { width:100%; border-collapse:collapse; font-size:12.5px; }
   th { text-align:left; color:var(--dim); font-weight:600; font-size:11px; letter-spacing:.4px;
        padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
-  td { padding:8px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:top; }
+  td { padding:8px; border-bottom:1px solid rgba(20,32,51,.06); vertical-align:top; }
   td input[type=text], td input[type=number], td select { padding:5px 8px; font-size:12.5px; }
 
   /* ---- login / toast / empty ---- */
@@ -89,17 +94,17 @@
   .gate p { color:var(--dim); font-size:13px; line-height:1.6; margin:0 0 16px; }
   .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:50;
            padding:10px 18px; border-radius:10px; font-size:13px; border:1px solid var(--line);
-           background:var(--panel); box-shadow:0 8px 24px rgba(0,0,0,.45); opacity:0;
+           background:var(--panel); box-shadow:0 8px 24px rgba(20,32,51,.14); opacity:0;
            transition:opacity .25s, transform .25s; pointer-events:none; max-width:90vw; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
-  .toast.ok { border-color:rgba(62,207,142,.5); }
-  .toast.err { border-color:rgba(255,107,107,.5); }
+  .toast.ok { border-color:rgba(31,138,90,.5); }
+  .toast.err { border-color:rgba(194,59,59,.5); }
   .hint { color:var(--dim); font-size:11.5px; line-height:1.5; margin-top:8px; }
   /* attention flash for the project form when "+ New project" is pressed */
   .card.flash { animation: cardFlash 1.4s ease; }
   @keyframes cardFlash {
-    0%, 55% { box-shadow: 0 0 0 2px var(--accent), 0 0 28px rgba(77,168,218,.4); }
-    100%    { box-shadow: 0 0 0 0 rgba(77,168,218,0); }
+    0%, 55% { box-shadow: 0 0 0 2px var(--accent), 0 0 28px rgba(23,105,209,.35); }
+    100%    { box-shadow: 0 0 0 0 rgba(23,105,209,0); }
   }
   #cloudProgress { color:var(--accent); font-family:ui-monospace,Menlo,Consolas,monospace;
                    font-size:11.5px; word-break:break-all; }
@@ -114,12 +119,12 @@
   .preview-note { color:var(--dim); font-size:11.5px; margin-top:8px; display:flex; gap:10px; flex-wrap:wrap; }
   .geo-badge { font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--accent); letter-spacing:.4px; }
   .preview-legend { position:absolute; left:10px; bottom:10px; z-index:800; max-width:240px; max-height:46%;
-    overflow:auto; background:rgba(13,21,32,.92); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+    overflow:auto; background:rgba(255,255,255,.95); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
     font-size:11.5px; color:var(--txt); }
   .preview-legend:empty { display:none; }
   .preview-legend .lg-title { color:var(--dim); font-size:10px; letter-spacing:.4px; margin-bottom:4px; text-transform:uppercase; }
   .preview-legend .lg-row { display:flex; align-items:center; gap:7px; padding:1.5px 0; }
-  .preview-legend .lg-sw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 0 1px rgba(255,255,255,.25); }
+  .preview-legend .lg-sw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 0 1px rgba(20,32,51,.25); }
   .preview-legend .lg-lbl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
   .sym-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
@@ -130,7 +135,7 @@
   .swatch { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line);
     border-radius:10px; background:var(--panel2); }
   .swatch .sw { width:38px; height:26px; border-radius:6px; flex:0 0 auto;
-    box-shadow:0 0 0 1px rgba(255,255,255,.2); }
+    box-shadow:0 0 0 1px rgba(20,32,51,.2); }
   .swatch small { color:var(--dim); display:block; }
   .valrow { display:flex; align-items:center; gap:8px; padding:5px 6px; border:1px solid var(--line);
     border-radius:9px; margin-bottom:6px; background:var(--panel2); }
@@ -148,10 +153,19 @@
   .stepper .steptxt { min-width:34px; text-align:center; font-size:13px; padding:0 4px; }
   .range-label { color:var(--dim); font-size:11px; }
   input[type=range] { padding:0; height:26px; accent-color:var(--accent); }
-  .studio-actions { position:sticky; bottom:0; background:rgba(13,21,32,.94); backdrop-filter:blur(6px);
+  .studio-actions { position:sticky; bottom:0; background:rgba(247,248,250,.94); backdrop-filter:blur(6px);
     border-top:1px solid var(--line); margin:14px -16px -16px; padding:12px 16px; border-radius:0 0 14px 14px; }
   .sym-empty { color:var(--dim); font-size:13px; line-height:1.6; padding:30px 10px; text-align:center; }
 
+  /* ---- per-cloud file manager ---- */
+  .fm-bar { height:8px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; }
+  .fm-bar > div { height:100%; width:0%; background:var(--accent); transition:width .2s; }
+  .fm-row { display:flex; align-items:center; gap:10px; padding:7px 10px; border:1px solid var(--line);
+            border-radius:9px; margin-bottom:6px; background:var(--panel2); font-size:12.5px; }
+  .fm-row.missing { border-color:rgba(194,59,59,.45); }
+  .fm-row .fm-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+                     font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .fm-row .fm-size { color:var(--dim); font-size:11.5px; flex:0 0 auto; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .hidden { display:none !important; }
 </style>
@@ -278,13 +292,41 @@
         <div class="row" style="margin-top:10px"><button class="btn primary" type="submit">Register</button></div>
         <p class="hint">Workflow: <b>register</b> → <b>LAS</b> stores the raw scan in <code>gis-private</code>
           (never served, ≤100 MB) → convert locally with PotreeConverter → <b>octree</b> uploads the converted folder to
-          <code>clouds-public/&lt;prefix&gt;</code> and flips status to <code>ready</code> automatically (point count is
-          read from <code>cloud.js</code>/<code>metadata.json</code>) → <b>files</b> lists what is stored → publish.
+          <code>clouds-public/&lt;prefix&gt;</code> (files over 90&nbsp;MB are chunked automatically) and flips status to
+          <code>ready</code> (point count read from <code>cloud.js</code>/<code>metadata.json</code>) →
+          <b>files</b> opens the per-cloud file manager (upload / replace / delete single files + upload tracking) → publish.
           The <code>/lidar</code> viewer and <code>/clouds/*</code> proxy serve published clouds only.</p>
       </form>
       <input type="file" id="lasFile" accept=".las,.laz" style="display:none">
       <input type="file" id="octreeDir" webkitdirectory directory multiple style="display:none">
+      <input type="file" id="fmFile" multiple style="display:none">
+      <input type="file" id="fmReplaceFile" style="display:none">
       <div id="cloudProgress" class="hint" hidden></div>
+    </div>
+
+    <!-- per-cloud file manager: upload / replace / delete individual octree files -->
+    <div class="card" id="fmCard" style="margin-top:18px" hidden>
+      <div class="sym-head">
+        <h3 style="margin:0">Files — <span id="fmTitle">—</span></h3>
+        <span class="chip" id="fmPrefix">—</span>
+        <span class="row" style="margin-left:auto">
+          <button class="btn small" id="fmRefresh" type="button">refresh</button>
+          <button class="btn small" id="fmClose" type="button">close</button>
+        </span>
+      </div>
+      <div class="row" style="margin:8px 0 12px">
+        <button class="btn small primary" id="fmUploadBtn" type="button">Upload file(s)</button>
+        <span class="hint" style="margin:0">Files are stored under the cloud prefix using their names. Big files
+          (&gt;90&nbsp;MB, e.g. <code>octree.bin</code>) are sliced into 32&nbsp;MB chunks automatically — the old
+          100&nbsp;MB single-request limit no longer applies.</span>
+      </div>
+      <div id="fmProgressWrap" hidden style="margin:0 0 12px">
+        <div class="fm-bar"><div id="fmBar"></div></div>
+        <div id="fmProgressText" class="hint" style="margin-top:4px"></div>
+      </div>
+      <div id="fmList"><p class="hint" style="margin:0">Loading…</p></div>
+      <h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)">Recent uploads (tracking log)</h4>
+      <div id="fmLog"><p class="hint" style="margin:0">—</p></div>
     </div>
   </section>
 
@@ -793,14 +835,14 @@
     var act = b.dataset.act;
     if (act === "las") { state.upCloud = Number(id); $("lasFile").click(); return; }
     if (act === "octree") { state.upCloud = Number(id); $("octreeDir").click(); return; }
-    if (act === "files") { showCloudFiles(Number(id)); return; }
+    if (act === "files") { openFileManager(Number(id)); return; }
     if (act !== "save") return;
     var get = function (f) { return tr.querySelector("[data-f='" + f + "']"); };
     var body = {
       title_en: get("title_en").value.trim(),
       status: get("status").value,
       point_count: get("point_count").value === "" ? null : num(get("point_count").value),
-      srs: get("srs").value.trim() || null,
+      srs: (function (v) { v = v.trim(); return (!v || /^null$/i.test(v) || /^n\/a$/i.test(v)) ? null : v; })(get("srs").value),
       prefix: get("prefix").value.trim() || null,
       published: get("published").checked ? 1 : 0
     };
@@ -886,7 +928,7 @@
     for (var i = 0; i < picked.length; i++) {
       var f = picked[i];
       var rel = relPathFor(f, cloud);
-      if (!rel || f.size > 100 * 1024 * 1024) continue;
+      if (!rel) continue;
       if (/(^|\/)(__MACOSX|\.)/.test(rel) || /(^|\/)\./.test(f.name)) continue; // junk / dotfiles
       files.push({ f: f, rel: rel });
     }
@@ -898,15 +940,21 @@
     state.uploading = true;
     var done = 0, failed = [];
     cloudBusy("Uploading octree 0/" + files.length + "…");
-    var CONC = 4, idx = 0;
+    var CONC = 4, idx = 0, bytesDone = 0;
     function worker(next) {
       if (idx >= files.length) return next();
       var item = files[idx++];
-      var send = function () { return sendFile(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), item.f); };
+      var isBig = item.f.size > 90 * 1024 * 1024; // chunked multipart — one request cannot carry >100 MB
+      var send = function () {
+        return isBig
+          ? uploadChunked(cid, item.f, item.rel, function () {})
+          : sendFile(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(item.rel), item.f);
+      };
       send().catch(function () { return send(); }).catch(function (e) { failed.push(item.rel + " (" + e.message + ")"); })
         .then(function () {
-          done++;
-          if (done % 10 === 0 || done === files.length) cloudBusy("Uploading octree " + done + "/" + files.length + "…");
+          done++; bytesDone += item.f.size;
+          cloudBusy("Uploading octree " + done + "/" + files.length + " — " + (bytesDone / 1048576).toFixed(1) +
+            " / " + (totalBytes / 1048576).toFixed(1) + " MB");
           worker(next);
         });
     }
@@ -916,24 +964,223 @@
       state.uploading = false;
       hideCloudBusy();
       if (failed.length) toast("Octree: " + (files.length - failed.length) + "/" + files.length + " uploaded — first failures: " + failed.slice(0, 2).join(" | "), "err");
-      else toast("Octree uploaded (" + files.length + " files) — status flips to ready via cloud.js/metadata.json", "ok");
+      else toast("Octree uploaded (" + files.length + " files, big files chunked) — status flips to ready via cloud.js/metadata.json", "ok");
       loadClouds();
       showCloudFiles(cid, true);
     });
   });
 
+  function fmtSize(n) {
+    return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? (n / 1024).toFixed(0) + " KB" : n + " B";
+  }
+
   function showCloudFiles(cid, silent) {
-    api("GET", "/api/admin/pointclouds/" + cid + "/files").then(function (j) {
-      var total = 0;
-      j.objects.forEach(function (o) { total += o.size; });
-      if (silent && !j.objects.length && !j.truncated) return;
-      var names = j.objects.slice(0, 6).map(function (o) { return o.key + " (" + (o.size / 1024).toFixed(0) + " KB)"; });
-      cloudBusy((j.prefix || "") + " → " + j.objects.length + "+ objects · " + (total / 1048576).toFixed(1) + " MB" +
-        (j.truncated ? " (first page — more below)" : "") + (names.length ? " — e.g. " + names.join(", ") : ""));
-      clearTimeout(showCloudFiles._t);
-      showCloudFiles._t = setTimeout(hideCloudBusy, 9000);
+    var objects = [], cursor = null, guard = 0;
+    function page() {
+      var url = "/api/admin/pointclouds/" + cid + "/files" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : "");
+      return api("GET", url).then(function (j2) {
+        objects = objects.concat(j2.objects || []);
+        cursor = j2.truncated ? j2.cursor : null;
+        if (cursor && ++guard < 15) return page();
+      });
+    }
+    return page().then(function () {
+      if (cid !== (fmCloud && fmCloud.id)) return; // manager closed or switched meanwhile
+      var total = 0; objects.forEach(function (o) { total += o.size; });
+      var have = {}; objects.forEach(function (o) { have[o.key] = true; });
+      var need = have["cloud.js"] ? ["cloud.js"] : ["metadata.json", "hierarchy.bin", "octree.bin"];
+      var coreRows = need.map(function (n) {
+        var present = !!have[n];
+        var sizeTxt = present ? fmtSize(objects.filter(function (o) { return o.key === n; })[0].size) : "viewer will fail without it";
+        return "<div class='fm-row" + (present ? "" : " missing") + "'>" +
+          (present ? "<span class='chip on'>present</span>" : "<span class='chip off'>MISSING</span>") +
+          "<span class='fm-name'>" + esc(n) + "</span>" +
+          "<span class='fm-size'>" + sizeTxt + "</span></div>";
+      }).join("");
+      var rows = objects.map(function (o) {
+        return "<div class='fm-row'>" +
+          "<span class='fm-name'>" + esc(o.key) + "</span>" +
+          "<span class='fm-size'>" + fmtSize(o.size) + "</span>" +
+          "<button class='btn small' data-fm='replace' data-path='" + esc(o.key) + "'>replace</button>" +
+          "<button class='btn small danger' data-fm='delete' data-path='" + esc(o.key) + "'>delete</button>" +
+          "</div>";
+      }).join("");
+      $("fmList").innerHTML =
+        "<p class='hint' style='margin:0 0 8px'>" + objects.length + " objects · " + (total / 1048576).toFixed(1) + " MB total" +
+        (guard >= 15 ? " (list truncated)" : "") + "</p>" +
+        "<h4 style='margin:0 0 6px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)'>Core files</h4>" +
+        coreRows +
+        "<h4 style='margin:12px 0 6px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)'>All files</h4>" +
+        (rows || "<p class='hint' style='margin:4px 0'>Nothing stored yet.</p>");
     }).catch(function (e) { if (!silent) toast("List files: " + e.message, "err"); });
   }
+
+  // ---------- per-cloud file manager (single-file upload / replace / delete + tracking) ----------
+  var fmCloud = null, fmReplacePath = null;
+  var PART_MAX = 32 * 1024 * 1024; // client slice size; server accepts up to 64 MB parts
+
+  function openFileManager(cid) {
+    fmCloud = state.clouds.filter(function (c) { return c.id === cid; })[0] || null;
+    if (!fmCloud) { toast("Cloud not found", "err"); return; }
+    $("fmCard").hidden = false;
+    $("fmTitle").textContent = fmCloud.title_en || fmCloud.slug;
+    $("fmPrefix").textContent = fmCloud.prefix || (fmCloud.slug + "/");
+    $("fmCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    refreshFileManager();
+  }
+  function refreshFileManager() {
+    if (!fmCloud) return;
+    showCloudFiles(fmCloud.id, true);
+    loadUploadLog();
+  }
+  function loadUploadLog() {
+    api("GET", "/api/admin/pointclouds/" + fmCloud.id + "/uploads").then(function (j2) {
+      var rows = j2.uploads || [];
+      if (!rows.length) { $("fmLog").innerHTML = '<p class="hint" style="margin:0">No uploads recorded yet.</p>'; return; }
+      var h = '<table><thead><tr><th>file</th><th>size</th><th>parts</th><th>status</th><th>started</th><th>finished</th></tr></thead><tbody>';
+      rows.forEach(function (u) {
+        h += "<tr><td style='max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + esc(u.filename) + "</td>" +
+          "<td>" + (u.size_bytes == null ? "—" : fmtSize(u.size_bytes)) + "</td>" +
+          "<td>" + (u.parts == null ? "—" : u.parts) + "</td>" +
+          "<td>" + (u.status === "complete" ? "<span class='chip on'>complete</span>"
+                     : u.status === "failed" ? "<span class='chip off'>failed</span>"
+                     : "<span class='chip n'>uploading</span>") +
+          (u.error ? "<br><span style='color:var(--err);font-size:10.5px'>" + esc(u.error) + "</span>" : "") + "</td>" +
+          "<td>" + esc(u.started_at || "") + "</td><td>" + esc(u.finished_at || "") + "</td></tr>";
+      });
+      $("fmLog").innerHTML = h + "</tbody></table>";
+    }).catch(function () {
+      $("fmLog").innerHTML = '<p class="hint" style="margin:0">Upload log unavailable — run ' +
+        '<code>npx wrangler d1 execute gis-db --remote --file derived/migrations/002-upload-log.sql</code></p>';
+    });
+  }
+
+  function xhrSend(url, method, blob, onprogress) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open(method, url, true);
+      x.setRequestHeader("x-admin-token", TOKEN);
+      x.setRequestHeader("content-type", "application/octet-stream");
+      x.upload.onprogress = function (ev) { if (onprogress) onprogress(ev.loaded, ev.total); };
+      x.onload = function () {
+        var jj = {}; try { jj = JSON.parse(x.responseText || "{}"); } catch (e) {}
+        if (x.status >= 200 && x.status < 300) resolve(jj);
+        else { var err = new Error(jj.error || ("HTTP " + x.status)); err.status = x.status; reject(err); }
+      };
+      x.onerror = function () { reject(new Error("network error")); };
+      x.send(blob);
+    });
+  }
+
+  function fmProgress(pct, text) {
+    $("fmProgressWrap").hidden = false;
+    $("fmBar").style.width = Math.max(0, Math.min(100, pct)) + "%";
+    $("fmProgressText").textContent = text;
+  }
+  function fmProgressDone(text) {
+    fmProgress(100, text);
+    setTimeout(function () { $("fmProgressWrap").hidden = true; }, 2500);
+  }
+
+  function uploadChunked(cid, file, rel, onprogress) {
+    var startUrl = "/api/admin/pointclouds/" + cid + "/multipart?path=" + encodeURIComponent(rel);
+    var partUrl = function (uploadId, p) {
+      return "/api/admin/pointclouds/" + cid + "/multipart/" + encodeURIComponent(uploadId) +
+        "?part=" + p + "&path=" + encodeURIComponent(rel);
+    };
+    var finUrl = function (uploadId, action) {
+      return "/api/admin/pointclouds/" + cid + "/multipart/" + encodeURIComponent(uploadId) + "/" + action +
+        "?path=" + encodeURIComponent(rel);
+    };
+    return api("POST", startUrl).then(function (start) {
+      var uploadId = start.uploadId;
+      var parts = [];
+      var totalParts = Math.ceil(file.size / PART_MAX);
+      var chain = Promise.resolve();
+      for (var p = 1; p <= totalParts; p++) {
+        (function (p) {
+          chain = chain.then(function () {
+            var baseOff = (p - 1) * PART_MAX;
+            var blob = file.slice(baseOff, Math.min(p * PART_MAX, file.size));
+            return xhrSend(partUrl(uploadId, p), "PUT", blob, function (loaded) {
+              onprogress(Math.min(baseOff + loaded, file.size), file.size);
+            }).then(function (res) { parts.push({ partNumber: res.partNumber, etag: res.etag }); });
+          });
+        })(p);
+      }
+      return chain
+        .then(function () { return api("POST", finUrl(uploadId, "complete"), { parts: parts }); })
+        .then(function (done) { onprogress(file.size, file.size); return done; })
+        .catch(function (e) {
+          api("POST", finUrl(uploadId, "abort")).catch(function () {});
+          throw e;
+        });
+    });
+  }
+
+  function uploadOne(cid, file, relOverride, doneCb) {
+    var cloud = state.clouds.filter(function (c) { return c.id === cid; })[0];
+    if (!cloud) { toast("Cloud not found", "err"); return; }
+    var rel = relOverride || file.name;
+    if (!rel || rel.charAt(0) === "/" || rel.indexOf("..") !== -1) { toast("Bad target path", "err"); return; }
+    var chunked = file.size > 90 * 1024 * 1024;
+    var label = rel + " (" + fmtSize(file.size) + ")" + (chunked ? " — chunked" : "");
+    fmProgress(0, "Uploading " + label + "…");
+    var onp = function (l, t) {
+      fmProgress((l / t) * 100, "Uploading " + rel + " — " + fmtSize(l) + " / " + fmtSize(t) + " (" + Math.round((l / t) * 100) + "%)");
+    };
+    var up = chunked
+      ? uploadChunked(cid, file, rel, onp)
+      : xhrSend(uploadUrl("/api/admin/upload/octree", cid) + "&path=" + encodeURIComponent(rel), "POST", file, onp);
+    up.then(function () { fmProgressDone("Done: " + rel); toast("Uploaded " + rel, "ok"); })
+      .catch(function (e) { $("fmProgressWrap").hidden = true; toast("Upload failed: " + e.message, "err"); })
+      .then(function () { refreshFileManager(); loadClouds(); if (doneCb) doneCb(); });
+  }
+
+  function uploadQueue(cid, files) {
+    state.uploading = true;
+    var i = 0;
+    function next() {
+      if (i >= files.length) { state.uploading = false; refreshFileManager(); loadClouds(); return; }
+      var f = files[i++];
+      uploadOne(cid, f, f.name, next);
+    }
+    next();
+  }
+
+  $("fmUploadBtn").addEventListener("click", function () { $("fmFile").click(); });
+  $("fmFile").addEventListener("change", function (ev) {
+    var input = ev.target;
+    var picked = Array.prototype.slice.call(input.files);
+    input.value = "";
+    if (!picked.length || !fmCloud || state.uploading) return;
+    uploadQueue(fmCloud.id, picked);
+  });
+  $("fmReplaceFile").addEventListener("change", function (ev) {
+    var input = ev.target;
+    var file = input.files.length ? input.files[0] : null;
+    input.value = "";
+    if (!file || !fmCloud || !fmReplacePath || state.uploading) return;
+    var path = fmReplacePath;
+    fmReplacePath = null;
+    uploadOne(fmCloud.id, file, path);
+  });
+  $("fmList").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-fm]");
+    if (!b || !fmCloud) return;
+    var path = b.dataset.path;
+    if (b.dataset.fm === "delete") {
+      if (!confirm("Delete " + path + " from storage? The viewer will fail on it until it is re-uploaded.")) return;
+      api("DELETE", "/api/admin/pointclouds/" + fmCloud.id + "/file?path=" + encodeURIComponent(path))
+        .then(function () { toast("Deleted " + path, "ok"); refreshFileManager(); })
+        .catch(function (e) { toast("Delete: " + e.message, "err"); });
+      return;
+    }
+    fmReplacePath = path;
+    $("fmReplaceFile").click();
+  });
+  $("fmRefresh").addEventListener("click", refreshFileManager);
+  $("fmClose").addEventListener("click", function () { $("fmCard").hidden = true; fmCloud = null; });
 
   // ---------- boot ----------
   if (TOKEN) {

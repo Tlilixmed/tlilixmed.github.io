@@ -306,6 +306,7 @@
   }
 
   let activeSlug = null;
+  let loadedSlug = null; // last cloud that loaded successfully (failure falls back to it)
   let activeMeta = null;
   let activePC = null;
   let activeMode = "intensity";
@@ -389,8 +390,21 @@
     }
   }
 
+  function probeMissing(base) {
+    // HEAD-like 1-byte range probes so a precise message can name the missing file.
+    var names = ["metadata.json", "hierarchy.bin", "octree.bin"];
+    return names.reduce(function (prom, name) {
+      return prom.then(function (missing) {
+        if (missing) return missing;
+        return fetch(base + name, { headers: { range: "bytes=0-0" } })
+          .then(function (r) { return (r.status === 200 || r.status === 206) ? null : name; })
+          .catch(function () { return name; });
+      });
+    }, Promise.resolve(null));
+  }
+
   async function loadCloud(entry) {
-    if (entry.slug === activeSlug) return;
+    if (entry.slug === loadedSlug) return; // already on screen — retry after a failure is still allowed
     activeSlug = entry.slug;
     tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
       b.classList.toggle("active", b.dataset.slug === entry.slug));
@@ -402,16 +416,20 @@
     showOverlay(true, "Streaming <b>" + (entry.title_en || entry.slug) + "</b> point cloud&hellip;<br>" +
       "<span style='font-size:12px'>First load downloads the full octree once &mdash; then it is cached.</span>");
 
+    const base = (remoteMode ? REMOTE_ORIGIN : "") + "/clouds/" + entry.prefix;  // e.g. /clouds/las-1/
     try {
-      const base = (remoteMode ? REMOTE_ORIGIN : "") + "/clouds/" + entry.prefix;  // e.g. /clouds/las-1/
-      activeMeta = await fetchJSON(base + "metadata.json");
+      const meta = await fetchJSON(base + "metadata.json");
 
-      // remove previous clouds (single-page multi-cloud switch)
-      viewer.scene.pointclouds.slice().forEach(pc => viewer.scene.removePointCloud(pc.name));
-
+      // Load the new cloud BEFORE touching the scene: if this cloud is broken
+      // (e.g. octree.bin missing from storage), the currently displayed cloud
+      // stays alive instead of being wiped by a failed switch.
       const e = await Potree.loadPointCloud(base + "metadata.json", entry.slug);
       const pc = e.pointcloud;
+
+      viewer.scene.pointclouds.slice().forEach(old => viewer.scene.removePointCloud(old.name));
+      activeMeta = meta;
       activePC = pc;
+      loadedSlug = entry.slug;
       pc.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
       pc.material.size = 0.7;
       pc.material.minSize = 1.5;
@@ -432,8 +450,24 @@
         (activeMeta.projection || entry.srs || "EPSG:2056 (assumed)");
       hideOverlay();
     } catch (err) {
+      // Restore tab state so the failed cloud can be retried and the previous
+      // cloud (still on screen) can be re-selected.
+      activeSlug = loadedSlug;
+      tabsEl.querySelectorAll(".cloud-tab").forEach(b =>
+        b.classList.toggle("active", b.dataset.slug === loadedSlug));
       const s = err && err.status;
-      if (s === 404) {
+      let missing = null;
+      try { missing = await probeMissing(base); } catch (e2) { /* probe is advisory only */ }
+      if (missing) {
+        showOverlay(false,
+          "<div class='err-icon'>&#9723;</div><b>Octree file missing: <code>" + missing + "</code></b><br>" +
+          (missing === "metadata.json"
+            ? "The catalog entry exists, but the converted point cloud files are not in storage.<br>"
+            : "The conversion is incomplete \u2014 this file is part of the Potree octree and must be (re-)uploaded.<br>") +
+          "<span style='font-size:12px'>Open the admin dashboard \u2192 <b>Point clouds</b> \u2192 <b>files</b> for " +
+          "<code>" + String(entry.slug).replace(/[&<>"]/g, "") + "</code> and upload it (large files are uploaded in 32\u00A0MB chunks automatically).</span>" +
+          BACK_BTN);
+      } else if (s === 404) {
         showOverlay(false,
           "<div class='err-icon'>&#9723;</div><b>Octree not uploaded yet</b><br>" +
           "The catalog entry exists, but the converted point cloud files are not in storage.<br>" +

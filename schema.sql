@@ -72,3 +72,18 @@ CREATE TABLE IF NOT EXISTS features (
 CREATE INDEX IF NOT EXISTS idx_layers_project  ON layers(project_id);
 CREATE INDEX IF NOT EXISTS idx_features_layer  ON features(layer_id);
 CREATE INDEX IF NOT EXISTS idx_projects_pub    ON projects(published, sort_order);
+
+-- Upload tracking log (migration 002). Best-effort: the admin upload
+-- endpoints keep working even if this table is absent.
+CREATE TABLE IF NOT EXISTS upload_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cloud_id INTEGER NOT NULL,
+  filename TEXT NOT NULL,
+  size_bytes INTEGER,
+  parts INTEGER,
+  status TEXT NOT NULL DEFAULT 'uploading',   -- uploading | complete | failed
+  error TEXT,
+  started_at TEXT DEFAULT (datetime('now')),
+  finished_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_upload_log_cloud ON upload_log(cloud_id, id DESC);
