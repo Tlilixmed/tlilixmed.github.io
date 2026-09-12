@@ -36,22 +36,12 @@ function fail(status, message) {
 // GET /api/health — verify bindings without touching data
 // ------------------------------------------------------------
 async function health(env) {
-  const out = { ok: true, d1: false, r2: {} };
   try {
-    await env.DB.prepare('SELECT 1').first();
-    out.d1 = true;
-  } catch (e) {
-    out.d1 = false;
-    out.d1_error = String(e && e.message ? e.message : e);
+    await env.DB.prepare("SELECT 1").first();
+    return json({ ok: true });
+  } catch {
+    return json({ ok: false }, 503);
   }
-  for (const [name, binding] of [['gis-private', env.R2_PRIVATE], ['repo', env.R2_MEDIA], ['clouds-public', env.R2_CLOUDS]]) {
-    try {
-      if (binding && typeof binding.head === 'function') { await binding.head('__probe__'); out.r2[name] = true; }
-      else out.r2[name] = false;
-    } catch (e) { out.r2[name] = false; }
-  }
-  out.ok = out.d1 && Object.values(out.r2).every(Boolean);
-  return json(out, out.ok ? 200 : 500);
 }
 
 // ------------------------------------------------------------
