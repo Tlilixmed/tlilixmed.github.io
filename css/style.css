@@ -687,6 +687,32 @@ body.menu-open { overflow: hidden; }
 .quote-submit { width: 100%; margin-top: 0.3rem; }
 .contact-note { font-size: 0.76rem; color: var(--soft); margin-top: 0.7rem; text-align: center; }
 
+/* lead inbox form status + honeypot (contact form POST flow) */
+.hp-field {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+.qf-status {
+  margin-top: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  text-transform: none;
+  word-break: break-word;
+}
+.qf-status.ok { border-color: rgba(47, 143, 107, 0.45); background: var(--data-soft); color: var(--ink); }
+.qf-status.err { border-color: rgba(194, 59, 59, 0.45); background: rgba(194, 59, 59, 0.06); }
+.qf-status a { color: var(--accent); font-weight: 600; text-decoration: underline; }
+.qf-err-detail { display: block; margin-top: 0.3rem; font-size: 0.7rem; color: var(--soft); }
+
 /* ---------- footer ---------- */
 .site-footer {
   border-top: 1px solid var(--border);

@@ -180,6 +180,52 @@
   .cloud-card .c-uplog h4 { margin:0 0 6px; font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--dim); }
   .cloud-card .c-uplog table { font-size:11.5px; }
   .cloud-card .c-uplog td, .cloud-card .c-uplog th { padding:4px 8px; }
+
+  /* ---- leads (lead inbox) ---- */
+  .lead-item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+               cursor:pointer; background:var(--panel2); transition:border-color .15s; border-left:3px solid var(--line); }
+  .lead-item:hover { border-color:rgba(23,105,209,.45); }
+  .lead-item.sel { border-color:var(--accent); background:rgba(23,105,209,.06); }
+  .lead-item.unread { border-left-color:var(--accent); background:var(--panel); }
+  .lead-item .t { font-weight:600; font-size:13px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .lead-item.unread .t { font-weight:700; }
+  .lead-item .s { color:var(--dim); font-size:11.5px; margin-top:2px; overflow:hidden; text-overflow:ellipsis;
+                  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .lead-msg { white-space:pre-wrap; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+              padding:10px 12px; font-size:13px; line-height:1.6; }
+  .lead-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; color:var(--dim); font-size:12px; }
+
+  /* ---- analytics (one screen) ---- */
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:14px; }
+  @media (max-width:980px){ .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+  .kpi { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+         box-shadow:0 1px 2px rgba(20,32,51,.04); }
+  .kpi b { display:block; font-size:22px; font-variant-numeric:tabular-nums; line-height:1.25; }
+  .kpi span { color:var(--dim); font-size:11.5px; letter-spacing:.3px; }
+  .kpi small { color:var(--dim); font-size:11px; display:block; margin-top:2px; }
+  .ana-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+  @media (max-width:980px){ .ana-grid { grid-template-columns:1fr; } }
+  .ana-chart { display:flex; align-items:flex-end; gap:2px; height:130px; padding:6px 2px 20px; }
+  .ana-chart .bar { flex:1; min-width:4px; background:rgba(23,105,209,.78); border-radius:3px 3px 0 0; position:relative; }
+  .ana-chart .bar:hover { background:var(--accent); }
+  .ana-chart .bar em { position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-style:normal;
+                       font-size:9px; color:var(--dim); }
+  .ana-hbar { display:flex; align-items:center; gap:8px; margin:7px 0; font-size:12.5px; }
+  .ana-hbar .lbl { width:150px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--txt); }
+  .ana-hbar .lbl a { color:inherit; }
+  .ana-hbar .track { flex:1; background:var(--panel2); border-radius:999px; height:14px; overflow:hidden; }
+  .ana-hbar .fill { height:100%; background:rgba(23,105,209,.6); border-radius:999px; }
+  .ana-hbar .n { color:var(--dim); font-size:11.5px; font-variant-numeric:tabular-nums; flex:0 0 auto; }
+  .funnel-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 2px;
+                border-bottom:1px solid rgba(20,32,51,.06); font-size:13px; }
+  .funnel-row:last-child { border-bottom:none; }
+  .funnel-row b { font-variant-numeric:tabular-nums; }
+  .funnel-row .fr-dim { color:var(--dim); font-size:12px; }
+  .mini-tab { padding:5px 12px; border-radius:999px; border:1px solid var(--line); cursor:pointer;
+              color:var(--dim); font-size:12.5px; background:transparent; font-family:inherit; }
+  .mini-tab.active { color:var(--txt); border-color:var(--accent); background:rgba(23,105,209,.10); }
+  .tab-badge { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:999px; font-size:10px;
+               background:var(--accent); color:#fff; font-weight:700; vertical-align:1px; }
 </style>
 </head>
 <body>
@@ -190,6 +236,8 @@
     <button class="tab active" data-tab="projects">Projects &amp; layers</button>
     <button class="tab" data-tab="clouds">Point clouds</button>
     <button class="tab" data-tab="style">Style Studio</button>
+    <button class="tab" data-tab="leads">Leads<span class="tab-badge" id="leadsBadge" hidden>0</span></button>
+    <button class="tab" data-tab="analytics">Analytics</button>
   </nav>
   <div class="health" title="GET /api/health"><span class="dot" id="healthDot"></span><span id="healthTxt">checking…</span>
     <button class="logout" id="logout" type="button">sign out</button>
@@ -451,6 +499,54 @@
       </div>
     </div>
   </section>
+
+  <!-- ---- leads tab — lead inbox (migration 003) ---- -->
+  <section id="tab-leads" class="hidden">
+    <div class="row" style="margin-bottom:14px">
+      <select id="leadStatus" style="width:auto" title="Filter by status">
+        <option value="">all statuses</option>
+        <option value="new">new</option>
+        <option value="read">read</option>
+        <option value="replied">replied</option>
+        <option value="archived">archived</option>
+      </select>
+      <select id="leadReason" style="width:auto" title="Filter by reason">
+        <option value="">all reasons</option>
+        <option value="full_time">full_time</option>
+        <option value="freelance">freelance</option>
+        <option value="spatial_automation">spatial_automation</option>
+        <option value="other">other</option>
+      </select>
+      <button class="btn small" id="leadRefresh" type="button">Refresh</button>
+      <button class="btn small" id="leadExport" type="button">Export CSV</button>
+      <span class="hint" id="leadCounts" style="margin:0"></span>
+    </div>
+    <div class="layout">
+      <div class="card">
+        <h3>Inbox <span class="chip n" id="leadNewChip" hidden>0 new</span></h3>
+        <div id="leadItems"><span class="spin"></span></div>
+      </div>
+      <div class="card" id="leadDetail"><p class="hint">Select a lead on the left.</p></div>
+    </div>
+  </section>
+
+  <!-- ---- analytics tab — one screen (migration 003) ---- -->
+  <section id="tab-analytics" class="hidden">
+    <div class="row" style="margin-bottom:14px">
+      <button class="mini-tab" data-days="7" type="button">Last 7 days</button>
+      <button class="mini-tab active" data-days="30" type="button">Last 30 days</button>
+      <span class="hint" id="anaGenerated" style="margin:0"></span>
+    </div>
+    <div class="kpi-grid" id="anaKpis"><span class="spin"></span></div>
+    <div class="ana-grid">
+      <div class="card"><h3>Page views / day <span class="hint" style="margin:0">(unique sessions in tooltip)</span></h3><div class="ana-chart" id="anaChart"></div></div>
+      <div class="card"><h3>Contact funnel</h3><div id="anaFunnel"></div></div>
+      <div class="card"><h3>Case studies opened</h3><div id="anaCases"></div></div>
+      <div class="card"><h3>CV downloads</h3><div id="anaCv"></div></div>
+      <div class="card"><h3>Top referrers</h3><div id="anaRefs"></div></div>
+      <div class="card"><h3>Map CTA clicks</h3><div id="anaMap"></div></div>
+    </div>
+  </section>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -460,7 +556,9 @@
   "use strict";
 
   var TOKEN = sessionStorage.getItem("gis_admin_token") || "";
-  var state = { projects: [], clouds: [], selProject: null, tab: "projects", upCloud: null, uploading: false };
+  var state = { projects: [], clouds: [], leads: [], selProject: null, tab: "projects", upCloud: null, uploading: false };
+  var anaDays = 30;
+  var leadSel = null;
 
   // ---------- tiny helpers ----------
   function $(id) { return document.getElementById(id); }
@@ -537,8 +635,12 @@
     $("tab-projects").classList.toggle("hidden", state.tab !== "projects");
     $("tab-clouds").classList.toggle("hidden", state.tab !== "clouds");
     if ($("tab-style")) $("tab-style").classList.toggle("hidden", state.tab !== "style");
+    if ($("tab-leads")) $("tab-leads").classList.toggle("hidden", state.tab !== "leads");
+    if ($("tab-analytics")) $("tab-analytics").classList.toggle("hidden", state.tab !== "analytics");
     if (state.tab === "clouds") loadClouds();
     if (state.tab === "style") document.dispatchEvent(new CustomEvent("gis-studio-activated"));
+    if (state.tab === "leads") loadLeads(false);
+    if (state.tab === "analytics") loadAnalytics();
   });
 
   // ---------- projects ----------
@@ -546,6 +648,7 @@
     pingHealth();
     loadProjects();
     loadClouds();
+    refreshLeadBadge();
   }
 
   function loadProjects() {
@@ -1341,6 +1444,279 @@
   });
   $("fmRefresh").addEventListener("click", refreshFileManager);
   $("fmClose").addEventListener("click", function () { $("fmCard").hidden = true; fmCloud = null; });
+
+  // ============================================================
+  // Lead inbox (migration 003)
+  // ============================================================
+  function refreshLeadBadge() {
+    api("GET", "/api/admin/leads?limit=1").then(function (j) {
+      setLeadsBadge((j.counts && j.counts.new) || 0);
+    }).catch(function () { /* degrade silently */ });
+  }
+
+  function setLeadsBadge(n) {
+    var badge = $("leadsBadge");
+    if (!badge) return;
+    badge.hidden = !n;
+    badge.textContent = n;
+  }
+
+  function leadFiltersQs() {
+    var qs = [];
+    if ($("leadStatus").value) qs.push("status=" + encodeURIComponent($("leadStatus").value));
+    if ($("leadReason").value) qs.push("reason=" + encodeURIComponent($("leadReason").value));
+    return qs.length ? "?" + qs.join("&") : "";
+  }
+
+  function loadLeads(keepSel) {
+    $("leadItems").innerHTML = '<span class="spin"></span>';
+    api("GET", "/api/admin/leads" + leadFiltersQs()).then(function (j) {
+      state.leads = j.leads || [];
+      renderLeadList(j.counts || {}, j.warning);
+      if (!keepSel) leadSel = null;
+      renderLeadDetail();
+      setLeadsBadge((j.counts && j.counts.new) || 0);
+    }).catch(function (e) {
+      $("leadItems").innerHTML = '<p class="hint">' + esc(e.message) + '</p>';
+    });
+  }
+
+  function findLead(id) {
+    for (var i = 0; i < (state.leads || []).length; i++) {
+      if (state.leads[i].id === id) return state.leads[i];
+    }
+    return null;
+  }
+
+  function renderLeadList(counts, warning) {
+    var el = $("leadItems");
+    var filtered = leadFiltersQs() !== "";
+    var html = "";
+    if (warning) html += '<p class="hint" style="color:var(--warn)">' + esc(warning) + '</p>';
+    if (!state.leads.length) {
+      html += '<p class="hint">No leads ' + (filtered ? "match this filter" : "yet — new contact-form submissions land here") + '.</p>';
+    }
+    state.leads.forEach(function (l) {
+      var unread = l.status === "new";
+      html += '<div class="lead-item' + (unread ? " unread" : "") + (leadSel === l.id ? " sel" : "") + '" data-id="' + l.id + '">'
+        + '<div class="t">' + esc(l.name) + (unread ? '<span class="chip n">NEW</span>' : '')
+        + '<span class="chip">' + esc(l.reason || "other") + '</span></div>'
+        + '<div class="s">' + esc((l.message || "").slice(0, 140)) + '</div>'
+        + '<div class="s">' + esc(l.created_at || "") + ' · ' + esc(l.email) + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+
+    var bits = [];
+    if (counts.new) bits.push(counts.new + " new");
+    if (counts.replied) bits.push(counts.replied + " replied");
+    bits.push(state.leads.length + (filtered ? " shown (filtered)" : " total"));
+    $("leadCounts").textContent = bits.join(" · ");
+    var chip = $("leadNewChip");
+    if (counts.new) { chip.hidden = false; chip.textContent = counts.new + " new"; }
+    else chip.hidden = true;
+  }
+
+  function renderLeadDetail() {
+    var el = $("leadDetail");
+    var l = findLead(leadSel);
+    if (!l) { el.innerHTML = '<p class="hint">Select a lead on the left.</p>'; return; }
+
+    el.innerHTML =
+      '<h3>#' + l.id + ' — ' + esc(l.name) + '</h3>'
+      + '<div class="lead-meta">'
+      + '<span class="chip">' + esc(l.reason || 'other') + '</span>'
+      + '<span class="chip ' + (l.status === 'new' ? 'n' : (l.status === 'archived' ? 'off' : 'on')) + '">' + esc(l.status) + '</span>'
+      + '<span>' + esc(l.created_at || '') + '</span>'
+      + (l.referrer ? '<span title="' + esc(l.referrer) + '">ref: ' + esc(String(l.referrer).slice(0, 60)) + '</span>' : '')
+      + '</div>'
+      + '<div class="lead-msg">' + esc(l.message) + '</div>'
+      + '<div class="lead-meta"><a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a></div>'
+      + '<div class="grid" style="margin-top:10px">'
+      + '<label>Status<select id="leadStatusSel">'
+      + ["new", "read", "replied", "archived"].map(function (s) {
+          return '<option value="' + s + '"' + (l.status === s ? ' selected' : '') + '>' + s + '</option>';
+        }).join("")
+      + '</select></label>'
+      + '<label class="wide">Notes (internal)<textarea id="leadNotesTa" rows="3" placeholder="internal notes…">' + esc(l.notes || '') + '</textarea></label>'
+      + '</div>'
+      + '<div class="row" style="margin-top:10px">'
+      + '<a class="btn small primary" href="mailto:' + esc(l.email) + '?subject=' + encodeURIComponent('Re: your inquiry — tliligis.me') + '">Reply by email</a>'
+      + '<button class="btn small" id="leadSaveNotes" type="button">Save notes</button>'
+      + '<button class="btn small danger" id="leadDelete" type="button">Delete</button>'
+      + '</div>';
+
+    $("leadStatusSel").addEventListener("change", function () {
+      var v = this.value;
+      api("PUT", "/api/admin/leads/" + l.id, { status: v }).then(function () {
+        l.status = v;
+        toast("Status → " + v, "ok");
+        loadLeads(true);
+      }).catch(function (e) { toast("Status: " + e.message, "err"); });
+    });
+
+    $("leadSaveNotes").addEventListener("click", function () {
+      api("PUT", "/api/admin/leads/" + l.id, { notes: $("leadNotesTa").value }).then(function () {
+        l.notes = $("leadNotesTa").value;
+        toast("Notes saved", "ok");
+      }).catch(function (e) { toast("Notes: " + e.message, "err"); });
+    });
+
+    $("leadDelete").addEventListener("click", function () {
+      if (!window.confirm("Delete lead #" + l.id + " (" + l.name + ")? This cannot be undone.")) return;
+      api("DELETE", "/api/admin/leads/" + l.id).then(function () {
+        toast("Lead deleted", "ok");
+        leadSel = null;
+        loadLeads(false);
+      }).catch(function (e) { toast("Delete: " + e.message, "err"); });
+    });
+  }
+
+  $("leadItems").addEventListener("click", function (ev) {
+    var it = ev.target.closest(".lead-item");
+    if (!it) return;
+    leadSel = Number(it.dataset.id);
+    $("leadItems").querySelectorAll(".lead-item").forEach(function (n) {
+      n.classList.toggle("sel", Number(n.dataset.id) === leadSel);
+    });
+    renderLeadDetail();
+    // opening an unread lead marks it read (standard inbox semantics)
+    var l = findLead(leadSel);
+    if (l && l.status === "new") {
+      api("PUT", "/api/admin/leads/" + l.id, { status: "read" })
+        .then(function () { loadLeads(true); })
+        .catch(function () { /* keep the UI as-is if the write fails */ });
+    }
+  });
+
+  $("leadStatus").addEventListener("change", function () { loadLeads(false); });
+  $("leadReason").addEventListener("change", function () { loadLeads(false); });
+  $("leadRefresh").addEventListener("click", function () { loadLeads(false); });
+
+  // CSV download via blob (the X-Admin-Token header rules out a plain <a href>)
+  $("leadExport").addEventListener("click", function () {
+    fetch("/api/admin/leads/export.csv" + leadFiltersQs(), { headers: { "x-admin-token": TOKEN } })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+      .then(function (b) {
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(b);
+        a.download = "leads-" + new Date().toISOString().slice(0, 10) + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        toast("CSV exported", "ok");
+      })
+      .catch(function (e) { toast("CSV export: " + e.message, "err"); });
+  });
+
+  // ============================================================
+  // Engagement analytics — one screen (migration 003)
+  // ============================================================
+  function fmtInt(n) { return (n || 0).toLocaleString("en-US"); }
+
+  function loadAnalytics() {
+    $("anaKpis").innerHTML = '<span class="spin"></span>';
+    ["anaChart", "anaFunnel", "anaCases", "anaCv", "anaRefs", "anaMap"].forEach(function (id) {
+      $(id).innerHTML = "";
+    });
+    $("anaGenerated").textContent = "";
+    api("GET", "/api/admin/analytics?days=" + anaDays).then(renderAnalytics).catch(function (e) {
+      $("anaKpis").innerHTML = "";
+      $("anaGenerated").textContent = "Analytics unavailable: " + e.message;
+    });
+  }
+
+  function kpiCard(num, label, sub) {
+    return '<div class="kpi"><b>' + num + '</b><span>' + label + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+  }
+
+  function hbars(rows, labelFn, valFn) {
+    if (!rows || !rows.length) return '<p class="hint">No data yet.</p>';
+    var max = 0;
+    rows.forEach(function (r) { if (valFn(r) > max) max = valFn(r); });
+    return rows.map(function (r) {
+      var v = valFn(r);
+      var w = max ? Math.round((v / max) * 100) : 0;
+      return '<div class="ana-hbar"><span class="lbl">' + labelFn(r) + '</span>'
+        + '<span class="track"><span class="fill" style="width:' + w + '%;display:block"></span></span>'
+        + '<span class="n">' + fmtInt(v) + '</span></div>';
+    }).join("");
+  }
+
+  function renderAnalytics(j) {
+    var t = j.totals || {};
+    var cvEn = 0, cvFr = 0;
+    (j.cv_split || []).forEach(function (r) { if (r.lang === "fr") cvFr = r.n; else cvEn += r.n; });
+    var conv = t.form_views ? Math.round((t.form_submits / t.form_views) * 100) : 0;
+
+    $("anaKpis").innerHTML =
+      kpiCard(fmtInt(t.page_views), "page views", fmtInt(t.unique_sessions) + " unique sessions")
+      + kpiCard(fmtInt(t.case_study_opens), "case study opens")
+      + kpiCard(fmtInt(t.cv_downloads), "CV downloads", "EN " + fmtInt(cvEn) + " · FR " + fmtInt(cvFr))
+      + kpiCard(fmtInt(t.form_submits), "form submits", fmtInt(t.form_views) + " views · " + conv + "% convert")
+      + kpiCard(fmtInt(t.map_cta_clicks), "map CTA clicks");
+    $("anaGenerated").textContent = "last " + j.days + " days · generated "
+      + String(j.generated_at || "").replace("T", " ").slice(0, 16) + " UTC";
+
+    // daily bars (views; tooltip = date, views, unique sessions)
+    var daily = j.daily || [];
+    var maxViews = 0;
+    daily.forEach(function (d) { if (d.views > maxViews) maxViews = d.views; });
+    if (!daily.length) {
+      $("anaChart").innerHTML = '<p class="hint">No page views recorded yet.</p>';
+    } else {
+      $("anaChart").innerHTML = daily.map(function (d, i) {
+        var h = maxViews ? Math.max(4, Math.round((d.views / maxViews) * 100)) : 4;
+        return '<div class="bar" style="height:' + h + '%" title="' + d.d + ' — ' + d.views + ' views / '
+          + d.sessions + ' sessions">'
+          + ((i % 5 === 0 || i === daily.length - 1) ? '<em>' + esc(String(d.d).slice(5)) + '</em>' : '')
+          + '</div>';
+      }).join("");
+    }
+
+    // contact funnel (leads counts are all-time, reply rate joins the leads table)
+    var f = j.funnel || {};
+    function frow(label, val, sub) {
+      return '<div class="funnel-row"><span>' + label
+        + (sub ? ' <span class="fr-dim">' + sub + '</span>' : '') + '</span><b>' + val + '</b></div>';
+    }
+    $("anaFunnel").innerHTML =
+      frow("Form views", fmtInt(f.form_views))
+      + frow("Successful submits", fmtInt(f.form_submits),
+          (f.form_views ? Math.round((f.form_submits / f.form_views) * 100) : 0) + "% of views")
+      + frow("Leads (all time)", fmtInt(f.leads_total))
+      + frow("Unread leads", fmtInt(f.leads_new))
+      + frow("Replied", fmtInt(f.leads_replied), "reply rate " + (f.reply_rate || 0) + "%");
+
+    $("anaCases").innerHTML = hbars(j.case_studies || [],
+      function (r) { return esc(r.detail); }, function (r) { return r.n; });
+    $("anaCv").innerHTML = hbars(j.cv_split || [],
+      function (r) { return r.lang === "fr" ? "Français (FR)" : "English (EN)"; }, function (r) { return r.n; });
+    $("anaMap").innerHTML = hbars(j.map_ctas || [],
+      function (r) { return esc(r.detail); }, function (r) { return r.n; });
+
+    var catRows = Object.keys(j.referrer_categories || {}).map(function (k) {
+      return { detail: k, n: j.referrer_categories[k] };
+    }).sort(function (a, b) { return b.n - a.n; });
+    $("anaRefs").innerHTML =
+      '<p class="hint" style="margin:0 0 6px">by category</p>'
+      + hbars(catRows, function (r) { return esc(r.detail); }, function (r) { return r.n; })
+      + '<p class="hint" style="margin:10px 0 6px">top sources</p>'
+      + hbars((j.top_referrers || []).slice(0, 5), function (r) {
+          return esc(String(r.referrer || "(direct)").replace(/^https?:\/\//, "").slice(0, 42));
+        }, function (r) { return r.n; });
+  }
+
+  document.querySelectorAll("#tab-analytics .mini-tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      anaDays = Number(b.dataset.days) || 30;
+      document.querySelectorAll("#tab-analytics .mini-tab").forEach(function (x) {
+        x.classList.toggle("active", x === b);
+      });
+      loadAnalytics();
+    });
+  });
 
   // ---------- boot ----------
   if (TOKEN) {

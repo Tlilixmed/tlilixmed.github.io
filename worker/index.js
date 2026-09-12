@@ -6,6 +6,8 @@
 //   /api/manifest        public map manifest (published only, D1-driven)
 //   /api/layer-data/:id  derived GeoJSON streamed from R2 (`repo` bucket)
 //   /api/pointclouds     public point-cloud catalog (published only)
+//   POST /api/leads      contact form submissions -> D1 `leads` (migration 003)
+//   POST /api/events     anonymous engagement beacons -> D1 `events` (migration 003)
 //   /api/admin/*         admin CRUD (token-guarded until Cloudflare Access, Phase 7)
 // Everything else -> static assets (ASSETS binding).
 // ============================================================
@@ -19,7 +21,7 @@ const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache
 // admin routes stay safe: CORS never bypasses the X-Admin-Token check.
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, HEAD, OPTIONS',
+  'access-control-allow-methods': 'GET, HEAD, POST, OPTIONS',
   'access-control-allow-headers': 'content-type, range, x-admin-token',
   'access-control-max-age': '86400',
 };
@@ -202,10 +204,135 @@ async function pointclouds(env) {
 }
 
 // ------------------------------------------------------------
+// POST /api/leads — contact form submissions (lead inbox)
+// ---------------------------------------------------------------
+// Replaces the old mailto: flow. No cookies, no third-party
+// services: the row lands in D1 and the admin reads it under
+// /api/admin/leads. Spam defenses are intentionally boring:
+//   - honeypot field (bots fill it, humans never see it)
+//   - strict field validation + length caps
+//   - rate limit keyed on a SHA-256 hash of the client IP —
+//     the hash lives in isolate memory only, is NEVER persisted,
+//     and raw IPs are never written anywhere.
+// ------------------------------------------------------------
+const LEAD_REASONS = ['full_time', 'freelance', 'spatial_automation', 'other'];
+const EVENT_TYPES = [
+  'page_view', 'cv_download', 'case_study_open',
+  'form_view', 'form_submit', 'map_cta_click',
+];
+
+// per-isolate sliding-window rate limiter (nothing persisted;
+// the Map resets on every deploy, which is fine for spam damping)
+const rateBuckets = new Map();
+function rateLimited(key, max, windowMs) {
+  const now = Date.now();
+  const hits = (rateBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (hits.length >= max) { rateBuckets.set(key, hits); return true; }
+  hits.push(now);
+  rateBuckets.set(key, hits);
+  if (rateBuckets.size > 5000) {
+    for (const [k, v] of rateBuckets) {
+      if (!v.some((t) => now - t < windowMs)) rateBuckets.delete(k);
+    }
+  }
+  return false;
+}
+
+async function clientIpHash(request) {
+  const ip = request.headers.get('cf-connecting-ip')
+    || (request.headers.get('x-forwarded-for') || '').split(',')[0].trim()
+    || '';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('rl:' + ip));
+  return [...new Uint8Array(digest)].slice(0, 8)
+    .map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function cleanStr(v, max) {
+  return typeof v === 'string' ? v.trim().slice(0, max) : '';
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+async function createLead(request, env) {
+  let b;
+  try { b = await request.json(); } catch { return fail(400, 'invalid JSON body'); }
+
+  // honeypot: the field is visually hidden from humans — a filled one
+  // means a bot. Answer with a fake success so bots learn nothing.
+  if (cleanStr(b.company, 100)) return json({ ok: true });
+
+  const name = cleanStr(b.name, 200);
+  const email = cleanStr(b.email, 320).toLowerCase();
+  const message = cleanStr(b.message, 10000);
+  const reason = LEAD_REASONS.includes(b.reason) ? b.reason : 'other';
+  const referrer = cleanStr(b.referrer, 500);
+  if (!name) return fail(400, 'name is required');
+  if (!EMAIL_RE.test(email)) return fail(400, 'a valid email is required');
+  if (!message) return fail(400, 'message is required');
+
+  if (rateLimited('lead:' + (await clientIpHash(request)), 5, 10 * 60_000)) {
+    return fail(429, 'too many messages from this network — try again later');
+  }
+
+  try {
+    const r = await env.DB.prepare(
+      `INSERT INTO leads (name, email, reason, message, referrer) VALUES (?, ?, ?, ?, ?)`
+    ).bind(name, email, reason, message, referrer).run();
+    return json({ ok: true, id: r.meta.last_row_id });
+  } catch (e) {
+    if (/no such table/i.test(String(e && e.message || e))) {
+      return fail(503, 'leads table missing — run schema.sql against gis-db (migration 003)');
+    }
+    throw e;
+  }
+}
+
+// ------------------------------------------------------------
+// POST /api/events — engagement analytics beacons
+// ---------------------------------------------------------------
+// Accepts a single event or a batch {events: [...]} (max 25).
+// Unknown event types are dropped, oversized fields truncated.
+// The insert runs in waitUntil so the response returns instantly
+// and a failed write never breaks the visitor's page.
+// ------------------------------------------------------------
+async function trackEvents(request, env, ctx) {
+  let b;
+  try { b = await request.json(); } catch { return fail(400, 'invalid JSON body'); }
+  const list = Array.isArray(b && b.events) ? b.events : [b];
+  if (list.length > 25) return fail(400, 'too many events per batch (max 25)');
+
+  const rows = [];
+  for (const e of list) {
+    if (!e || typeof e !== 'object' || !EVENT_TYPES.includes(e.type)) continue;
+    rows.push([
+      cleanStr(e.session_id, 64) || null,
+      e.type,
+      cleanStr(e.detail, 300) || null,
+      cleanStr(e.referrer, 500) || null,
+    ]);
+  }
+  if (!rows.length) return json({ ok: true, stored: 0 });
+
+  // flood damping — events are expendable, so we drop silently
+  if (rateLimited('ev:' + (await clientIpHash(request)), 120, 60_000)) {
+    return json({ ok: true, stored: 0 });
+  }
+
+  const task = env.DB.batch(rows.map((r) =>
+    // a fresh prepared statement per row: re-binding one instance would
+    // make every batch item share the last row's parameters
+    env.DB.prepare(`INSERT INTO events (session_id, event_type, detail, referrer) VALUES (?, ?, ?, ?)`).bind(...r)
+  )).catch(() => { /* analytics must never surface errors */ });
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(task);
+  else await task;
+  return json({ ok: true, stored: rows.length });
+}
+
+// ------------------------------------------------------------
 // Router
 // ------------------------------------------------------------
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -218,6 +345,9 @@ export default {
       if (path === '/api/health') return await health(env);
       if (path === '/api/manifest') return await manifest(env);
       if (path === '/api/pointclouds') return await pointclouds(env);
+
+      if (path === '/api/leads' && request.method === 'POST') return await createLead(request, env);
+      if (path === '/api/events' && request.method === 'POST') return await trackEvents(request, env, ctx);
 
       const m = path.match(/^\/api\/layer-data\/(\d+)$/);
       if (m) return await layerData(env, Number(m[1]));

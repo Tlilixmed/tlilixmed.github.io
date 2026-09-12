@@ -87,3 +87,38 @@ CREATE TABLE IF NOT EXISTS upload_log (
   finished_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_upload_log_cloud ON upload_log(cloud_id, id DESC);
+
+-- ============================================================
+-- Migration 003 — Lead inbox + engagement analytics
+-- Both tables are cookie-less and first-party only:
+--   leads  -> contact form submissions (replaces the mailto: flow)
+--   events -> anonymous engagement beacons (sessionStorage session id,
+--             no fingerprinting, no persistent visitor tracking)
+-- Idempotent: safe to re-run.
+-- Run: npx wrangler d1 execute gis-db --remote --file schema.sql
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS leads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  reason TEXT,       -- full_time | freelance | spatial_automation | other
+  message TEXT NOT NULL,
+  referrer TEXT,
+  status TEXT NOT NULL DEFAULT 'new',  -- new | read | replied | archived
+  notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status, id DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_reason ON leads(reason);
+
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  session_id TEXT,
+  event_type TEXT NOT NULL,   -- page_view | cv_download | case_study_open | form_view | form_submit | map_cta_click
+  detail TEXT,                -- e.g. project slug, cv language
+  referrer TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_events_type_time ON events(event_type, created_at);
+CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id);

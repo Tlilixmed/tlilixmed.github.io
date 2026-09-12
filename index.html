@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/script.js" defer></script>
   <script src="js/contact-form.js" defer></script>
+  <script src="js/analytics.js" defer></script>
   <script src="js/map-projects.js" defer></script>
   <script src="js/map.js" defer></script>
 
@@ -632,18 +633,23 @@
           <label for="qfType" data-en="Reason (optional)" data-fr="Motif (optionnel)">Reason (optional)</label>
           <select id="qfType" name="type">
             <option value="" data-en="Select a reason (optional)" data-fr="Choisir un motif (optionnel)">Select a reason (optional)</option>
-            <option value="Full-time GIS role" data-en="Full-time GIS role" data-fr="Poste SIG à temps plein">Full-time GIS role</option>
-            <option value="Freelance / contract project" data-en="Freelance / contract project" data-fr="Mission freelance / contrat">Freelance / contract project</option>
-            <option value="GIS services" data-en="Spatial analysis, cartography or automation" data-fr="Analyse spatiale, cartographie ou automatisation">Spatial analysis, cartography or automation</option>
-            <option value="Other" data-en="Other / not sure yet" data-fr="Autre / pas encore sûr">Other / not sure yet</option>
+            <option value="full_time" data-en="Full-time GIS role" data-fr="Poste SIG à temps plein">Full-time GIS role</option>
+            <option value="freelance" data-en="Freelance / contract project" data-fr="Mission freelance / contrat">Freelance / contract project</option>
+            <option value="spatial_automation" data-en="Spatial analysis, cartography or automation" data-fr="Analyse spatiale, cartographie ou automatisation">Spatial analysis, cartography or automation</option>
+            <option value="other" data-en="Other / not sure yet" data-fr="Autre / pas encore sûr">Other / not sure yet</option>
           </select>
         </div>
         <div class="form-field">
           <label for="qfMsg" data-en="Message" data-fr="Message">Message</label>
           <textarea id="qfMsg" name="message" rows="4" required data-en-placeholder="Tell me about the role, your data, and your goal…" data-fr-placeholder="Parlez-moi du poste, de vos données et de votre objectif…" placeholder="Tell me about the role, your data, and your goal…"></textarea>
         </div>
+        <!-- honeypot: visually hidden from humans; bots that fill it get a silent fake success -->
+        <div class="hp-field" aria-hidden="true">
+          <label for="qfCompany">Company (leave empty)</label>
+          <input type="text" id="qfCompany" name="company" tabindex="-1" autocomplete="off">
+        </div>
         <button type="submit" class="btn btn-primary quote-submit" data-en="Send message" data-fr="Envoyer le message">Send message</button>
-        <p class="contact-note" data-en="Opens a pre-filled email in your own mail app - replies usually within 24h." data-fr="Ouvre un e-mail pré-rempli dans votre application - réponse en général sous 24 h.">Opens a pre-filled email in your own mail app - replies usually within 24h.</p>
+        <p class="contact-note" data-en="Goes straight to my inbox - I usually reply within 24 hours." data-fr="Arrive directement dans ma boîte mail - réponse en général sous 24 h.">Goes straight to my inbox - I usually reply within 24 hours.</p>
       </form>
     </div>
   </section>

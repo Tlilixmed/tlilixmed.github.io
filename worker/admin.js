@@ -54,6 +54,14 @@
 //   GET    /api/admin/pointclouds/:id/rescan      re-read <prefix>metadata.json / cloud.js from R2
 //                                                 and self-heal point_count + status (fixes stale
 //                                                 catalog numbers without re-uploading anything).
+// ---- lead inbox (migration 003) ----
+//   GET    /api/admin/leads?status=&reason=&limit=   list leads, newest first + per-status counts
+//   GET    /api/admin/leads/:id                      single lead
+//   PUT    /api/admin/leads/:id                      update {status} and/or {notes}
+//   DELETE /api/admin/leads/:id                      delete one lead (spam cleanup)
+//   GET    /api/admin/leads/export.csv?status=&reason=  CSV download, generated on the fly
+// ---- engagement analytics (migration 003) ----
+//   GET    /api/admin/analytics?days=7|30            one-screen dashboard payload
 // ============================================================
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
@@ -478,6 +486,250 @@ async function uploadGeojson(request, env, layerId) {
   return json({ ok: true, layer_id: layer.id, derived_key: derivedKey, original_key: originalKey, features: features.length, bytes: derivedText.length });
 }
 
+// ============================================================
+// Lead inbox (D1 `leads` table, migration 003)
+// ============================================================
+
+const LEAD_STATUSES = ['new', 'read', 'replied', 'archived'];
+
+function noLeadsTable(e) { return /no such table/i.test(String((e && e.message) || e)); }
+
+function leadWhere(url, out) {
+  const where = [];
+  const binds = [];
+  const status = url.searchParams.get('status');
+  const reason = url.searchParams.get('reason');
+  if (status && LEAD_STATUSES.includes(status)) { where.push('status = ?'); binds.push(status); }
+  if (reason) { where.push('reason = ?'); binds.push(String(reason).slice(0, 40)); }
+  if (where.length) out.sql = 'WHERE ' + where.join(' AND ');
+  out.binds = binds;
+}
+
+async function listLeads(request, env) {
+  const url = new URL(request.url);
+  const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 200), 1), 500);
+  const w = {};
+  leadWhere(url, w);
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, created_at, name, email, reason, message, referrer, status, notes
+       FROM leads ${w.sql} ORDER BY id DESC LIMIT ${limit}`
+    ).bind(...w.binds).all();
+    const stats = await env.DB.prepare(`SELECT status, COUNT(*) AS n FROM leads GROUP BY status`).all();
+    const counts = {};
+    for (const r of stats.results || []) counts[r.status] = r.n;
+    return json({ leads: results || [], counts });
+  } catch (e) {
+    if (noLeadsTable(e)) return json({ leads: [], counts: {}, warning: 'leads table missing — run schema.sql (migration 003)' });
+    throw e;
+  }
+}
+
+async function getLead(env, id) {
+  try {
+    const row = await env.DB.prepare(`SELECT * FROM leads WHERE id = ?`).bind(id).first();
+    if (!row) return fail(404, 'lead not found');
+    return json({ lead: row });
+  } catch (e) {
+    if (noLeadsTable(e)) return fail(503, 'leads table missing — run schema.sql (migration 003)');
+    throw e;
+  }
+}
+
+async function updateLead(request, env, id) {
+  const b = await readBody(request);
+  const sets = [];
+  const vals = [];
+  if (b.status !== undefined) {
+    if (!LEAD_STATUSES.includes(b.status)) return fail(400, 'status must be one of: ' + LEAD_STATUSES.join(', '));
+    sets.push('status = ?');
+    vals.push(b.status);
+  }
+  if (b.notes !== undefined) {
+    sets.push('notes = ?');
+    vals.push(String(b.notes || '').slice(0, 10000));
+  }
+  if (!sets.length) return fail(400, 'nothing to update (writable: status, notes)');
+  try {
+    await env.DB.prepare(`UPDATE leads SET ${sets.join(', ')} WHERE id = ?`).bind(...vals, id).run();
+    const row = await env.DB.prepare(`SELECT * FROM leads WHERE id = ?`).bind(id).first();
+    if (!row) return fail(404, 'lead not found');
+    return json({ ok: true, lead: row });
+  } catch (e) {
+    if (noLeadsTable(e)) return fail(503, 'leads table missing — run schema.sql (migration 003)');
+    throw e;
+  }
+}
+
+async function deleteLead(env, id) {
+  try {
+    await env.DB.prepare(`DELETE FROM leads WHERE id = ?`).bind(id).run();
+    return json({ ok: true });
+  } catch (e) {
+    if (noLeadsTable(e)) return fail(503, 'leads table missing — run schema.sql (migration 003)');
+    throw e;
+  }
+}
+
+// CSV generated on the fly — no R2 round-trip needed at this scale.
+// \ufeff BOM + CRLF so Excel renders UTF-8 (French accents) correctly.
+function csvCell(v) {
+  const s = v == null ? '' : String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+async function exportLeadsCsv(request, env) {
+  const url = new URL(request.url);
+  const w = {};
+  leadWhere(url, w);
+  let rows = [];
+  try {
+    const r = await env.DB.prepare(
+      `SELECT id, created_at, name, email, reason, message, referrer, status, notes
+       FROM leads ${w.sql} ORDER BY id DESC LIMIT 5000`
+    ).bind(...w.binds).all();
+    rows = r.results || [];
+  } catch (e) {
+    if (!noLeadsTable(e)) throw e;
+  }
+  const head = ['id', 'created_at', 'name', 'email', 'reason', 'message', 'referrer', 'status', 'notes'];
+  const lines = [head.join(',')];
+  for (const r of rows) lines.push(head.map((k) => csvCell(r[k])).join(','));
+  const stamp = new Date().toISOString().slice(0, 10);
+  return new Response('\ufeff' + lines.join('\r\n'), {
+    headers: {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': `attachment; filename="leads-${stamp}.csv"`,
+      'cache-control': 'no-store',
+    },
+  });
+}
+
+// ============================================================
+// Engagement analytics — one-screen dashboard payload
+// (D1 `events` + `leads` tables, migration 003)
+// ============================================================
+
+const JOB_BOARD_HOSTS = ['indeed', 'glassdoor', 'upwork', 'fiverr', 'leboncoin',
+  'ziprecruiter', 'simplyhired', 'welcometothejungle', 'wttj', 'malt', 'twago',
+  'jobs.', 'career', 'remotive', 'weworkremotely', 'remoteok'];
+const SEARCH_HOSTS = ['google.', 'bing.', 'duckduckgo', 'yahoo.', 'ecosia', 'qwant', 'baidu', 'yandex'];
+
+export function referrerCategory(ref) {
+  const r = String(ref || '').trim();
+  if (!r || r === '0') return 'direct';
+  let host = '';
+  try { host = new URL(r).hostname.toLowerCase().replace(/^www\./, ''); }
+  catch { return 'other'; }
+  if (host.endsWith('tliligis.me') || host.includes('workers.dev') ||
+      host === 'localhost' || host.startsWith('127.') || host.startsWith('192.168.')) return 'direct';
+  if (host.includes('linkedin')) return 'linkedin';
+  if (SEARCH_HOSTS.some((s) => host.includes(s))) return 'search';
+  if (JOB_BOARD_HOSTS.some((s) => host.includes(s))) return 'job_board';
+  return 'other';
+}
+
+async function analyticsDashboard(request, env) {
+  const url = new URL(request.url);
+  const days = url.searchParams.get('days') === '7' ? 7 : 30;
+  const since = '-' + days + ' days';
+
+  const q = async (sql, binds) =>
+    ((await env.DB.prepare(sql).bind(...(binds || [])).all()).results || []);
+
+  try {
+    const totalsRows = await q(
+      `SELECT event_type, COUNT(*) AS n, COUNT(DISTINCT session_id) AS sessions
+       FROM events WHERE created_at >= datetime('now', ?) GROUP BY event_type`, [since]);
+    const t = {};
+    for (const r of totalsRows) t[r.event_type] = r.n;
+
+    const sessionsRow = await env.DB.prepare(
+      `SELECT COUNT(DISTINCT session_id) AS n FROM events
+       WHERE event_type = 'page_view' AND created_at >= datetime('now', ?)`
+    ).bind(since).first();
+
+    const daily = await q(
+      `SELECT date(created_at) AS d, COUNT(*) AS views, COUNT(DISTINCT session_id) AS sessions
+       FROM events WHERE event_type = 'page_view' AND created_at >= datetime('now', ?)
+       GROUP BY d ORDER BY d`, [since]);
+
+    const caseStudies = await q(
+      `SELECT COALESCE(NULLIF(detail, ''), '(none)') AS detail, COUNT(*) AS n
+       FROM events WHERE event_type = 'case_study_open' AND created_at >= datetime('now', ?)
+       GROUP BY detail ORDER BY n DESC LIMIT 10`, [since]);
+
+    const mapCtas = await q(
+      `SELECT COALESCE(NULLIF(detail, ''), '(none)') AS detail, COUNT(*) AS n
+       FROM events WHERE event_type = 'map_cta_click' AND created_at >= datetime('now', ?)
+       GROUP BY detail ORDER BY n DESC LIMIT 10`, [since]);
+
+    const cv = await q(
+      `SELECT COALESCE(NULLIF(detail, ''), 'en') AS lang, COUNT(*) AS n
+       FROM events WHERE event_type = 'cv_download' AND created_at >= datetime('now', ?)
+       GROUP BY lang ORDER BY n DESC`, [since]);
+
+    const refRows = await q(
+      `SELECT referrer, COUNT(*) AS n FROM events
+       WHERE event_type = 'page_view' AND created_at >= datetime('now', ?)
+       GROUP BY referrer`, [since]);
+    const refCategories = {};
+    const topReferrers = refRows
+      .map((r) => {
+        const label = r.referrer || '(direct)';
+        const category = referrerCategory(r.referrer);
+        refCategories[category] = (refCategories[category] || 0) + r.n;
+        return { referrer: label, category, n: r.n };
+      })
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 10);
+
+    // contact funnel joins events with the leads table
+    let leadCounts = {};
+    try {
+      const rows = await q(`SELECT status, COUNT(*) AS n FROM leads GROUP BY status`);
+      for (const r of rows) leadCounts[r.status] = r.n;
+    } catch (e) {
+      if (!noLeadsTable(e)) throw e;
+    }
+    const leadsTotal = Object.values(leadCounts).reduce((a, b) => a + b, 0);
+    const replied = leadCounts.replied || 0;
+
+    return json({
+      days,
+      generated_at: new Date().toISOString(),
+      totals: {
+        page_views: t.page_view || 0,
+        unique_sessions: (sessionsRow && sessionsRow.n) || 0,
+        cv_downloads: t.cv_download || 0,
+        case_study_opens: t.case_study_open || 0,
+        form_views: t.form_view || 0,
+        form_submits: t.form_submit || 0,
+        map_cta_clicks: t.map_cta_click || 0,
+      },
+      cv_split: cv.map((r) => ({ lang: r.lang, n: r.n })),
+      daily,
+      case_studies: caseStudies,
+      map_ctas: mapCtas,
+      funnel: {
+        form_views: t.form_view || 0,
+        form_submits: t.form_submit || 0,
+        leads_total: leadsTotal,
+        leads_new: leadCounts.new || 0,
+        leads_replied: replied,
+        reply_rate: leadsTotal ? Math.round((replied / leadsTotal) * 100) : 0,
+      },
+      referrer_categories: refCategories,
+      top_referrers: topReferrers,
+    });
+  } catch (e) {
+    if (/no such table/i.test(String((e && e.message) || e))) {
+      return fail(503, 'events table missing — run schema.sql against gis-db (migration 003)');
+    }
+    throw e;
+  }
+}
+
 // ------------------------------------------------------------
 export async function handleAdmin(request, env, path) {
   if (!(await tokenOK(request, env))) {
@@ -650,6 +902,21 @@ export async function handleAdmin(request, env, path) {
       await env.DB.prepare(`UPDATE pointclouds SET ${u.sql} WHERE id = ?`).bind(...u.vals, id).run();
       return json({ ok: true });
     }
+  }
+
+  // ---- leads (lead inbox, migration 003) ----
+  if (what === 'leads') {
+    // export.csv must be matched before :id parsing (Number('export.csv') is NaN)
+    if (method === 'GET' && seg[3] === 'export.csv') return exportLeadsCsv(request, env);
+    if (method === 'GET' && !id) return listLeads(request, env);
+    if (method === 'GET' && id) return getLead(env, id);
+    if (method === 'PUT' && id) return updateLead(request, env, id);
+    if (method === 'DELETE' && id) return deleteLead(env, id);
+  }
+
+  // ---- analytics (one-screen dashboard payload, migration 003) ----
+  if (what === 'analytics' && method === 'GET' && !id) {
+    return analyticsDashboard(request, env);
   }
 
   return fail(404, 'unknown admin route: ' + method + ' ' + path);
