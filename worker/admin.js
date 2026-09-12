@@ -73,7 +73,9 @@ function fail(status, message) {
   return json({ error: message }, status);
 }
 
-async function tokenOK(request, env) {
+// (exported so /api/health can reuse the same check: the admin panel gets a
+// detailed binding report, the public gets the bare minimum — see index.js)
+export async function tokenOK(request, env) {
   const a = request.headers.get('x-admin-token') || '';
   const b = env.ADMIN_TOKEN || '';
   if (!a || !b) return false;

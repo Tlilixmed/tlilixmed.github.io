@@ -11,7 +11,7 @@
 //   /api/admin/*         admin CRUD (token-guarded until Cloudflare Access, Phase 7)
 // Everything else -> static assets (ASSETS binding).
 // ============================================================
-import { handleAdmin } from './admin.js';
+import { handleAdmin, tokenOK } from './admin.js';
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
 
@@ -37,13 +37,29 @@ function fail(status, message) {
 // ------------------------------------------------------------
 // GET /api/health — verify bindings without touching data
 // ------------------------------------------------------------
-async function health(env) {
+async function health(request, env) {
+  // D1 is the one binding everything depends on — one cheap query.
   try {
     await env.DB.prepare("SELECT 1").first();
-    return json({ ok: true });
   } catch {
     return json({ ok: false }, 503);
   }
+  // Public response stays minimal ({ok}) so no infrastructure details leak
+  // (per the "health status privacy" change); the admin panel authenticates
+  // with its token to receive the full D1 + R2 report instead.
+  if (!(await tokenOK(request, env))) return json({ ok: true });
+
+  const r2 = {};
+  for (const [name, bucket] of [
+    ['gis-private', env.R2_PRIVATE],
+    ['repo', env.R2_MEDIA],
+    ['clouds-public', env.R2_CLOUDS],
+  ]) {
+    try { await bucket.list({ limit: 1 }); r2[name] = true; }
+    catch { r2[name] = false; }
+  }
+  const r2ok = r2['gis-private'] && r2['repo'] && r2['clouds-public'];
+  return json({ ok: true, d1: true, r2, r2_ok: !!r2ok }, r2ok ? 200 : 503);
 }
 
 // ------------------------------------------------------------
@@ -342,7 +358,7 @@ export default {
         return new Response(null, { status: 204, headers: CORS_HEADERS });
       }
 
-      if (path === '/api/health') return await health(env);
+      if (path === '/api/health') return await health(request, env);
       if (path === '/api/manifest') return await manifest(env);
       if (path === '/api/pointclouds') return await pointclouds(env);
 

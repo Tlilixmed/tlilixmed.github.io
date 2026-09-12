@@ -589,10 +589,15 @@
 
   // ---------- health ----------
   function pingHealth() {
-    fetch("/api/health").then(function (r) { return r.json(); }).then(function (h) {
-      var allOk = h.ok && h.d1 && h.r2 && h.r2["gis-private"] && h.r2["repo"] && h.r2["clouds-public"];
+    // token unlocks the detailed D1 + R2 report (public shape is {ok} only)
+    var opts = TOKEN ? { headers: { "X-Admin-Token": TOKEN } } : {};
+    fetch("/api/health", opts).then(function (r) { return r.json(); }).then(function (h) {
+      // tolerant of both shapes: detailed {ok,d1,r2:{...}} for the admin
+      // token, bare {ok:true} otherwise (e.g. gate screen before unlock)
+      var detailOk = !("d1" in h) || (h.d1 && h.r2 && h.r2["gis-private"] && h.r2["repo"] && h.r2["clouds-public"]);
+      var allOk = !!h.ok && detailOk;
       $("healthDot").className = "dot" + (allOk ? " ok" : "");
-      $("healthTxt").textContent = allOk ? "d1 + r2 ok" : "degraded";
+      $("healthTxt").textContent = allOk ? (h.d1 ? "d1 + r2 ok" : "api ok") : "degraded";
       $("healthDot").parentElement.title = "GET /api/health → " + JSON.stringify(h);
     }).catch(function () {
       $("healthDot").className = "dot";
