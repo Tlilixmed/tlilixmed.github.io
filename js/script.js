@@ -34,15 +34,26 @@ function toggleLanguage() {
     var t = el.getAttribute('data-' + currentLanguage + '-title');
     if (t) el.setAttribute('title', t);
   });
+  // accessibility labels follow the site language (opt-in via
+  // data-aria-en / data-aria-fr sitting next to aria-label)
+  document.querySelectorAll('[data-aria-en][data-aria-fr]').forEach(function (el) {
+    var label = el.getAttribute('data-aria-' + currentLanguage);
+    if (label) el.setAttribute('aria-label', label);
+  });
   document.documentElement.setAttribute('lang', currentLanguage);
   syncCVLinks();
+
+  // engagement analytics: language adoption (fail-silent if analytics absent)
+  if (window.gisTrack) window.gisTrack('language_change', currentLanguage);
 
   var langToggle = document.getElementById('langToggle');
   if (!langToggle) return;
   var langFlag = langToggle.querySelector('.lang-flag');
   var langText = langToggle.querySelector('.lang-text');
-  if (currentLanguage === 'fr') { langFlag.textContent = '🇺🇸'; langText.textContent = 'EN'; }
-  else { langFlag.textContent = '🇫🇷'; langText.textContent = 'FR'; }
+  if (langFlag && langText) {
+    if (currentLanguage === 'fr') { langFlag.textContent = '🇺🇸'; langText.textContent = 'EN'; }
+    else { langFlag.textContent = '🇫🇷'; langText.textContent = 'FR'; }
+  }
 }
 
 /* ---------- smooth scroll (anchor links) ---------- */

@@ -671,6 +671,19 @@ async function analyticsDashboard(request, env) {
        FROM events WHERE event_type = 'cv_download' AND created_at >= datetime('now', ?)
        GROUP BY lang ORDER BY n DESC`, [since]);
 
+    // site language usage (from toggleLanguage tracking)
+    const languages = await q(
+      `SELECT COALESCE(NULLIF(detail, ''), 'en') AS lang, COUNT(*) AS n
+       FROM events WHERE event_type = 'language_change' AND created_at >= datetime('now', ?)
+       GROUP BY lang ORDER BY n DESC`, [since]);
+
+    // embedded 3D LiDAR viewer (postMessage bridge: loaded / error / mode)
+    const lidar = await q(
+      `SELECT event_type, COALESCE(NULLIF(detail, ''), '(none)') AS detail, COUNT(*) AS n
+       FROM events WHERE event_type IN ('lidar_loaded', 'lidar_error', 'lidar_mode')
+       AND created_at >= datetime('now', ?)
+       GROUP BY event_type, detail ORDER BY n DESC LIMIT 10`, [since]);
+
     const refRows = await q(
       `SELECT referrer, COUNT(*) AS n FROM events
        WHERE event_type = 'page_view' AND created_at >= datetime('now', ?)
@@ -710,12 +723,18 @@ async function analyticsDashboard(request, env) {
         map_cta_clicks: t.map_cta_click || 0,
       },
       cv_split: cv.map((r) => ({ lang: r.lang, n: r.n })),
+      languages: languages.map((r) => ({ lang: r.lang, n: r.n })),
+      lidar: lidar.map((r) => ({ event: r.event_type, detail: r.detail, n: r.n })),
       daily,
       case_studies: caseStudies,
       map_ctas: mapCtas,
       funnel: {
         form_views: t.form_view || 0,
+        form_attempts: t.form_attempt || 0,
+        form_invalid: t.form_invalid || 0,
         form_submits: t.form_submit || 0,
+        form_errors: t.form_error || 0,
+        form_fallback_clicks: t.form_fallback_click || 0,
         leads_total: leadsTotal,
         leads_new: leadCounts.new || 0,
         leads_replied: replied,

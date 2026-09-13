@@ -436,10 +436,15 @@
     buildGroups(map);
     wireStaticUI(map);
 
-    document.getElementById('langToggle').addEventListener('click', function () {
-      // run after toggleLanguage() has flipped the indicator
-      setTimeout(function () { state.lang = detectLang(); rerenderUI(); }, 0);
-    });
+    // #langToggle may be absent (e.g. map.js reused on a page without the
+    // language switch) — the map must still initialize without it
+    var langToggleBtn = document.getElementById('langToggle');
+    if (langToggleBtn) {
+      langToggleBtn.addEventListener('click', function () {
+        // run after toggleLanguage() has flipped the indicator
+        setTimeout(function () { state.lang = detectLang(); rerenderUI(); }, 0);
+      });
+    }
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeAttrPanel();

@@ -22,7 +22,11 @@
   /* ---- top bar ---- */
   .topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:14px;
             padding:12px 20px; background:rgba(247,248,250,.92); backdrop-filter:blur(8px);
-            border-bottom:1px solid var(--line); }
+            border-bottom:1px solid var(--line);
+            /* narrow screens: the pill row scrolls inside the bar instead of
+               stretching the whole page sideways */
+            overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
+  .topbar::-webkit-scrollbar { display:none; }
   .brand { font-weight:700; font-size:15px; white-space:nowrap; }
   .brand span { color:var(--accent); }
   .tabs { display:flex; gap:6px; }
@@ -545,6 +549,7 @@
       <div class="card"><h3>CV downloads</h3><div id="anaCv"></div></div>
       <div class="card"><h3>Top referrers</h3><div id="anaRefs"></div></div>
       <div class="card"><h3>Map CTA clicks</h3><div id="anaMap"></div></div>
+      <div class="card"><h3>Language &amp; 3D viewer</h3><div id="anaLang"></div><div id="anaLidar"></div></div>
     </div>
   </section>
 </main>
@@ -1622,7 +1627,7 @@
 
   function loadAnalytics() {
     $("anaKpis").innerHTML = '<span class="spin"></span>';
-    ["anaChart", "anaFunnel", "anaCases", "anaCv", "anaRefs", "anaMap"].forEach(function (id) {
+    ["anaChart", "anaFunnel", "anaCases", "anaCv", "anaRefs", "anaMap", "anaLang", "anaLidar"].forEach(function (id) {
       $(id).innerHTML = "";
     });
     $("anaGenerated").textContent = "";
@@ -1688,6 +1693,10 @@
     }
     $("anaFunnel").innerHTML =
       frow("Form views", fmtInt(f.form_views))
+      + frow("Attempts", fmtInt(f.form_attempts), "button or Enter presses")
+      + frow("Blocked by validation", fmtInt(f.form_invalid), "empty required fields")
+      + frow("API errors", fmtInt(f.form_errors), "send failed")
+      + frow("Fallback e-mail clicks", fmtInt(f.form_fallback_clicks))
       + frow("Successful submits", fmtInt(f.form_submits),
           (f.form_views ? Math.round((f.form_submits / f.form_views) * 100) : 0) + "% of views")
       + frow("Leads (all time)", fmtInt(f.leads_total))
@@ -1700,6 +1709,19 @@
       function (r) { return r.lang === "fr" ? "Français (FR)" : "English (EN)"; }, function (r) { return r.n; });
     $("anaMap").innerHTML = hbars(j.map_ctas || [],
       function (r) { return esc(r.detail); }, function (r) { return r.n; });
+
+    // language adoption + embedded 3D LiDAR viewer (postMessage bridge)
+    $("anaLang").innerHTML = (j.languages && j.languages.length)
+      ? '<p class="hint" style="margin:0 0 6px">switched to</p>'
+        + hbars(j.languages, function (r) { return r.lang === "fr" ? "Français (FR)" : "English (EN)"; }, function (r) { return r.n; })
+      : '<p class="hint">No language switches yet.</p>';
+    var LIDAR_LABEL = { lidar_loaded: "cloud loaded", lidar_error: "load error", lidar_mode: "color mode" };
+    $("anaLidar").innerHTML = (j.lidar && j.lidar.length)
+      ? '<p class="hint" style="margin:12px 0 6px">3D LiDAR viewer</p>'
+        + hbars(j.lidar, function (r) {
+            return esc((LIDAR_LABEL[r.event] || r.event) + " \u00b7 " + String(r.detail || "").slice(0, 34));
+          }, function (r) { return r.n; })
+      : '<p class="hint" style="margin:12px 0 0">3D viewer not used yet.</p>';
 
     var catRows = Object.keys(j.referrer_categories || {}).map(function (k) {
       return { detail: k, n: j.referrer_categories[k] };

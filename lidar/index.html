@@ -217,6 +217,22 @@
   // inside the iframe, so error overlays simply omit it in embed mode.
   const BACK_BTN = EMBED ? "" : "<a class='btn' href='/'>Back to portfolio</a>";
 
+  // ---- analytics bridge ---------------------------------------------------
+  // When embedded in the portfolio, forward key viewer moments to the parent
+  // page's cookie-less analytics (js/analytics.js validates origin, source
+  // marker and event name before recording a lidar_* event). Fail-silent:
+  // analytics must never break the viewer.
+  function emit(event, detail) {
+    try {
+      if (!window.parent || window.parent === window) return;  // standalone page: nothing to notify
+      window.parent.postMessage({
+        source: "gis-lidar",
+        event: event,
+        detail: detail == null ? null : String(detail).slice(0, 120),
+      }, "*");
+    } catch (e) { /* never break the viewer for analytics */ }
+  }
+
   // ---- local-dev fallback -------------------------------------------------
   // Static dev servers (VS Code Live Server, python http.server, …) have no
   // /api/* routes: the catalog call would 404 and the 3D view would stay
@@ -372,6 +388,7 @@
   attrSel.addEventListener("change", function () {
     if (!activePC || !activeMeta) return;
     applyMode(activePC, activeMeta, attrSel.value);
+    emit("mode", (activeSlug || "?") + ":" + attrSel.value);
   });
 
   function describe(meta) {
@@ -493,6 +510,7 @@
         (entry.status || "ready") + " \u00B7 source CRS: " +
         (activeMeta.projection || entrySrs(entry) || "EPSG:2056 (assumed)");
       hideOverlay();
+      emit("loaded", entry.slug + " (" + fmt(activeMeta.points || 0, 0) + " pts)");
     } catch (err) {
       // Restore tab state so the failed cloud can be retried and the previous
       // cloud (still on screen) can be re-selected.
@@ -525,6 +543,7 @@
           BACK_BTN);
       }
       document.getElementById("iStatus").textContent = "unavailable";
+      emit("error", entry.slug + ": " + String(err && err.message || err).slice(0, 90));
     }
   }
 

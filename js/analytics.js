@@ -34,8 +34,52 @@
     var queue = [];
     var timer = null;
 
+    function track(type, detail) {
+      try {
+        queue.push({
+          type: type,
+          detail: detail || null,
+          session_id: sid,
+          referrer: document.referrer || null,
+        });
+        if (queue.length >= 5) { flush(); return; }
+        if (!timer) timer = setTimeout(flush, 2500);
+      } catch (e) {}
+    }
+
+    // contract used by other scripts:
+    //   gisTrack(type, detail)      — batched (normal case)
+    //   gisTrackNow(type, detail)   — tracked + flushed immediately
+    //                                 (fires right before a navigation,
+    //                                 e.g. the form's mailto fallback)
+    window.gisTrack = track;
+    window.gisTrackNow = function (type, detail) { track(type, detail); flush(); };
+
+    // --- development-only rejection logging -------------------------------
+    // On localhost the batch goes out via fetch (never sendBeacon) so the
+    // Worker's {stored, rejected, reasons} report can be inspected; in
+    // production everything stays fail-silent.
+    var IS_DEV = /^localhost$|^127\.0\.0\.1$|^0\.0\.0\.0$/.test(location.hostname);
+
     function send(batch) {
       var body = JSON.stringify({ events: batch });
+      if (IS_DEV) {
+        fetch("/api/events", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: body,
+          keepalive: true,
+        }).then(function (r) { return r.json().catch(function () { return null; }); })
+          .then(function (j) {
+            if (j && (j.rejected || j.reason)) {
+              console.warn("[analytics] worker report:", JSON.stringify(j));
+            } else if (!j) {
+              console.warn("[analytics] /api/events unreachable");
+            }
+          })
+          .catch(function () {});
+        return;
+      }
       // sendBeacon survives page unload (CV click -> navigation to the PDF)
       if (navigator.sendBeacon) {
         try {
@@ -58,22 +102,6 @@
       send(queue.splice(0));
     }
 
-    function track(type, detail) {
-      try {
-        queue.push({
-          type: type,
-          detail: detail || null,
-          session_id: sid,
-          referrer: document.referrer || null,
-        });
-        if (queue.length >= 5) { flush(); return; }
-        if (!timer) timer = setTimeout(flush, 2500);
-      } catch (e) {}
-    }
-
-    // contract used by contact-form.js for form_submit
-    window.gisTrack = track;
-
     // --- page view (referrer category is derived server-side) ---
     track("page_view", document.documentElement.lang === "fr" ? "lang:fr" : "lang:en");
 
@@ -89,12 +117,9 @@
         return;
       }
 
-      // case studies — "Read case study" buttons carry data-target="case-<slug>"
-      var cs = el.closest(".case-open");
-      if (cs) {
-        track("case_study_open", (cs.getAttribute("data-target") || "").replace(/^case-/, "") || null);
-        return;
-      }
+      // case studies + every native <details>: the "toggle" listener below is
+      // the single source of truth (openCase() sets .open programmatically,
+      // which still fires "toggle"), so clicks are NOT double-counted here
 
       // maps section CTAs — static map cards + interactive map view toggles
       var mi = el.closest(".map-item");
@@ -106,6 +131,33 @@
       if (el.closest("#imapView3d")) { track("map_cta_click", "lidar_3d"); return; }
       if (el.closest("#imapView2d")) { track("map_cta_click", "map_2d"); return; }
     }, true);
+
+    // --- native <details> opening (covers .case-open buttons, deep links,
+    // --- and plain <summary> clicks — any path that flips .open) ----------
+    document.addEventListener("toggle", function (ev) {
+      var d = ev.target;
+      if (!d || d.tagName !== "DETAILS" || !d.open) return;   // opens only
+      if (d.classList.contains("case")) {
+        // keep the existing dashboard event type + slug detail
+        track("case_study_open", (d.id || "").replace(/^case-/, "") || null);
+        return;
+      }
+      var summary = d.querySelector("summary");
+      track("details_open",
+        (summary && summary.textContent.trim().slice(0, 80)) || d.id || null);
+    }, true);   // "toggle" does not bubble — capture is required
+
+    // --- embedded 3D LiDAR viewer bridge ----------------------------------
+    // The Potree page (loaded in #imapLidarFrame) posts {source:"gis-lidar",
+    // event, detail}. Validate strictly: same origin, known source marker,
+    // whitelisted events — then record as lidar_* events.
+    var LIDAR_EVENTS = { loaded: 1, error: 1, mode: 1 };
+    window.addEventListener("message", function (ev) {
+      if (ev.origin !== location.origin) return;              // same origin only
+      var d = ev.data;
+      if (!d || d.source !== "gis-lidar" || !LIDAR_EVENTS[d.event]) return;
+      track("lidar_" + d.event, d.detail == null ? null : String(d.detail).slice(0, 120));
+    });
 
     // --- contact form funnel: a "view" = the form scrolled into sight ---
     function watchForm() {

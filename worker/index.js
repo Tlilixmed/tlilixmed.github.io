@@ -235,6 +235,12 @@ const LEAD_REASONS = ['full_time', 'freelance', 'spatial_automation', 'other'];
 const EVENT_TYPES = [
   'page_view', 'cv_download', 'case_study_open',
   'form_view', 'form_submit', 'map_cta_click',
+  // funnel split (each attempt stage is its own event)
+  'form_attempt', 'form_invalid', 'form_error', 'form_fallback_click',
+  // UI engagement
+  'language_change', 'details_open',
+  // embedded 3D LiDAR viewer (arrives via the validated postMessage bridge)
+  'lidar_loaded', 'lidar_error', 'lidar_mode',
 ];
 
 // per-isolate sliding-window rate limiter (nothing persisted;
@@ -318,8 +324,16 @@ async function trackEvents(request, env, ctx) {
   if (list.length > 25) return fail(400, 'too many events per batch (max 25)');
 
   const rows = [];
+  const reasons = [];
+  let rejected = 0;
   for (const e of list) {
-    if (!e || typeof e !== 'object' || !EVENT_TYPES.includes(e.type)) continue;
+    if (!e || typeof e !== 'object') { rejected++; reasons.push('not an object'); continue; }
+    if (!EVENT_TYPES.includes(e.type)) {
+      // development-only visibility: worker logs show up in `wrangler tail`
+      // and the dashboard live log stream — never on the public site
+      rejected++; reasons.push('unknown type: ' + cleanStr(e.type, 40));
+      continue;
+    }
     rows.push([
       cleanStr(e.session_id, 64) || null,
       e.type,
@@ -327,21 +341,28 @@ async function trackEvents(request, env, ctx) {
       cleanStr(e.referrer, 500) || null,
     ]);
   }
-  if (!rows.length) return json({ ok: true, stored: 0 });
+  if (rejected) {
+    // dev-only log (wrangler tail / dashboard), rate: one line per batch
+    console.log('[events] rejected ' + rejected + '/' + list.length, JSON.stringify(reasons.slice(0, 5)));
+  }
+  const report = { rejected, reasons: reasons.slice(0, 5) };
+  if (!rows.length) return json({ ok: true, stored: 0, ...report });
 
   // flood damping — events are expendable, so we drop silently
   if (rateLimited('ev:' + (await clientIpHash(request)), 120, 60_000)) {
-    return json({ ok: true, stored: 0 });
+    return json({ ok: true, stored: 0, ...report, reason: 'flood damped' });
   }
 
   const task = env.DB.batch(rows.map((r) =>
     // a fresh prepared statement per row: re-binding one instance would
     // make every batch item share the last row's parameters
     env.DB.prepare(`INSERT INTO events (session_id, event_type, detail, referrer) VALUES (?, ?, ?, ?)`).bind(...r)
-  )).catch(() => { /* analytics must never surface errors */ });
+  )).catch((e) => {
+    console.log('[events] insert failed:', String(e && e.message || e).slice(0, 120));
+  });
   if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(task);
   else await task;
-  return json({ ok: true, stored: rows.length });
+  return json({ ok: true, stored: rows.length, ...report });
 }
 
 // ------------------------------------------------------------

@@ -18,6 +18,39 @@ document.addEventListener('DOMContentLoaded', function () {
   var btn = form.querySelector('.quote-submit');
   var note = form.querySelector('.contact-note');
 
+  function track(type, detail) {
+    if (window.gisTrack) window.gisTrack(type, detail);
+  }
+
+  // --- funnel: attempts are deduped within a short window because a valid
+  // --- submission fires BOTH the button click and the submit event
+  var attemptMark = 0;
+  function beginAttempt() {
+    var now = Date.now();
+    if (now - attemptMark < 400) return;   // same initiation, already counted
+    attemptMark = now;
+    track('form_attempt');
+  }
+  // button click AND Enter-key implicit submission both fire "click"
+  if (btn) btn.addEventListener('click', beginAttempt);
+  // browser constraint validation blocks "submit" and fires "invalid"
+  // per field (does not bubble) — capture it here, one report per attempt
+  var invalidSentAt = 0;
+  form.addEventListener('invalid', function (e) {
+    beginAttempt();
+    var now = Date.now();
+    if (now - invalidSentAt < 400) return;
+    invalidSentAt = now;
+    track('form_invalid', (e.target && e.target.name) || null);
+  }, true);
+  // visitor bails out to their mail client from the error state
+  form.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.qf-mailto')) {
+      if (window.gisTrackNow) window.gisTrackNow('form_fallback_click');
+      else track('form_fallback_click');
+    }
+  }, true);
+
   // --- inline status line (built here; index.html stays structural) ---
   var status = document.createElement('div');
   status.className = 'qf-status';
@@ -99,12 +132,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return j;
       });
     }).then(function () {
-      if (window.gisTrack) window.gisTrack('form_submit');
+      track('form_submit');
       form.reset();
       show('ok', L === 'fr'
         ? '<strong>Message bien reçu — merci !</strong> Je réponds en général sous 24 heures.'
         : '<strong>Message received — thank you!</strong> I usually reply within 24 hours.');
     }).catch(function (err) {
+      track('form_error', String(err && err.message || err).slice(0, 120));
       var fb = mailtoFallback(name, email, reason, message);
       show('err', (L === 'fr'
         ? '<strong>L’envoi a échoué.</strong> Utilisez plutôt ce lien e-mail pré-rempli :'

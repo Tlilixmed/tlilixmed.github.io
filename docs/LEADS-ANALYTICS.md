@@ -92,7 +92,19 @@ events (id, created_at, session_id, event_type, detail, referrer)
 ```
 
 `events.event_type` whitelist: `page_view | cv_download | case_study_open |
-form_view | form_submit | map_cta_click`.
+form_view | form_submit | map_cta_click | form_attempt | form_invalid |
+form_error | form_fallback_click | language_change | details_open |
+lidar_loaded | lidar_error | lidar_mode`.
+
+Funnel split: `form_attempt` (button/Enter), `form_invalid` (blocked by
+browser validation, detail = first failing field), `form_error` (API failure,
+detail = error message), `form_fallback_click` (visitor used the pre-filled
+mailto link), `form_submit` (stored in D1). `case_study_open` fires from the
+native `<details class="case">` toggle — the single source of truth for
+every open path (summary click, "Read case study" buttons, deep links).
+The embedded 3D viewer posts `{source:"gis-lidar", event, detail}` to its
+parent via postMessage (same-origin validated, event-whitelisted) and the
+parent records `lidar_loaded / lidar_error / lidar_mode`.
 
 ## 4. Verification checklist after deploy
 
@@ -110,5 +122,10 @@ form_view | form_submit | map_cta_click`.
   hard quota. Cloudflare's edge protection stays the first line of defense.
 - CSV export is generated on the fly (≤ 5000 rows). If the inbox ever grows past
   that, an R2-backed export can be added without changing the UI.
-- `analytics.js` is only loaded by the portfolio `index.html` — the lidar viewer
-  and admin pages do not emit events.
+- `analytics.js` is only loaded by the portfolio `index.html`; the embedded
+  lidar viewer reaches it through the postMessage bridge above.
+- Rejected analytics batches: the Worker response carries
+  `{stored, rejected, reasons[]}` and logs one line per rejected batch
+  (`[events] rejected …`) to `wrangler tail` / the dashboard log stream.
+  On localhost, `analytics.js` logs that report to the browser console;
+  production visitors never see anything (sendBeacon, fail-silent).
