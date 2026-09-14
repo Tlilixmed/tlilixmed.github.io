@@ -440,7 +440,8 @@ async function deleteCloud(request, env, cloudId) {
 // Upload endpoint — replace a layer's GeoJSON.
 // Original -> gis-private (never served). Whitelisted copy -> repo bucket.
 // NOTE: intended for datasets up to a few MB (Workers CPU limits).
-// Multi-MB datasets: use scripts/import_geojson.py locally instead.
+// Multi-MB datasets: import them into the repo bucket with
+// `npx wrangler r2 object put` instead.
 // ------------------------------------------------------------
 async function uploadGeojson(request, env, layerId) {
   const layer = await env.DB.prepare(
@@ -684,6 +685,22 @@ async function analyticsDashboard(request, env) {
        AND created_at >= datetime('now', ?)
        GROUP BY event_type, detail ORDER BY n DESC LIMIT 10`, [since]);
 
+    // engaged sessions: distinct sessions that did anything beyond landing
+    const engagedRow = await env.DB.prepare(
+      `SELECT COUNT(DISTINCT session_id) AS n FROM events
+       WHERE event_type IN ('case_study_open','details_open','map_cta_click',
+                            'lidar_loaded','cv_download','vcf_download',
+                            'form_attempt','form_submit')
+       AND created_at >= datetime('now', ?)`).bind(since).first();
+
+    // previous-period counts (same-length window right before) for trend chips
+    const prevRows = await q(
+      `SELECT event_type, COUNT(*) AS n FROM events
+       WHERE created_at >= datetime('now', ?) AND created_at < datetime('now', ?)
+       GROUP BY event_type`, ['-' + (days * 2) + ' days', since]);
+    const prev = {};
+    for (const r of prevRows) prev[r.event_type] = r.n;
+
     const refRows = await q(
       `SELECT referrer, COUNT(*) AS n FROM events
        WHERE event_type = 'page_view' AND created_at >= datetime('now', ?)
@@ -710,6 +727,25 @@ async function analyticsDashboard(request, env) {
     const leadsTotal = Object.values(leadCounts).reduce((a, b) => a + b, 0);
     const replied = leadCounts.replied || 0;
 
+    // where leads come from (same referrer categories as page views)
+    let leadSources = [];
+    try {
+      const rows = await q(
+        `SELECT referrer, COUNT(*) AS n FROM leads
+         WHERE created_at >= datetime('now', ?)
+         GROUP BY referrer ORDER BY n DESC`, [since]);
+      const byCat = {};
+      for (const r of rows) {
+        const c = referrerCategory(r.referrer);
+        byCat[c] = (byCat[c] || 0) + r.n;
+      }
+      leadSources = Object.keys(byCat)
+        .map((c) => ({ source: c, n: byCat[c] }))
+        .sort((a, b) => b.n - a.n);
+    } catch (e) {
+      if (!noLeadsTable(e)) throw e;
+    }
+
     return json({
       days,
       generated_at: new Date().toISOString(),
@@ -725,6 +761,14 @@ async function analyticsDashboard(request, env) {
       cv_split: cv.map((r) => ({ lang: r.lang, n: r.n })),
       languages: languages.map((r) => ({ lang: r.lang, n: r.n })),
       lidar: lidar.map((r) => ({ event: r.event_type, detail: r.detail, n: r.n })),
+      engaged_sessions: (engagedRow && engagedRow.n) || 0,
+      prev: {
+        page_views: prev.page_view || 0,
+        case_study_opens: prev.case_study_open || 0,
+        cv_downloads: prev.cv_download || 0,
+        form_submits: prev.form_submit || 0,
+      },
+      lead_sources: leadSources,
       daily,
       case_studies: caseStudies,
       map_ctas: mapCtas,

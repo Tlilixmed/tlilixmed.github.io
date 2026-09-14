@@ -43,6 +43,10 @@ function toggleLanguage() {
   document.documentElement.setAttribute('lang', currentLanguage);
   syncCVLinks();
 
+  // remember the choice across visits (restored pre-paint in <head> and on
+  // DOMContentLoaded below)
+  try { localStorage.setItem('tlili-lang', currentLanguage); } catch (e) { /* private mode */ }
+
   // engagement analytics: language adoption (fail-silent if analytics absent)
   if (window.gisTrack) window.gisTrack('language_change', currentLanguage);
 
@@ -55,6 +59,15 @@ function toggleLanguage() {
     else { langFlag.textContent = '🇫🇷'; langText.textContent = 'FR'; }
   }
 }
+
+/* ---------- language persistence (restore the saved choice) ---------- */
+document.addEventListener('DOMContentLoaded', function () {
+  var saved = null;
+  try { saved = localStorage.getItem('tlili-lang'); } catch (e) { /* private mode */ }
+  if (!saved) saved = document.documentElement.getAttribute('data-pref-lang');
+  // currentLanguage starts at 'en'; flipping once restores the visitor's choice
+  if (saved === 'fr' && currentLanguage === 'en') toggleLanguage();
+});
 
 /* ---------- smooth scroll (anchor links) ---------- */
 document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {

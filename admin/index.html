@@ -540,6 +540,7 @@
       <button class="mini-tab" data-days="7" type="button">Last 7 days</button>
       <button class="mini-tab active" data-days="30" type="button">Last 30 days</button>
       <span class="hint" id="anaGenerated" style="margin:0"></span>
+      <span class="hint" id="anaTrend" style="margin:0 0 0 12px"></span>
     </div>
     <div class="kpi-grid" id="anaKpis"><span class="spin"></span></div>
     <div class="ana-grid">
@@ -1665,9 +1666,24 @@
       + kpiCard(fmtInt(t.case_study_opens), "case study opens")
       + kpiCard(fmtInt(t.cv_downloads), "CV downloads", "EN " + fmtInt(cvEn) + " · FR " + fmtInt(cvFr))
       + kpiCard(fmtInt(t.form_submits), "form submits", fmtInt(t.form_views) + " views · " + conv + "% convert")
-      + kpiCard(fmtInt(t.map_cta_clicks), "map CTA clicks");
+      + kpiCard(fmtInt(t.map_cta_clicks), "map CTA clicks")
+      + kpiCard(fmtInt(j.engaged_sessions || 0), "engaged sessions",
+          (t.unique_sessions ? Math.round(((j.engaged_sessions || 0) / t.unique_sessions) * 100) : 0) + "% of unique");
     $("anaGenerated").textContent = "last " + j.days + " days · generated "
       + String(j.generated_at || "").replace("T", " ").slice(0, 16) + " UTC";
+
+    // period-over-period trend (vs the same-length window right before)
+    var pr = j.prev || {};
+    function tchip(label, cur, prv) {
+      var d = (cur || 0) - (prv || 0);
+      var arrow = d > 0 ? "▲" : (d < 0 ? "▼" : "·");
+      return label + ' <b>' + arrow + " " + Math.abs(d) + "</b>";
+    }
+    $("anaTrend").innerHTML = "vs previous " + j.days + " days: "
+      + tchip("views", t.page_views, pr.page_views) + " · "
+      + tchip("cases", t.case_study_opens, pr.case_study_opens) + " · "
+      + tchip("CV", t.cv_downloads, pr.cv_downloads) + " · "
+      + tchip("submits", t.form_submits, pr.form_submits);
 
     // daily bars (views; tooltip = date, views, unique sessions)
     var daily = j.daily || [];
@@ -1732,7 +1748,11 @@
       + '<p class="hint" style="margin:10px 0 6px">top sources</p>'
       + hbars((j.top_referrers || []).slice(0, 5), function (r) {
           return esc(String(r.referrer || "(direct)").replace(/^https?:\/\//, "").slice(0, 42));
-        }, function (r) { return r.n; });
+        }, function (r) { return r.n; })
+      + '<p class="hint" style="margin:10px 0 6px">leads by source</p>'
+      + ((j.lead_sources && j.lead_sources.length)
+        ? hbars(j.lead_sources, function (r) { return esc(r.source); }, function (r) { return r.n; })
+        : '<p class="hint">No leads in this window yet.</p>');
   }
 
   document.querySelectorAll("#tab-analytics .mini-tab").forEach(function (b) {

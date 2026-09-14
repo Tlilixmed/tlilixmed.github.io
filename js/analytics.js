@@ -117,6 +117,9 @@
         return;
       }
 
+      // vCard save-contact (recruiter convenience)
+      if (el.closest(".vcf-link")) { track("vcf_download"); return; }
+
       // case studies + every native <details>: the "toggle" listener below is
       // the single source of truth (openCase() sets .open programmatically,
       // which still fires "toggle"), so clicks are NOT double-counted here

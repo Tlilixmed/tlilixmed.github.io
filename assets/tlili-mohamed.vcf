@@ -1,0 +1,11 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Tlili;Mohamed;;;
+FN:Tlili Mohamed
+TITLE:GIS Engineer
+EMAIL;TYPE=INTERNET,WORK:tlilixmed@gmail.com
+TEL;TYPE=CELL:+21696806719
+URL:https://tliligis.me/
+X-SOCIALPROFILE;TYPE=linkedin:https://linkedin.com/in/tlilixmed
+NOTE:Geodatabase design, GIS automation, LiDAR processing. Open to GIS Engineer / GIS Developer / Geospatial Data Engineer roles.
+END:VCARD

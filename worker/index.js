@@ -238,7 +238,7 @@ const EVENT_TYPES = [
   // funnel split (each attempt stage is its own event)
   'form_attempt', 'form_invalid', 'form_error', 'form_fallback_click',
   // UI engagement
-  'language_change', 'details_open',
+  'language_change', 'details_open', 'vcf_download',
   // embedded 3D LiDAR viewer (arrives via the validated postMessage bridge)
   'lidar_loaded', 'lidar_error', 'lidar_mode',
 ];
