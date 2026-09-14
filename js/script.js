@@ -23,7 +23,7 @@ function syncCVLinks() {
   document.querySelectorAll('.cv-link').forEach(function (a) { a.setAttribute('href', href); });
 }
 
-function toggleLanguage() {
+function toggleLanguage(skipTrack) {
   currentLanguage = currentLanguage === 'en' ? 'fr' : 'en';
   document.querySelectorAll('[data-en][data-fr]').forEach(function (el) {
     var text = el.getAttribute('data-' + currentLanguage);
@@ -47,8 +47,11 @@ function toggleLanguage() {
   // DOMContentLoaded below)
   try { localStorage.setItem('tlili-lang', currentLanguage); } catch (e) { /* private mode */ }
 
-  // engagement analytics: language adoption (fail-silent if analytics absent)
-  if (window.gisTrack) window.gisTrack('language_change', currentLanguage);
+  // engagement analytics: language adoption (fail-silent if analytics absent).
+  // skipTrack marks the AUTOMATIC restore on page load — only user-initiated
+  // toggles count, otherwise every reload of a returning FR visitor would
+  // inflate the "switched to FR" counter by one phantom event per visit.
+  if (window.gisTrack && !skipTrack) window.gisTrack('language_change', currentLanguage);
 
   var langToggle = document.getElementById('langToggle');
   if (!langToggle) return;
@@ -66,7 +69,8 @@ document.addEventListener('DOMContentLoaded', function () {
   try { saved = localStorage.getItem('tlili-lang'); } catch (e) { /* private mode */ }
   if (!saved) saved = document.documentElement.getAttribute('data-pref-lang');
   // currentLanguage starts at 'en'; flipping once restores the visitor's choice
-  if (saved === 'fr' && currentLanguage === 'en') toggleLanguage();
+  // (true = automatic restore, not a user toggle — don't track it)
+  if (saved === 'fr' && currentLanguage === 'en') toggleLanguage(true);
 });
 
 /* ---------- smooth scroll (anchor links) ---------- */

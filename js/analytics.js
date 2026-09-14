@@ -189,6 +189,12 @@
     }
 
     // --- never lose the tail of a session ---
+    // pagehide covers desktop navigation/unload; visibilitychange->hidden
+    // additionally covers mobile backgrounds (iOS Safari can discard the
+    // page without a pagehide). Flushing on both keeps the last batch alive.
     window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") flush();
+    });
   } catch (e) { /* analytics must never break the site */ }
 })();

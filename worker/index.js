@@ -353,16 +353,26 @@ async function trackEvents(request, env, ctx) {
     return json({ ok: true, stored: 0, ...report, reason: 'flood damped' });
   }
 
-  const task = env.DB.batch(rows.map((r) =>
-    // a fresh prepared statement per row: re-binding one instance would
-    // make every batch item share the last row's parameters
-    env.DB.prepare(`INSERT INTO events (session_id, event_type, detail, referrer) VALUES (?, ?, ?, ?)`).bind(...r)
-  )).catch((e) => {
-    console.log('[events] insert failed:', String(e && e.message || e).slice(0, 120));
-  });
-  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(task);
-  else await task;
-  return json({ ok: true, stored: rows.length, ...report });
+  // Insert INLINE (awaited) instead of inside waitUntil: a 1-4 row batch
+  // costs ~1-5 ms, and running it on the request path lets the response
+  // REPORT database failures instead of hiding them. The previous
+  // waitUntil + swallowed-catch version answered {stored:N} even when the
+  // write failed — a dead analytics pipeline became impossible to spot.
+  try {
+    await env.DB.batch(rows.map((r) =>
+      // a fresh prepared statement per row: re-binding one instance would
+      // make every batch item share the last row's parameters
+      env.DB.prepare(`INSERT INTO events (session_id, event_type, detail, referrer) VALUES (?, ?, ?, ?)`).bind(...r)
+    ));
+    return json({ ok: true, stored: rows.length, ...report });
+  } catch (e) {
+    const msg = String((e && e.message) || e).slice(0, 200);
+    console.log('[events] insert failed:', msg);
+    // Still HTTP 200 — analytics must never break the visitor's page.
+    // db_error is the observable signal (dev-mode console report,
+    // `wrangler tail`, curl probes) that the D1 write path is broken.
+    return json({ ok: true, stored: 0, db_error: msg, ...report });
+  }
 }
 
 // ------------------------------------------------------------

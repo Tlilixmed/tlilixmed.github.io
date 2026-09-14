@@ -1672,6 +1672,20 @@
     $("anaGenerated").textContent = "last " + j.days + " days · generated "
       + String(j.generated_at || "").replace("T", " ").slice(0, 16) + " UTC";
 
+    // pipeline diagnostics (all-time row count + latest write): tells apart
+    // "no traffic in this window" from "the events pipeline never stored a row"
+    var diag = j.diagnostics || {};
+    var diagLine = " · " + fmtInt(diag.events_rows_total || 0) + " events stored (all time)";
+    if (diag.latest_event_at) diagLine += " · latest " + String(diag.latest_event_at).slice(0, 16);
+    var anyKpi = (t.page_views || 0) + (t.case_study_opens || 0) + (t.cv_downloads || 0)
+      + (t.form_submits || 0) + (t.map_cta_clicks || 0);
+    if (!anyKpi && !(diag.events_rows_total > 0)) {
+      diagLine += " — pipeline empty: open the site in another tab, browse, then reopen this tab";
+    } else if (!anyKpi && diag.events_rows_total > 0) {
+      diagLine += " — events exist but none in this window";
+    }
+    $("anaGenerated").textContent += diagLine;
+
     // period-over-period trend (vs the same-length window right before)
     var pr = j.prev || {};
     function tchip(label, cur, prv) {

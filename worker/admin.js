@@ -641,6 +641,12 @@ async function analyticsDashboard(request, env) {
     ((await env.DB.prepare(sql).bind(...(binds || [])).all()).results || []);
 
   try {
+    // diagnostics: all-time row count + latest write — lets the admin tell
+    // apart "pipeline dead" (0 rows / stale latest) from "quiet window"
+    const diagRow = await env.DB.prepare(
+      `SELECT COUNT(*) AS n, MAX(created_at) AS latest FROM events`
+    ).first();
+
     const totalsRows = await q(
       `SELECT event_type, COUNT(*) AS n, COUNT(DISTINCT session_id) AS sessions
        FROM events WHERE created_at >= datetime('now', ?) GROUP BY event_type`, [since]);
@@ -749,6 +755,10 @@ async function analyticsDashboard(request, env) {
     return json({
       days,
       generated_at: new Date().toISOString(),
+      diagnostics: {
+        events_rows_total: (diagRow && diagRow.n) || 0,
+        latest_event_at: (diagRow && diagRow.latest) || null,
+      },
       totals: {
         page_views: t.page_view || 0,
         unique_sessions: (sessionsRow && sessionsRow.n) || 0,
