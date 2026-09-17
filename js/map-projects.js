@@ -99,11 +99,11 @@ window.MAP_PROJECTS = [
   ----------------------------------------------------------- */
 
   {
-    id: 'Something-open-ground',
-    title: { en: 'Something Open Ground', fr: 'Ciel Ouvert — quelque chose' },
+    id: 'tungsten-open-ground',
+    title: { en: 'Tungsten Open Ground — Yukon', fr: 'Terrains libres tungstène — Yukon' },
     desc: {
-      en: 'Mineral exploration project.',
-      fr: "Projet d'exploration minière."
+      en: 'Prospectivity screening for tungsten skarn targets: regional faults, favorable geology units and MINFILE occurrences, built on Yukon Geological Survey open data.',
+      fr: "Analyse de prospectivité pour des cibles de skarn à tungstène : failles régionales, unités géologiques favorables et indices MINFILE, à partir des données ouvertes de la Commission géologique du Yukon."
     },
     category: 'Mineral Exploration',
     year: '2025',
@@ -113,22 +113,19 @@ window.MAP_PROJECTS = [
     layers: [
       {
         file: 'geojson/Something-open-ground/Faults.json',
-        label: { en: 'License Boundary', fr: 'Périmètre Minier' },
-        weight: 2.5,
-        dash: '8 5',
-        fillOpacity: 0.05,
-      
+        label: { en: 'Regional faults (YGS)', fr: 'Failles régionales (YGS)' },
+        weight: 1.2,
+        dash: '6 4',
+        fields: ['NAME', 'TYPE', 'SUBTYPE', 'CONFIDENCE', 'SCALE'],
       },
       {
         file: 'geojson/Something-open-ground/something Favorable Geology.json',
-        label: { en: 'Favorable Geology', fr: 'Géologie Favorable' },
-        
+        label: { en: 'Favorable geology', fr: 'Géologie favorable' },
       },
       {
         file: 'geojson/Something-open-ground/Ocurrences.json',
-        label: { en: 'Ocurrences', fr: "Ocurrences" },
-        dash: '4 3',
-      
+        label: { en: 'MINFILE occurrences', fr: 'Indices MINFILE' },
+        fields: ['NAME', 'DEP_TYPE', 'DEP_STATUS', 'COMMODITY', 'NUMBER', 'DOC_LINK'],
       },
     ]
   },
@@ -164,11 +161,11 @@ window.MAP_PROJECTS = [
   },
 */
  {
-    id: 'Urban Digitize',
-    title: { en: 'Urban Digitize', fr: 'numérisation ' },
+    id: 'urban-digitize',
+    title: { en: 'Urban Digitization', fr: 'Numérisation urbaine' },
     desc: {
-      en: 'High precision urban digitization project.',
-      fr: 'numérisation urbaine de haute précision.'
+      en: 'High-precision digitization of buildings, roads, pavements, cycleways and road markings from drone imagery.',
+      fr: "Numérisation de haute précision des bâtiments, routes, revêtements, pistes cyclables et marquages au sol à partir d'imagerie drone."
     },
     category: 'Cartography',
     year: '2025',

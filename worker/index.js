@@ -17,12 +17,14 @@ const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache
 
 // Public read endpoints are CORS-enabled so local dev servers (VS Code Live
 // Server on 127.0.0.1:5500, python http.server, …) can fall back to the
-// deployed Worker for the catalog and octrees. Read-only + token-guarded
-// admin routes stay safe: CORS never bypasses the X-Admin-Token check.
+// deployed Worker for the catalog and octrees. Admin routes are same-origin
+// only: they get no CORS headers and no preflight answer, so the admin token
+// header is never advertised cross-origin (the token check itself is what
+// protects them; this just removes an unnecessary surface).
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, HEAD, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type, range, x-admin-token',
+  'access-control-allow-headers': 'content-type, range',
   'access-control-max-age': '86400',
 };
 
@@ -384,8 +386,9 @@ export default {
     const path = url.pathname;
 
     try {
-      // CORS preflight for cross-origin reads (local dev servers).
-      if (request.method === 'OPTIONS' && (path.startsWith('/api/') || path.startsWith('/clouds/'))) {
+      // CORS preflight for cross-origin reads (local dev servers); admin routes excluded.
+      if (request.method === 'OPTIONS' && !path.startsWith('/api/admin/') &&
+          (path.startsWith('/api/') || path.startsWith('/clouds/'))) {
         return new Response(null, { status: 204, headers: CORS_HEADERS });
       }
 

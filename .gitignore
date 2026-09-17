@@ -3,3 +3,5 @@ converted-las1/
 *.las
 *.laz
 *.copc.laz
+.dev.vars
+node_modules/

@@ -411,6 +411,7 @@
     var L = window.L;
 
     var map = L.map(mount, {
+      preferCanvas: true,            // PERF: tens of thousands of fault lines as one canvas, not one SVG path each
       scrollWheelZoom: false,        // don't hijack page scroll
       zoomControl: true,
       attributionControl: true,
