@@ -241,6 +241,8 @@ const EVENT_TYPES = [
   'form_attempt', 'form_invalid', 'form_error', 'form_fallback_click',
   // UI engagement
   'language_change', 'details_open', 'vcf_download',
+  // attribution: UTM / ?ref= tag on links used in job applications (once per session)
+  'campaign_visit',
   // embedded 3D LiDAR viewer (arrives via the validated postMessage bridge)
   'lidar_loaded', 'lidar_error', 'lidar_mode',
 ];

@@ -19,7 +19,7 @@
   <meta name="author" content="Tlili GIS" />
 
   <!-- Preload critical resources -->
-  <link rel="preload" href="css/style.css?v=20260917" as="style">
+  <link rel="preload" href="css/style.css?v=20260917b" as="style">
   <link rel="preload" href="images/1024.webp" as="image" fetchpriority="high">
 
   <!-- Leaflet - interactive GeoJSON map (CDN, no build step).
@@ -27,12 +27,12 @@
        map section approaches the viewport), so they never delay first paint. -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
-  <link rel="stylesheet" href="css/style.css?v=20260917" />
-  <script src="js/script.js?v=20260917" defer></script>
-  <script src="js/contact-form.js?v=20260917" defer></script>
-  <script src="js/analytics.js?v=20260917" defer></script>
-  <script src="js/map-projects.js?v=20260917" defer></script>
-  <script src="js/map.js?v=20260917" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20260917b" />
+  <script src="js/script.js?v=20260917b" defer></script>
+  <script src="js/contact-form.js?v=20260917b" defer></script>
+  <script src="js/analytics.js?v=20260917b" defer></script>
+  <script src="js/map-projects.js?v=20260917b" defer></script>
+  <script src="js/map.js?v=20260917b" defer></script>
 
   <link rel="canonical" href="https://tliligis.me/" />
 
@@ -65,7 +65,9 @@
       "telephone": "+216 96 806 719",
       "url": "https://tliligis.me/",
       "image": "https://tliligis.me/images/1024.webp",
-      "sameAs": ["https://linkedin.com/in/tlilixmed"],
+      "sameAs": ["https://linkedin.com/in/tlilixmed", "https://github.com/Tlilixmed"],
+      "address": { "@type": "PostalAddress", "addressCountry": "TN" },
+      "knowsLanguage": ["fr", "en", "ar"],
       "knowsAbout": ["GIS", "Geodatabase Design", "LiDAR Processing", "ArcGIS Pro", "QGIS", "PyQGIS", "Python", "SQL Server", "Smallworld GIS", "Spatial Analysis", "Cartography"]
     }
   }
@@ -125,6 +127,11 @@
         <p class="hero-availability">
           <span class="dot" aria-hidden="true"></span>
           <span data-en="Open to full-time GIS Engineer, GIS Developer, and Geospatial Data Engineer roles." data-fr="Ouvert aux postes à temps plein : Ingénieur SIG, Développeur SIG et Ingénieur données géospatiales.">Open to full-time GIS Engineer, GIS Developer, and Geospatial Data Engineer roles.</span>
+        </p>
+        <p class="hero-facts">
+          <span data-en="Based in Tunisia" data-fr="Basé en Tunisie">Based in Tunisia</span>
+          <span data-en="Remote or relocation" data-fr="Télétravail ou relocalisation">Remote or relocation</span>
+          <span data-en="French · English · Arabic" data-fr="Français · Anglais · Arabe">French · English · Arabic</span>
         </p>
         <div class="hero-ctas">
           <a href="#work" class="btn btn-primary" data-en="View selected work" data-fr="Voir les projets">View selected work</a>
@@ -216,6 +223,26 @@
             </ul>
             <p class="work-tools">Smallworld GIS · AutoCAD · Data harmonization</p>
             <button class="btn btn-ghost btn-sm case-open" data-target="case-fiber" data-en="Read case study" data-fr="Lire l'étude de cas">Read case study</button>
+          </div>
+        </article>
+
+        <!-- Project 5 : this site (serverless geospatial platform) -->
+        <article class="work-card work-card--wide">
+          <div class="work-thumb"><img src="images/site-architecture.svg" alt="Architecture diagram: browser and admin panel call a Cloudflare Worker backed by a D1 database and three R2 buckets" loading="lazy" decoding="async" width="960" height="440"></div>
+          <div class="work-body">
+            <span class="work-cat" data-en="Web GIS · Cloud platform" data-fr="SIG Web · Plateforme cloud">Web GIS · Cloud platform</span>
+            <h3 class="work-title" data-en="This site: a serverless geospatial platform" data-fr="Ce site : une plateforme géospatiale serverless">This site: a serverless geospatial platform</h3>
+            <p class="work-sum" data-en="Designed and built the platform behind this portfolio: a Cloudflare Worker API over D1 and R2 that serves the project map, streams LiDAR point clouds, and runs a lead inbox with first-party analytics." data-fr="Conception et développement de la plateforme derrière ce portfolio : une API Cloudflare Worker sur D1 et R2 qui alimente la carte des projets, diffuse les nuages de points LiDAR et gère une boîte de réception avec des analytics first-party.">Designed and built the platform behind this portfolio: a Cloudflare Worker API over D1 and R2 that serves the project map, streams LiDAR point clouds, and runs a lead inbox with first-party analytics.</p>
+            <ul class="work-proof">
+              <li data-en="Point clouds streamed with HTTP range requests" data-fr="Nuages de points diffusés par requêtes HTTP Range">Point clouds streamed with HTTP range requests</li>
+              <li data-en="Zero third-party scripts, zero cookies" data-fr="Aucun script tiers, aucun cookie">Zero third-party scripts, zero cookies</li>
+              <li data-en="Admin back office: GeoJSON and chunked uploads" data-fr="Back-office admin : imports GeoJSON et par morceaux">Admin back office: GeoJSON and chunked uploads</li>
+            </ul>
+            <p class="work-tools">Cloudflare Workers · D1 (SQLite) · R2 · Leaflet · Potree · JavaScript</p>
+            <div class="work-actions">
+              <button class="btn btn-ghost btn-sm case-open" data-target="case-site" data-en="Read case study" data-fr="Lire l'étude de cas">Read case study</button>
+              <a class="btn btn-ghost btn-sm" href="https://github.com/Tlilixmed/tlilixmed.github.io" target="_blank" rel="noopener" data-en="Source on GitHub" data-fr="Code source sur GitHub">Source on GitHub</a>
+            </div>
           </div>
         </article>
       </div>
@@ -430,6 +457,57 @@
                 <img src="images/FO2.webp" alt="Infrastructure network detail view in Smallworld GIS" loading="lazy" decoding="async" width="1600" height="486">
                 <figcaption data-en="Infrastructure network detail in Smallworld GIS" data-fr="Détail du réseau d'infrastructure dans Smallworld GIS">Infrastructure network detail in Smallworld GIS</figcaption>
               </figure>
+            </div>
+          </div>
+        </details>
+
+        <details class="case" id="case-site">
+          <summary>
+            <span class="case-kicker" data-en="Case study" data-fr="Étude de cas">Case study</span>
+            <span class="case-title" data-en="This site: a serverless geospatial platform" data-fr="Ce site : une plateforme géospatiale serverless">This site: a serverless geospatial platform</span>
+            <svg class="case-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="case-body">
+            <p class="case-outcome" data-en="A portfolio that is itself a working geospatial product: a serverless API, object-storage data lake, 2D/3D viewer and admin back office, with no build step and no third-party code at runtime." data-fr="Un portfolio qui est lui-même un produit géospatial fonctionnel : API serverless, stockage objet, visionneuse 2D/3D et back-office admin, sans étape de build ni code tiers à l'exécution.">A portfolio that is itself a working geospatial product: a serverless API, object-storage data lake, 2D/3D viewer and admin back office, with no build step and no third-party code at runtime.</p>
+            <dl class="case-facts">
+              <div><dt data-en="Role" data-fr="Rôle">Role</dt><dd data-en="Sole designer and developer: architecture, data model, API, front end, admin panel, deployment." data-fr="Seul concepteur et développeur : architecture, modèle de données, API, front-end, panneau admin, déploiement.">Sole designer and developer: architecture, data model, API, front end, admin panel, deployment.</dd></div>
+              <div><dt data-en="Context" data-fr="Contexte">Context</dt><dd data-en="Personal project: publish real GIS data (GeoJSON layers, LiDAR point clouds) the way a small organisation would, on a static-site budget." data-fr="Projet personnel : publier de vraies données SIG (couches GeoJSON, nuages de points LiDAR) comme le ferait une petite organisation, avec le budget d'un site statique.">Personal project: publish real GIS data (GeoJSON layers, LiDAR point clouds) the way a small organisation would, on a static-site budget.</dd></div>
+              <div><dt data-en="Scale" data-fr="Envergure">Scale</dt><dd data-en="Three R2 buckets, seven D1 tables, 30+ API routes, point clouds of several hundred MB streamed in chunks." data-fr="Trois buckets R2, sept tables D1, plus de 30 routes API, nuages de points de plusieurs centaines de Mo diffusés par morceaux.">Three R2 buckets, seven D1 tables, 30+ API routes, point clouds of several hundred MB streamed in chunks.</dd></div>
+              <div><dt data-en="Technologies" data-fr="Technologies">Technologies</dt><dd>Cloudflare Workers, D1 (SQLite), R2, Wrangler, Leaflet, Potree, JavaScript, SQL.</dd></div>
+            </dl>
+            <h4 data-en="Challenge" data-fr="Défi">Challenge</h4>
+            <p data-en="A static host can show screenshots, but it cannot serve a data catalog, stream a 300 MB point cloud, accept uploads or receive contact messages. The goal was a site that stays static for visitors while gaining a real back end, without a framework, a build pipeline or a monthly bill." data-fr="Un hébergement statique affiche des captures d'écran, mais ne peut ni servir un catalogue de données, ni diffuser un nuage de points de 300 Mo, ni accepter des imports ou des messages de contact. L'objectif : un site qui reste statique pour les visiteurs tout en gagnant un vrai back-end, sans framework, sans pipeline de build et sans facture mensuelle.">A static host can show screenshots, but it cannot serve a data catalog, stream a 300 MB point cloud, accept uploads or receive contact messages. The goal was a site that stays static for visitors while gaining a real back end, without a framework, a build pipeline or a monthly bill.</p>
+            <h4 data-en="Technical approach" data-fr="Approche technique">Technical approach</h4>
+            <ul>
+              <li data-en="Modelled projects, layers and point clouds in D1; the map manifest is generated from the database, with the static manifest kept as an offline fallback." data-fr="Modélisation des projets, couches et nuages de points dans D1 ; le manifeste de la carte est généré depuis la base, le manifeste statique restant en secours.">Modelled projects, layers and point clouds in D1; the map manifest is generated from the database, with the static manifest kept as an offline fallback.</li>
+              <li data-en="Split storage into three R2 buckets: untouched originals (never served), derived public GeoJSON with attribute whitelisting, and Potree octrees, so the public surface can never expose a source file." data-fr="Stockage réparti sur trois buckets R2 : originaux intacts (jamais servis), GeoJSON public dérivé avec liste blanche d'attributs, et octrees Potree, de sorte que la surface publique ne puisse jamais exposer un fichier source.">Split storage into three R2 buckets: untouched originals (never served), derived public GeoJSON with attribute whitelisting, and Potree octrees, so the public surface can never expose a source file.</li>
+              <li data-en="Implemented HTTP range requests over R2 for the octrees, so the 3D viewer loads only the nodes in view; immutable caching on octree chunks, short caching on metadata." data-fr="Requêtes HTTP Range sur R2 pour les octrees : la visionneuse 3D ne charge que les nœuds visibles ; cache immuable pour les morceaux d'octree, cache court pour les métadonnées.">Implemented HTTP range requests over R2 for the octrees, so the 3D viewer loads only the nodes in view; immutable caching on octree chunks, short caching on metadata.</li>
+              <li data-en="Built the admin panel as one HTML file: project and layer CRUD, GeoJSON upload, chunked multipart uploads for files beyond the request-body limit, an upload log, a lead inbox and an analytics dashboard." data-fr="Panneau admin en un seul fichier HTML : CRUD projets et couches, import GeoJSON, import multipart par morceaux pour les fichiers dépassant la limite de requête, journal des imports, boîte de réception et tableau de bord analytics.">Built the admin panel as one HTML file: project and layer CRUD, GeoJSON upload, chunked multipart uploads for files beyond the request-body limit, an upload log, a lead inbox and an analytics dashboard.</li>
+              <li data-en="Added a contact endpoint and cookie-less analytics: honeypot, strict validation, in-memory rate limiting keyed on a hashed IP, batched beacons that survive page unload." data-fr="Point de contact et analytics sans cookie : honeypot, validation stricte, limitation de débit en mémoire sur IP hachée, beacons groupés qui survivent au déchargement de la page.">Added a contact endpoint and cookie-less analytics: honeypot, strict validation, in-memory rate limiting keyed on a hashed IP, batched beacons that survive page unload.</li>
+              <li data-en="Hardened the API: constant-time token comparison, column allowlists for dynamic SQL, path-traversal checks on object keys, admin routes excluded from CORS." data-fr="Durcissement de l'API : comparaison de jeton à temps constant, listes blanches de colonnes pour le SQL dynamique, contrôle des chemins sur les clés objet, routes admin exclues du CORS.">Hardened the API: constant-time token comparison, column allowlists for dynamic SQL, path-traversal checks on object keys, admin routes excluded from CORS.</li>
+            </ul>
+            <h4 data-en="Deliverables &amp; validation" data-fr="Livrables &amp; validation">Deliverables &amp; validation</h4>
+            <ul>
+              <li data-en="Public API, admin panel, seed and migration scripts, and a README covering bindings, deployment and content workflow; every endpoint is documented in the source." data-fr="API publique, panneau admin, scripts de seed et de migration, README couvrant les bindings, le déploiement et le workflow de contenu ; chaque route est documentée dans le code.">Public API, admin panel, seed and migration scripts, and a README covering bindings, deployment and content workflow; every endpoint is documented in the source.</li>
+              <li data-en="Validated with live traffic: the analytics dashboard reports its own pipeline health (rows stored, last write, rejected events), so a silent failure cannot hide." data-fr="Validé en trafic réel : le tableau de bord analytics rapporte l'état de son propre pipeline (lignes stockées, dernière écriture, événements rejetés), une panne silencieuse ne peut donc pas passer inaperçue.">Validated with live traffic: the analytics dashboard reports its own pipeline health (rows stored, last write, rejected events), so a silent failure cannot hide.</li>
+            </ul>
+            <h4 data-en="Results" data-fr="Résultats">Results</h4>
+            <ul class="case-results">
+              <li data-en="Deploys in seconds: git push → Workers Builds → wrangler deploy, HTML always revalidated" data-fr="Déploiement en quelques secondes : git push → Workers Builds → wrangler deploy, HTML toujours revalidé">Deploys in seconds: git push → Workers Builds → wrangler deploy, HTML always revalidated</li>
+              <li data-en="Point clouds of hundreds of MB open in the browser without a download" data-fr="Des nuages de points de centaines de Mo s'ouvrent dans le navigateur sans téléchargement">Point clouds of hundreds of MB open in the browser without a download</li>
+              <li data-en="Zero cookies, zero third-party scripts: all data first-party on one origin" data-fr="Zéro cookie, zéro script tiers : toutes les données en first-party sur une seule origine">Zero cookies, zero third-party scripts: all data first-party on one origin</li>
+              <li data-en="Runs within Cloudflare's free tier" data-fr="Fonctionne dans les limites de l'offre gratuite Cloudflare">Runs within Cloudflare's free tier</li>
+            </ul>
+            <h4 data-en="Architecture" data-fr="Architecture">Architecture</h4>
+            <div class="case-media">
+              <figure class="wide" onclick="openMapModal('images/site-architecture.svg', 'Architecture of tliligis.me', 'Browser and admin panel call a Cloudflare Worker backed by D1 and three R2 buckets.')">
+                <img src="images/site-architecture.svg" alt="Architecture diagram of this site" loading="lazy" decoding="async" width="960" height="440">
+                <figcaption data-en="Request flow: browser → Worker → D1 catalog and R2 buckets (derived GeoJSON, Potree octrees, private originals)" data-fr="Flux des requêtes : navigateur → Worker → catalogue D1 et buckets R2 (GeoJSON dérivé, octrees Potree, originaux privés)">Request flow: browser → Worker → D1 catalog and R2 buckets (derived GeoJSON, Potree octrees, private originals)</figcaption>
+              </figure>
+            </div>
+            <div class="case-links">
+              <a class="btn btn-ghost btn-sm" href="https://github.com/Tlilixmed/tlilixmed.github.io" target="_blank" rel="noopener" data-en="Source code on GitHub" data-fr="Code source sur GitHub">Source code on GitHub</a>
+              <a class="btn btn-ghost btn-sm" href="/lidar/" target="_blank" rel="noopener" data-en="Open the 3D viewer" data-fr="Ouvrir la visionneuse 3D">Open the 3D viewer</a>
             </div>
           </div>
         </details>

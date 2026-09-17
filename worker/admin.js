@@ -62,6 +62,8 @@
 //   GET    /api/admin/leads/export.csv?status=&reason=  CSV download, generated on the fly
 // ---- engagement analytics (migration 003) ----
 //   GET    /api/admin/analytics?days=7|30            one-screen dashboard payload
+//                                                    (incl. campaigns: UTM-tagged visits joined
+//                                                    to what each session opened afterwards)
 // ============================================================
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
@@ -722,6 +724,24 @@ async function analyticsDashboard(request, env) {
       .sort((a, b) => b.n - a.n)
       .slice(0, 10);
 
+    // campaign attribution: each tagged visit joined to everything the same
+    // session did afterwards — answers "did company X open the case studies?"
+    const campaigns = await q(
+      `SELECT c.detail AS campaign,
+              COUNT(DISTINCT c.session_id) AS sessions,
+              MIN(c.created_at) AS first_seen,
+              MAX(c.created_at) AS last_seen,
+              SUM(CASE WHEN e.event_type = 'case_study_open' THEN 1 ELSE 0 END) AS case_opens,
+              GROUP_CONCAT(DISTINCT CASE WHEN e.event_type = 'case_study_open' THEN e.detail END) AS opened,
+              SUM(CASE WHEN e.event_type = 'cv_download' THEN 1 ELSE 0 END) AS cv_downloads,
+              SUM(CASE WHEN e.event_type = 'lidar_loaded' THEN 1 ELSE 0 END) AS lidar_loads,
+              SUM(CASE WHEN e.event_type = 'map_cta_click' THEN 1 ELSE 0 END) AS map_clicks,
+              SUM(CASE WHEN e.event_type = 'form_submit' THEN 1 ELSE 0 END) AS form_submits
+       FROM events c
+       LEFT JOIN events e ON e.session_id = c.session_id AND e.id <> c.id
+       WHERE c.event_type = 'campaign_visit' AND c.created_at >= datetime('now', ?)
+       GROUP BY c.detail ORDER BY last_seen DESC LIMIT 40`, [since]);
+
     // contact funnel joins events with the leads table
     let leadCounts = {};
     try {
@@ -779,6 +799,7 @@ async function analyticsDashboard(request, env) {
         form_submits: prev.form_submit || 0,
       },
       lead_sources: leadSources,
+      campaigns,
       daily,
       case_studies: caseStudies,
       map_ctas: mapCtas,

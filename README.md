@@ -68,6 +68,19 @@ LiDAR viewer falls back to the deployed Worker API. For the full stack run
   the admin panel or run an `UPDATE` file such as `derived/004-rename-projects.sql`:
   `npx wrangler d1 execute gis-db --remote --file derived/004-rename-projects.sql`.
 
+## Tracking applications
+
+Tag the link you paste into an application so the Insights tab shows whether that
+company visited and what they opened:
+
+```
+https://tliligis.me/?utm_source=<company>&utm_medium=application&utm_campaign=<role>
+```
+
+The admin panel has a link builder in the Insights tab. The tag is recorded once per
+session as a `campaign_visit` event and removed from the visitor's address bar.
+A short form also works: `https://tliligis.me/?ref=<company>`.
+
 ## Cache and versioning
 
 HTML is always served with `cache-control: no-cache`. Scripts and styles are cached

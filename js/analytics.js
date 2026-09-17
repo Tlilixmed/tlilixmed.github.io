@@ -5,7 +5,8 @@
      ends the session; no cookie, nothing persistent)
    - batches tiny JSON POSTs to /api/events (Worker -> D1)
    - tracked: page_view, cv_download (EN/FR), case_study_open,
-     form_view, form_submit (via contact-form.js), map_cta_click
+     form_view, form_submit (via contact-form.js), map_cta_click,
+     campaign_visit (UTM / ?ref= on links used in applications)
    - no fingerprinting, no third-party scripts, no raw IPs
    - everything fails silent: analytics must never break the site
    Contract for other scripts:
@@ -104,6 +105,37 @@
 
     // --- page view (referrer category is derived server-side) ---
     track("page_view", document.documentElement.lang === "fr" ? "lang:fr" : "lang:en");
+
+    // --- campaign attribution (UTM or short ?ref=) ---------------------
+    // Links pasted into applications carry
+    //   ?utm_source=<company>&utm_medium=application&utm_campaign=<role>
+    // (or just ?ref=<company>). Recorded ONCE per session as campaign_visit
+    // with detail "source/medium/campaign", then stripped from the URL so the
+    // tag is never copied around or bookmarked. The admin Insights tab joins
+    // the session to what was opened afterwards (case studies, CV, 3D…).
+    try {
+      var qs = new URLSearchParams(location.search);
+      var src = qs.get("utm_source") || qs.get("ref") || qs.get("src") || "";
+      if (src) {
+        var clean = function (v) {
+          return String(v).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+        };
+        var parts = [clean(src)];
+        if (qs.get("utm_medium")) parts.push(clean(qs.get("utm_medium")));
+        if (qs.get("utm_campaign")) parts.push(clean(qs.get("utm_campaign")));
+        var cmp = parts.filter(Boolean).join("/");
+        var prev = "";
+        try { prev = sessionStorage.getItem("gis_cmp") || ""; } catch (e) {}
+        if (cmp && cmp !== prev) {
+          track("campaign_visit", cmp);
+          try { sessionStorage.setItem("gis_cmp", cmp); } catch (e) {}
+        }
+        ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref", "src"]
+          .forEach(function (k) { qs.delete(k); });
+        var rest = qs.toString();
+        history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
+      }
+    } catch (e) { /* attribution is optional */ }
 
     // --- delegated click tracking (capture phase, additive — script.js untouched) ---
     document.addEventListener("click", function (ev) {
