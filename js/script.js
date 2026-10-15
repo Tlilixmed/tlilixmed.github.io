@@ -16,11 +16,14 @@
 /* ---------- language toggle ---------- */
 let currentLanguage = 'en';
 
+// The CV filename lives only in index.html; this just swaps the _En/_Fr suffix,
+// so renaming the PDFs never needs a JS change.
 function syncCVLinks() {
-  var href = currentLanguage === 'fr'
-    ? 'assets/Tlili_Mohamed_CV_Fr.pdf'
-    : 'assets/Tlili_Mohamed_CV_En.pdf';
-  document.querySelectorAll('.cv-link').forEach(function (a) { a.setAttribute('href', href); });
+  var suffix = currentLanguage === 'fr' ? '_Fr.pdf' : '_En.pdf';
+  document.querySelectorAll('.cv-link').forEach(function (a) {
+    var href = a.getAttribute('href') || '';
+    a.setAttribute('href', href.replace(/_(En|Fr)\.pdf/i, suffix));
+  });
 }
 
 function toggleLanguage(skipTrack) {

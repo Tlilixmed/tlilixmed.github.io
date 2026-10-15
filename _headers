@@ -6,9 +6,12 @@
 /videos/*
   Cache-Control: public, max-age=604800
 /css/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: no-cache
 /js/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: no-cache
+# CV PDFs and other documents — always revalidate (ETag -> cheap 304 when unchanged)
+/assets/*
+  Cache-Control: no-cache
 /geojson/*
   Cache-Control: public, max-age=3600
 /lidar/libs/*

@@ -83,9 +83,14 @@ A short form also works: `https://tliligis.me/?ref=<company>`.
 
 ## Cache and versioning
 
-HTML is always served with `cache-control: no-cache`. Scripts and styles are cached
-for an hour (`_headers`), so bump the `?v=` query string in `index.html` when you
-change `css/style.css` or anything in `js/`.
+HTML, `css/`, `js/` and `assets/` (the CV PDFs) are served with `cache-control: no-cache`
+(`_headers` + the Worker), so browsers revalidate on every load and pick up a new deploy
+without clearing the cache. Unchanged files come back as a cheap `304`. Images, videos
+and the Potree libs stay cached for a week.
+
+To update the CV, replace `assets/Tlili_Mohamed-CV_En.pdf` / `_Fr.pdf`. If you rename
+them, change the three `.cv-link` hrefs in `index.html` only; `js/script.js` just swaps
+the `_En` / `_Fr` suffix.
 
 ## Privacy
 
